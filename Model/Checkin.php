@@ -1,0 +1,480 @@
+<?php
+
+class Checkin extends AppModel {
+	
+	public $primaryKey = 'big';
+	
+	public $belongsTo = array(
+		'Event',
+		'Member',
+	);
+	
+	public $hasMany = array(
+		'ChatMessage'
+	);
+	
+	/**
+	 * Check if member is checked in a place or was checked in and the period while he retains
+	 * the capability of performing functions is not over yet.
+	 * @param unknown_type $memberBig
+	 * @param unknown_type $eventBig
+	 * @param unknown_type $returnCheckin Default is false. When set to true, returns the Checkin object
+	 * @return boolean|Ambigous <multitype:, NULL, mixed>
+	 */
+	public function isOrWasCheckedIn($memberBig, $eventBig, $returnCheckin = false)
+	{
+		$queryParams = array(
+			'conditions' => array(
+				'Checkin.member_big' => $memberBig, 
+				'Checkin.event_big' => $eventBig,
+				'Checkin.physical' => 1,
+				'OR' => array(
+					'Checkin.checkout' => null,
+					'Checkin.checkout >' => date('Y-m-d H:i', strtotime('- ' . API_RETAIN_CHECK_IN_FUNC . ' days'))
+//					'Checkin.checkout >' => 'NOW() - interval \'' . API_RETAIN_CHECK_IN_FUNC . ' days\''
+				)
+			),
+			'order' => array('Checkin.created' => 'desc')
+		);
+		
+		$result = $this->find('first', $queryParams);
+		
+		if (empty($result))
+			return false;
+		
+		if ($returnCheckin)
+			return $result;
+		
+		return true;
+	}
+	
+	/**
+	 * Return event_big of the event where this member is currently checked in/joined, or the whole checkin object depending on parameters.
+	 * @param unknown_type $memberBig
+	 * @param unknown_type $returnCheckin
+	 * @return boolean|Ambiguous
+	 */
+	public function getCheckedinEventFor($memberBig, $returnCheckin = FALSE)
+	{
+		$queryParams = array(
+//			'fields' => array('Checkin.event_big'),
+			'conditions' => array(
+				'Checkin.member_big' => $memberBig, 
+				'OR' => array(
+					'Checkin.checkout' => null,
+					'Checkin.checkout >' => 'NOW()'
+				)
+			),
+			'order' => array('Checkin.created' => 'desc'),
+			'recursive' => 0,
+		);
+		
+//		try {
+			$result = $this->find('first', $queryParams);
+//		}
+//		catch (Exception $e)
+//		{
+//			debug($e);
+//		}
+		
+		if (empty($result))
+			return false;
+		
+		if ($returnCheckin)
+			return $result;
+		
+		return $result['Checkin']['event_big'];
+	}
+	
+	public function getMemberAvailableToChat($eventBig, $memberBig)
+	{
+		
+		$db = $this->getDataSource();
+		$query =  'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count" 
+			FROM "checkins" AS "Checkin" 
+			LEFT JOIN "members" AS "Member" ON ("Checkin"."member_big" = "Member"."big")  
+			LEFT JOIN (SELECT from_big, COUNT(*) AS count FROM chat_messages WHERE read = 0 AND to_big = ? GROUP BY from_big) AS "ChatMessage" ON ("Member"."big" = "ChatMessage"."from_big") 
+			LEFT JOIN "events" AS "Event" ON ("Checkin"."event_big" = "Event"."big") 
+			WHERE "Checkin"."event_big" = ? AND "Member"."status" != 255 
+			AND (("Checkin"."checkout" IS NULL) OR ("Checkin"."checkout" > \'NOW()\')) 
+			AND NOT ("Checkin"."member_big" = ?)   
+			ORDER BY "Checkin"."created" desc';
+		
+		try {
+			$result = $db->fetchAll($query, array($memberBig, $eventBig, $memberBig));
+		}
+		catch (Exception $e)
+		{
+//			debug($e);
+		}
+		
+		if (empty($result)) {
+			return array();
+		}
+			
+		return $result;
+			
+	}
+	
+	/**
+	 * Check if member is checked in or joined a place and is not yet checked out.
+	 * @param unknown_type $memberBig
+	 * @param unknown_type $eventBig
+	 * @param unknown_type $physical
+	 * @param unknown_type $returnCheckin Default is false. When set to true, returns the Checkin object
+	 * @return boolean|Ambigous <multitype:, NULL, mixed>
+	 */
+	public function hasJoinedOrCheckedIn($memberBig, $eventBig, $physical = false, $returnCheckin = false)
+	{
+		$queryParams = array(
+			'conditions' => array(
+				'Checkin.member_big' => $memberBig, 
+				'Checkin.event_big' => $eventBig,
+				'Checkin.checkout' => null
+			),
+			'order' => array('Checkin.created' => 'desc')
+		);
+		
+		if ($physical !== false)
+		{
+			$queryParams['conditions']['Checkin.physical'] = $physical;
+		}
+		
+		$result = $this->find('first', $queryParams);
+		
+		if (empty($result))
+			return false;
+		
+		if ($returnCheckin)
+			return $result;
+		
+		return true;
+	}
+	
+	public function getCheckinsCountFor($eventBig, $memberBig = null)
+	{
+		$pars = array(
+			'conditions' => array(
+				'Checkin.event_big' => $eventBig,
+				'Checkin.physical' => 1,
+				'Member.status !=' => DELETED,
+				'OR' => array(
+					'Checkin.checkout' => null,
+					'Checkin.checkout >' => 'NOW()',
+				)
+			)
+		);
+		
+		if (!empty($memberBig))
+			$pars['conditions']['Checkin.member_big !='] = $memberBig;
+		
+		return intval($this->find('count', $pars));
+	}
+	
+	public function getCheckinsCountForMember($memberBig)
+	{
+		$pars = array(
+			'conditions' => array(
+				'Checkin.member_big' => $memberBig,
+				'Checkin.physical' => 1,
+				'OR' => array(
+					'Checkin.checkout !=' => null,
+					'Checkin.checkout <' => 'NOW()',
+				)
+			),
+			'group' => array('Checkin.event_big'),
+		);
+		
+		return intval($this->find('count', $pars));
+	}
+	
+	
+	/*
+	 * Find last checkins for friends
+	 */
+	public function getCheckinsForFriends($memberBig)
+	{
+		
+		$pars = array(
+				'conditions' => array(
+						'Checkin.member_big' => $memberBig,
+						'Checkin.physical' => 1,
+						'OR' => array(
+								'Checkin.checkout !=' => null,
+								'Checkin.checkout <' => 'NOW()',
+						)
+				),
+				'group' => array('Checkin.event_big'),
+		);
+	
+		return intval($this->find('count', $pars));
+	}
+	
+	public function getJoinsCountFor($eventBig, $memberBig = null)
+	{	
+		$params = array(
+			'conditions' => array(
+				'Checkin.event_big' => $eventBig,
+				'Checkin.physical' => 0,
+				'Member.status !=' => DELETED,
+				'OR' => array(
+					'Checkin.checkout' => null,
+					'Checkin.checkout >' => 'NOW()',
+				)
+			)
+		);
+		
+		if (!empty($memberBig))
+			$params['conditions']['Checkin.member_big !='] = $memberBig;
+			
+		return intval($this->find('count', $params));
+	}
+	
+	/**
+	 * Chcek out / join out from all events (you can have oinly 1 at a time)
+	 * @param int $member_big of the member to check out
+	 * @param array $except_big array of checkout BIGs to avoid checking out
+	 * @return boolean true for succesfull checkout
+	 */
+	public function out($member_big, $except_big=array()) {
+		
+		/*{
+			$checkins = $this->find('all', array(
+				'exceptions' => array(
+					'big !=' => $except_big,
+					'member_big' => $member_big,
+					'OR' => array(
+						'checkout' => null,
+						'checkout >' => 'NOW()',
+					)
+				),
+				'recursive' => -1,
+			));
+
+			foreach($checkins as $item) {
+				$members = $this->ChatCache->read($item['Checkin']['big'].'_members');
+				$members = str_replace(',', $this->logged['Member']['big'], $members);
+				$this->ChatCache->write($item['Checkin']['big'].'_members', $members);
+			}
+
+			$this->ChatCache->write($this->logged['Member']['big'].'_checkin_event_big', 0);
+		}*/
+
+		unbindAllBut($this);
+		$this->updateAll(
+			array(
+				'checkout' => DboSource::expression('now()'),
+			),
+			array(
+				'big !=' => $except_big,
+				'member_big' => $member_big,
+				'OR' => array(
+					'checkout' => null,
+					'checkout >' => 'NOW()',
+				)
+			)
+		);
+
+		return (bool) $this->getAffectedRows();
+		
+	}
+
+	public function getCheckinCountsForPlaceBigs($place_bigs, $physical=1) {
+
+		$event_bigs = $this->Event->find('list', array(
+			'conditions' => array(
+				'Event.place_big' => $place_bigs,
+				'Event.status' => array(ACTIVE, INACTIVE),
+				'or' => array(
+					array('Event.type' => EVENT_TYPE_DEFAULT, 'Event.status' => array(ACTIVE, INACTIVE)),
+					array('Event.type' => EVENT_TYPE_NORMAL, 'Event.status' => ACTIVE),
+				)
+			),
+			'fields' => array('Event.big', 'Event.place_big'),
+		));
+
+		$event_checkin_counts = $this->getCheckinCountsForEventBigs(array_keys($event_bigs), $physical);
+
+		$checkins = array();
+		foreach($event_checkin_counts as $event_big => $count) {
+			if (!isset($checkins[ $event_bigs[$event_big] ])) {
+				$checkins[ $event_bigs[$event_big] ] = 0;
+			}
+			$checkins[ $event_bigs[$event_big] ] += $count;
+		}
+		return $checkins;
+
+	}
+
+	public function getCheckinCountsForEventBigs($event_bigs, $physical=1) {
+
+		unbindAllBut($this, array('Member'));
+		$checkins_raw = $this->find('all', array(
+			'conditions' => array(
+				'Checkin.event_big' => $event_bigs,	
+				'Checkin.physical' => $physical,
+				'Member.status !=' => DELETED,
+				'OR' => array(
+					'Checkin.checkout' => null,
+					'Checkin.checkout >' => 'NOW()',
+				)
+			),
+			'group' => array('Checkin.event_big'),//, 'Checkin.member_big'),	//TODO
+			'fields' => array('Checkin.event_big', 'count(Checkin.event_big) as "Checkin__count"'),
+		));
+
+		$checkins = array();
+		foreach($checkins_raw as $item) {
+			$checkins[ $item['Checkin']['event_big'] ] = $item['Checkin']['count'];
+		}
+
+		return $checkins;
+
+	}
+	
+	public function checkout($member_bigs, $cronjobs = false) {
+		
+		if (empty($member_bigs))
+			return false;
+		
+		if (!is_numeric($member_bigs))
+		{
+			// handle format of big1,big2,...,bign or array of bigs
+			if (is_string($member_bigs))
+			{
+				$member_bigs = explode(',', $member_bigs);
+			}
+			elseif (!is_array($member_bigs))
+			{
+				return false;
+			}
+			
+			foreach ($member_bigs as $key => $val)
+			{
+				if (is_numeric($val) === false)
+					unset($member_bigs[$key]);
+			}
+			
+			$member_bigs = implode('\',\'', $member_bigs);
+			if (empty($member_bigs))
+				return false;
+		}
+			
+		$db = $this->getDataSource();
+		$query = 'UPDATE checkins SET checkout = NOW() WHERE checkout IS NULL AND member_big IN (\'' . $member_bigs . '\')';
+		$result = false;
+		try {
+			$result = $db->execute($query);
+		}
+		catch (Exception $e)
+		{
+			if ($cronjobs)
+				return $e;
+			
+			CakeLog::error($e);
+		}
+		
+		return $result;
+		
+	}
+	
+	public function findInactiveMembers()
+	{
+		$params = array(
+			'conditions' => array(
+				'Checkin.checkout' => null,
+				array(
+					'OR' => array(
+						'Member.last_web_activity <' => date('Y-m-d H:i', strtotime('- ' . ONLINE_TIMEOUT . ' hours')),
+						'Member.last_web_activity' => null,
+					),
+				),
+				array(
+					'OR' => array(
+						'Member.last_mobile_activity <' => date('Y-m-d H:i', strtotime('- ' . ONLINE_TIMEOUT . ' hours')),
+						'Member.last_mobile_activity' => null,
+					),
+				)
+			),
+			'recursive' => 0,
+			'fields' => array(
+				'Member.big',
+			),
+		);
+		
+		return $this->find('list', $params);
+		
+	}
+	
+	
+	public function getNearbyCheckins($coords) {
+		$db = $this->getDataSource ();
+		$sql2 = 'SELECT 
+  checkins.member_big, 
+  checkins.checkout, 
+  Places.big, 
+  Places.name,
+	Places.lonlat AS "Place__coordinates",
+(( Places.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance"
+				
+FROM 
+  public.checkins, 
+  public.events, 
+  public.places as Places
+WHERE 
+ checkins.checkout ISNULL and
+  checkins.event_big = events.big AND
+  events.place_big = Places.big AND
+				( Places.lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . ' 
+				
+  order by  ( Places.lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT;
+
+
+		
+		// try {
+		$result = $db->fetchAll ( $sql2, array (
+				$coords, $coords,
+				$coords
+		) );
+		// }
+		// catch (Exception $e)
+		// {
+		// debug($e);
+		// }
+	
+	/*	AND
+				( checkins.lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . ' 
+
+	 * 
+	 * if (empty ( $result ))
+			return array ();
+			
+		// Transform to a friendlier format
+			$res = array ();
+
+		
+	
+		 
+		 foreach ( $result as $key => $r ) {
+			// Transform coordinates into lon and lat
+			if (! empty ( $r ['Place'] ['lonlat'] )) {
+				$lonlat = explode ( ',', preg_replace ( '/[\(\)]/', '', $r ['Place'] ['lonlat'] ) );
+				$r ['Place'] ['lon'] = $lonlat [0];
+				$r ['Place'] ['lat'] = $lonlat [1];
+				unset ( $r [0] ['lonlat'] );
+			}
+				
+			// Posprocess to match Cake like result for gallery
+			$r ['Gallery'] = array (
+					$r ['Gallery']
+			);
+				
+			$result [$key] = $r;
+		}
+	  */
+		return $result;
+	}
+	
+	
+	
+}

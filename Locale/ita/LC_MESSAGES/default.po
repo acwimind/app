@@ -1,0 +1,2178 @@
+# LANGUAGE translation of CakePHP Application
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2014-04-07 10:52+0000\n"
+"PO-Revision-Date: 2014-04-09 16:18+0100\n"
+"Last-Translator: \n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.6.4\n"
+"Language: it\n"
+
+#: Config/bootstrap.php:187
+msgid "None"
+msgstr "Nessuno"
+
+#: Config/bootstrap.php:188
+msgid "English"
+msgstr "Inglese"
+
+#: Config/bootstrap.php:189
+msgid "Italian"
+msgstr "Italiano"
+
+#: Config/bootstrap.php:193 View/Signalations/admin_index.ctp:50
+msgid "Member"
+msgstr "Membro"
+
+#: Config/bootstrap.php:194
+msgid "Operator"
+msgstr ""
+
+#: Config/bootstrap.php:195
+msgid "Administrator"
+msgstr ""
+
+#: Config/bootstrap.php:199
+msgid "Inactive"
+msgstr ""
+
+#: Config/bootstrap.php:200 View/Events/admin_edit.ctp:25
+#: View/Events/operator_edit.ctp:29 View/Members/admin_edit.ctp:63
+#: View/Places/admin_edit.ctp:16
+msgid "Active"
+msgstr ""
+
+#: Config/bootstrap.php:201
+msgid "Deleted"
+msgstr ""
+
+#: Config/bootstrap.php:210
+msgid "Italy"
+msgstr ""
+
+#: Config/bootstrap.php:214 View/Events/detail.ctp:104
+#: View/Places/detail.ctp:131
+msgid "Photo"
+msgstr "Foto"
+
+#: Config/bootstrap.php:215 View/Places/people.ctp:47
+msgid "Chat"
+msgstr ""
+
+#: Config/bootstrap.php:219 View/Events/detail.ctp:103
+#: View/Places/detail.ctp:130
+msgid "News"
+msgstr ""
+
+#: Config/bootstrap.php:220
+msgid "Static"
+msgstr ""
+
+#: Config/bootstrap.php:224
+msgid "This is a spam"
+msgstr ""
+
+#: Config/bootstrap.php:225
+msgid "This is inappropriate content"
+msgstr ""
+
+#: Config/bootstrap.php:226
+msgid "I am feeling offended by this content"
+msgstr ""
+
+#: Controller/AdvertsController.php:93 Controller/CmsEntriesController.php:73
+msgid "Entry saved"
+msgstr ""
+
+#: Controller/AdvertsController.php:97
+msgid "Error while saving advertisment"
+msgstr ""
+
+#: Controller/AdvertsController.php:116
+#: Controller/CmsEntriesController.php:102
+msgid "Entry deleted"
+msgstr ""
+
+#: Controller/AppApiController.php:183
+msgid "There was an authentication error, try to log in again"
+msgstr "Errore di autenticazione, per favore riprovare ad accedere"
+
+#: Controller/AppApiController.php:288
+msgid ""
+"We are sorry but something failed. Our team will take care of the issue as "
+"soon as possible."
+msgstr ""
+
+#: Controller/AppApiController.php:337
+msgid "Invalid email or password"
+msgstr "Le credenziali non risultano corrette, riprovare grazie"
+
+#: Controller/AppApiController.php:347
+msgid ""
+"Your Facebook account could not be accessed. Check your permissions for "
+"Haamble application from your Facebook."
+msgstr ""
+
+#: Controller/AppApiController.php:356
+msgid "Registration via Facebook failed"
+msgstr ""
+
+#: Controller/AppApiController.php:361
+msgid "Please specify email or password"
+msgstr ""
+
+#: Controller/AppApiController.php:513
+msgid ""
+"You tried to register via Facebook that is connected to an email address "
+"that already exists in our database and that email is not connected to your "
+"Facebook account in our system. Try to login with your email and password."
+msgstr ""
+
+#: Controller/AppApiController.php:521
+msgid "There was an error connecting via Facebook: %s"
+msgstr ""
+
+#: Controller/AppWebController.php:195
+msgid "Access denied, please login"
+msgstr ""
+
+#: Controller/AppWebController.php:204
+msgid "Access denied, you are not administrator"
+msgstr ""
+
+#: Controller/AppWebController.php:212
+msgid "Access denied, you are not operator"
+msgstr ""
+
+#: Controller/AppWebController.php:238
+msgid "Users"
+msgstr ""
+
+#: Controller/AppWebController.php:239
+#: View/Elements/menu/front_top_logged.ctp:35
+msgid "Places"
+msgstr ""
+
+#: Controller/AppWebController.php:240
+#: View/Elements/menu/front_top_logged.ctp:36
+msgid "Events"
+msgstr ""
+
+#: Controller/AppWebController.php:241
+msgid "Categories"
+msgstr ""
+
+#: Controller/AppWebController.php:242
+msgid "Regions"
+msgstr ""
+
+#: Controller/AppWebController.php:244
+msgid "Signalations"
+msgstr ""
+
+#: Controller/AppWebController.php:245
+msgid "Website CMS"
+msgstr ""
+
+#: Controller/AppWebController.php:246
+msgid "Advertisments CMS"
+msgstr ""
+
+#: Controller/AppWebController.php:292
+msgid "You do not have permissions access this page"
+msgstr ""
+
+#: Controller/BookmarksController.php:105
+msgid "Place is already bookmarked"
+msgstr ""
+
+#: Controller/BookmarksController.php:166
+msgid "Place bookmarked"
+msgstr ""
+
+#: Controller/BookmarksController.php:187
+msgid "Place removed from bookmarks"
+msgstr ""
+
+#: Controller/CategoriesController.php:43
+msgid "Category saved"
+msgstr ""
+
+#: Controller/CategoriesController.php:47
+msgid "Error while saving category"
+msgstr ""
+
+#: Controller/CategoriesController.php:79
+msgid "Category deleted"
+msgstr ""
+
+#: Controller/CategoriesController.php:81
+msgid ""
+"Unable to delete category, because it contains places. Please delete places "
+"first."
+msgstr ""
+
+#: Controller/CheckinsController.php:337
+msgid "No place or event specified for join."
+msgstr ""
+
+#: Controller/CheckinsController.php:358
+msgid "Join failed. Event or place does not exist."
+msgstr ""
+
+#: Controller/CheckinsController.php:370
+msgid "You have joined an event %s"
+msgstr ""
+
+#: Controller/CheckinsController.php:378
+msgid "You have joined an event at place %s"
+msgstr ""
+
+#: Controller/CheckinsController.php:396
+msgid "You were succesfully checked out"
+msgstr ""
+
+#: Controller/CheckinsController.php:398
+msgid "You are not checked in at the moment"
+msgstr ""
+
+#: Controller/CmsEntriesController.php:45
+msgid "Entry not saved because of missing values"
+msgstr ""
+
+#: Controller/CmsEntriesController.php:77
+msgid "Error while saving entry"
+msgstr ""
+
+#: Controller/CmsEntriesController.php:167
+msgid "Welcome to Haamble"
+msgstr ""
+
+#: Controller/EventsController.php:125
+msgid "Please select a place to create a new event for (use the icon on right)"
+msgstr ""
+
+#: Controller/EventsController.php:161
+msgid "Event saved"
+msgstr ""
+
+#: Controller/EventsController.php:165
+msgid "Error while saving event"
+msgstr ""
+
+#: Controller/EventsController.php:186
+msgid "This place does not exist"
+msgstr ""
+
+#: Controller/EventsController.php:228
+msgid "Event deleted"
+msgstr ""
+
+#: Controller/EventsController.php:260 Controller/PlacesController.php:249
+msgid "Error while uploading photos"
+msgstr ""
+
+#: Controller/EventsController.php:263 Controller/PlacesController.php:252
+msgid "Photos saved"
+msgstr ""
+
+#: Controller/EventsController.php:800
+msgid "The event does not exist"
+msgstr ""
+
+#: Controller/EventsController.php:843
+msgid "Rating saved"
+msgstr ""
+
+#: Controller/ExtraInfosController.php:37
+msgid "Error saving extra info."
+msgstr ""
+
+#: Controller/ExtraInfosController.php:53
+msgid "Your information has been saved."
+msgstr ""
+
+#: Controller/ExtraInfosController.php:60
+msgid "Unable to add your post."
+msgstr ""
+
+#: Controller/FriendsController.php:50 Controller/RegionsController.php:35
+msgid "Region saved"
+msgstr ""
+
+#: Controller/FriendsController.php:55 Controller/RegionsController.php:38
+msgid "Error while saving region"
+msgstr ""
+
+#: Controller/FriendsController.php:77 Controller/RegionsController.php:61
+msgid "Region deleted"
+msgstr ""
+
+#: Controller/FriendsController.php:79 Controller/RegionsController.php:63
+msgid ""
+"Unable to delete region, because it contains places. Please delete places "
+"first."
+msgstr ""
+
+#: Controller/IgnoresController.php:77
+msgid "User is already on the ignore list."
+msgstr ""
+
+#: Controller/IgnoresController.php:85
+msgid "Error occured. Member not added to ignore list."
+msgstr ""
+
+#: Controller/IgnoresController.php:135
+msgid "Error occured. Member not removed from ignore list."
+msgstr ""
+
+#: Controller/IgnoresController.php:145
+msgid "User added to ignore list"
+msgstr ""
+
+#: Controller/IgnoresController.php:162
+msgid "User removed from ignore list"
+msgstr ""
+
+#: Controller/MembersController.php:39
+msgid "E-mail or password is incorrect"
+msgstr "Nome utente o password non corretti"
+
+#: Controller/MembersController.php:55
+msgid "Your Facebook account was disconnected from Haamble"
+msgstr ""
+
+#: Controller/MembersController.php:57
+msgid "Your Haamble account is not connected to any Facebook account"
+msgstr ""
+
+#: Controller/MembersController.php:76
+msgid "Your Facebook account was unlinked, you denied access to your account"
+msgstr ""
+
+#: Controller/MembersController.php:78
+msgid "Please confirm access to your Facebook account"
+msgstr ""
+
+#: Controller/MembersController.php:81;85
+msgid "We were not able to connect to your Facebook. Facebook told us: %s"
+msgstr ""
+
+#: Controller/MembersController.php:151
+msgid "Your account was linked with your Facebook account"
+msgstr ""
+
+#: Controller/MembersController.php:154
+msgid "Your account is already linked with this Facebook account"
+msgstr ""
+
+#: Controller/MembersController.php:157
+msgid "Your Facebook account is already linked to another Haamble account"
+msgstr ""
+
+#: Controller/MembersController.php:160;224
+msgid "Internal error occured"
+msgstr ""
+
+#: Controller/MembersController.php:208
+msgid "Thank you for registering. Please fill in your profile"
+msgstr ""
+
+#: Controller/MembersController.php:221
+msgid ""
+"The e-mail address is already in use, but the account is not paired with "
+"your Facebook account. If you already signed up, please login with your "
+"email and password. If you forgot your password you can reset it."
+msgstr ""
+
+#: Controller/MembersController.php:283
+msgid "Please fill in your profile"
+msgstr ""
+
+#: Controller/MembersController.php:331
+msgid "Profile updated"
+msgstr ""
+
+#: Controller/MembersController.php:370;444
+msgid "You are already logged in. You can change your password here."
+msgstr ""
+
+#: Controller/MembersController.php:381
+msgid "Invalid e-mail address"
+msgstr ""
+
+#: Controller/MembersController.php:399
+msgid "Haamble - password reset"
+msgstr ""
+
+#: Controller/MembersController.php:407
+msgid ""
+"Please check your e-mail for further instruction. (Make sure to check your "
+"spam folder as well.)"
+msgstr ""
+
+#: Controller/MembersController.php:429
+msgid ""
+"Invalid password reset link. Please use the form below to generate new link."
+msgstr ""
+
+#: Controller/MembersController.php:466
+msgid "Password succesfully changed. Now use your new password to login."
+msgstr ""
+
+#: Controller/MembersController.php:575
+msgid "User saved"
+msgstr ""
+
+#: Controller/MembersController.php:581
+msgid "Error while saving user"
+msgstr ""
+
+#: Controller/MembersController.php:640
+msgid "User deleted"
+msgstr ""
+
+#: Controller/MembersController.php:683
+msgid "Unsubscribed successuly"
+msgstr ""
+
+#: Controller/MembersController.php:760
+msgid "Registration succesfull"
+msgstr ""
+
+#: Controller/MembersController.php:789
+msgid "There was an error while saving your profile data"
+msgstr ""
+
+#: Controller/MembersController.php:897
+msgid "Please fill in all required fields"
+msgstr ""
+
+#: Controller/MembersController.php:1198;1253
+msgid "The user does not exist"
+msgstr ""
+
+#: Controller/PhotosController.php:29
+msgid "Photo was set as default"
+msgstr ""
+
+#: Controller/PhotosController.php:57
+msgid "Photo was removed from gallery"
+msgstr ""
+
+#: Controller/PhotosController.php:80
+msgid "Please upload a file"
+msgstr ""
+
+#: Controller/PhotosController.php:91
+msgid "Invalid event_big"
+msgstr ""
+
+#: Controller/PhotosController.php:91
+msgid "Sorry, this event does not exist"
+msgstr ""
+
+#: Controller/PhotosController.php:124
+msgid "Photo upload failed"
+msgstr ""
+
+#: Controller/PhotosController.php:141
+msgid "Photo not found"
+msgstr ""
+
+#: Controller/PlacesController.php:154
+msgid "Place saved"
+msgstr "Luogo salvato"
+
+#: Controller/PlacesController.php:158
+msgid "Error while saving place"
+msgstr ""
+
+#: Controller/PlacesController.php:227
+msgid "Place deleted"
+msgstr ""
+
+#: Controller/PlacesController.php:1052
+msgid "The place does not exist"
+msgstr ""
+
+#: Controller/SignalationsController.php:94
+msgid "Signalation deleted"
+msgstr ""
+
+#: Controller/SignalationsController.php:106
+msgid "Signalation marked as solved"
+msgstr ""
+
+#: Controller/SignalationsController.php:216;343
+msgid "New signalation"
+msgstr ""
+
+#: Model/Event.php:75
+msgid "This place already has a default event"
+msgstr ""
+
+#: Model/Event.php:148
+msgid "Default"
+msgstr ""
+
+#: Plugin/Uploader/Controller/FilesController.php:49
+msgid "No file uploaded"
+msgstr ""
+
+#: Plugin/Uploader/Controller/FilesController.php:75
+msgid "Internal error, unable to upload file"
+msgstr ""
+
+#: View/Adverts/admin_edit.ctp:8
+msgid "Advertisment Content"
+msgstr ""
+
+#: View/Adverts/admin_edit.ctp:9 View/Adverts/admin_index.ctp:29
+msgid "Heading"
+msgstr ""
+
+#: View/Adverts/admin_edit.ctp:10
+msgid "Url"
+msgstr ""
+
+#: View/Adverts/admin_edit.ctp:11 View/CmsEntries/admin_edit.ctp:78
+msgid "Text"
+msgstr ""
+
+#: View/Adverts/admin_edit.ctp:27
+msgid "Advertisment Picture"
+msgstr ""
+
+#: View/Adverts/admin_index.ctp:3 View/CmsEntries/admin_index.ctp:3
+msgid "List Content"
+msgstr ""
+
+#: View/Adverts/admin_index.ctp:26 View/CmsEntries/admin_index.ctp:44
+msgid "New Content"
+msgstr ""
+
+#: View/Adverts/admin_index.ctp:29 View/Places/admin_edit.ctp:34
+#: View/Places/operator_edit.ctp:40
+msgid "URL"
+msgstr ""
+
+#: View/Bookmarks/index.ctp:5
+msgid "No bookmarks"
+msgstr ""
+
+#: View/Bookmarks/index.ctp:36
+msgid "Remove Bookmark"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:3
+msgid "Edit Category %s"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:3 View/Categories/admin_index.ctp:22
+msgid "New Category"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:10 View/Events/admin_edit.ctp:12
+#: View/Events/operator_edit.ctp:22 View/Places/admin_edit.ctp:10
+#: View/Places/operator_edit.ctp:18 View/Regions/admin_edit.ctp:10
+msgid "Basic Info"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:11;66 View/Categories/admin_index.ctp:26
+#: View/CmsEntries/admin_edit.ctp:15;71 View/CmsEntries/admin_index.ctp:47
+#: View/Events/admin_edit.ctp:20 View/Events/admin_index.ctp:34
+#: View/Events/operator_edit.ctp:24 View/Events/operator_index.ctp:20
+#: View/Places/admin_edit.ctp:12 View/Places/admin_index.ctp:62
+#: View/Places/operator_edit.ctp:19 View/Places/operator_index.ctp:13
+msgid "Name"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:12 View/Categories/admin_index.ctp:27
+msgid "External Name"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:13 View/Categories/admin_index.ctp:28
+msgid "External Source"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:15
+msgid "Category Icon / Picture"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:16
+msgid "PNG only"
+msgstr ""
+
+#: View/Categories/admin_edit.ctp:65
+msgid "Category name for "
+msgstr ""
+
+#: View/Categories/admin_index.ctp:3
+msgid "List Categories"
+msgstr ""
+
+#: View/Categories/admin_index.ctp:29
+msgid "Category Picture / Icon"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:13
+msgid "Content Info"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:14 View/CmsEntries/admin_index.ctp:47
+msgid "Section"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:69
+msgid "Content for "
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:73
+msgid "Slug"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:74
+msgid "Meta Title"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:75
+msgid "Meta Text"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:76
+msgid "Meta Keywords"
+msgstr ""
+
+#: View/CmsEntries/admin_edit.ctp:77
+msgid "Perex"
+msgstr ""
+
+#: View/Elements/chat.ctp:7
+msgid "Chat - available users"
+msgstr ""
+
+#: View/Elements/home/bookmarks_col.ctp:3
+msgid "My Bookmarks"
+msgstr ""
+
+#: View/Elements/home/bookmarks_col.ctp:66
+#: View/Elements/home/events_col.ctp:72 View/Elements/home/places_col.ctp:65
+msgid "Show all..."
+msgstr ""
+
+#: View/Elements/home/events_col.ctp:3
+msgid "Last Visited Events"
+msgstr ""
+
+#: View/Elements/home/places_col.ctp:3
+msgid "Last Visited Places"
+msgstr ""
+
+#: View/Elements/members/login.ctp:5
+msgid "Email Or Phone"
+msgstr ""
+
+#: View/Elements/members/login.ctp:11
+msgid "Login with"
+msgstr ""
+
+#: View/Elements/members/login.ctp:13
+msgid "Forgot password?"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:5 View/Members/admin_edit.ctp:36
+#: View/Members/admin_index.ctp:39 View/Members/edit.ctp:17
+msgid "First Name"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:6 View/Members/admin_edit.ctp:38
+#: View/Members/admin_index.ctp:40 View/Members/edit.ctp:19
+msgid "Last Name"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:7 View/Members/admin_edit.ctp:18
+#: View/Members/admin_index.ctp:38
+msgid "E-mail"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:8 View/Members/admin_edit.ctp:53
+#: View/Places/admin_edit.ctp:35 View/Places/admin_index.ctp:62
+#: View/Places/operator_edit.ctp:41
+msgid "Phone"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:9 View/Members/admin_edit.ctp:19
+msgid "Password"
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:11
+msgid "I have read and agree with Terms & Conditions and Privacy Policy."
+msgstr ""
+
+#: View/Elements/members/register_step_1.ctp:22
+msgid "Register"
+msgstr ""
+
+#: View/Elements/menu/backend_top.ctp:9 View/Layouts/default.ctp:7
+#: View/Layouts/mobile.ctp:7 View/Layouts/Emails/html/default.ctp:27
+msgid "Haamble"
+msgstr ""
+
+#: View/Elements/menu/backend_top.ctp:10
+msgid "Admin"
+msgstr ""
+
+#: View/Elements/menu/backend_top.ctp:19
+msgid "Sign Up"
+msgstr ""
+
+#: View/Elements/menu/backend_top.ctp:20
+msgid "Sign In"
+msgstr ""
+
+#: View/Elements/menu/backend_top.ctp:26
+msgid "Sign Out"
+msgstr ""
+
+#: View/Elements/menu/front_top_logged.ctp:6
+msgid "Logged in as %s"
+msgstr ""
+
+#: View/Elements/menu/front_top_logged.ctp:7
+msgid "Log Off"
+msgstr ""
+
+#: View/Elements/menu/front_top_logged.ctp:14
+#: View/Elements/menu/operator.ctp:12
+msgid "Admin Backend"
+msgstr ""
+
+#: View/Elements/menu/front_top_logged.ctp:20
+#: View/Elements/menu/operator.ctp:18
+msgid "Operator Panel"
+msgstr ""
+
+#: View/Elements/menu/operator.ctp:4 View/Places/operator_index.ctp:8
+msgid "My Places"
+msgstr ""
+
+#: View/Elements/menu/operator.ctp:5
+msgid "My Events"
+msgstr ""
+
+#: View/Elements/sidebar/detail_header.ctp:17 View/Ignores/index.ctp:36
+msgid "Remove"
+msgstr ""
+
+#: View/Elements/sidebar/detail_header.ctp:23
+msgid "Bookmark"
+msgstr ""
+
+#: View/Elements/sidebar/detail_header.ctp:32 View/Members/my_profile.ctp:64
+msgid "Leave"
+msgstr ""
+
+#: View/Elements/sidebar/detail_header.ctp:38
+msgid "Join"
+msgstr ""
+
+#: View/Elements/sidebar/detail_header.ctp:40
+msgid ""
+"At the moment you are joined at other event. Do you want to leave it and "
+"join this event instead?"
+msgstr ""
+
+#: View/Elements/sidebar/filter_sidebar_listing.ctp:47
+#: View/Elements/sidebar/filter_sidebar_map.ctp:41
+msgid "Filter"
+msgstr ""
+
+#: View/Elements/sidebar/topbar_filter.ctp:104
+msgid "Enter search phrase here..."
+msgstr ""
+
+#: View/Elements/sidebar/topbar_header.ctp:5
+msgid "List"
+msgstr ""
+
+#: View/Elements/sidebar/topbar_header.ctp:8 View/Places/detail.ctp:133
+msgid "Map"
+msgstr ""
+
+#: View/Elements/table/row_options.ctp:19
+msgid "View"
+msgstr ""
+
+#: View/Elements/table/row_options.ctp:20 View/Members/my_profile.ctp:12
+#: View/Members/public_profile.ctp:6
+msgid "Edit"
+msgstr ""
+
+#: View/Elements/table/row_options.ctp:21 View/Galleries/admin_all.ctp:43
+#: View/Galleries/admin_index.ctp:108 View/Galleries/operator_index.ctp:63
+#: View/Photos/admin_all.ctp:39
+msgid "Delete"
+msgstr ""
+
+#: View/Elements/table/row_options.ctp:33 View/Galleries/admin_all.ctp:49
+#: View/Galleries/admin_index.ctp:114 View/Galleries/operator_index.ctp:65
+#: View/Photos/admin_all.ctp:45
+msgid "Are you sure?\\nThis action cannot be undone!"
+msgstr ""
+
+#: View/Emails/html/password_reset.ctp:3 View/Emails/text/password_reset.ctp:3
+msgid "Hello %s,"
+msgstr ""
+
+#: View/Emails/html/password_reset.ctp:4 View/Emails/text/password_reset.ctp:5
+msgid "this is password reset e-mail from Haamble."
+msgstr ""
+
+#: View/Emails/html/password_reset.ctp:7
+msgid "Please click here to reset your password."
+msgstr ""
+
+#: View/Emails/html/password_reset.ctp:11
+#: View/Emails/text/password_reset.ctp:11
+msgid ""
+"If you didn't request password reset, please ignore this e-mail. Password "
+"reset was requested from IP address %s."
+msgstr ""
+
+#: View/Emails/text/password_reset.ctp:8
+msgid "To reset your password, please click this link:"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:3 View/Events/operator_edit.ctp:8
+msgid "Edit Event %s"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:3 View/Events/admin_index.ctp:31
+#: View/Events/operator_edit.ctp:8 View/Events/operator_index.ctp:13
+#: View/Places/admin_index.ctp:91 View/Places/operator_index.ctp:37
+msgid "New Event"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:14 View/Events/admin_index.ctp:34
+#: View/Events/operator_edit.ctp:23 View/Events/operator_index.ctp:20
+msgid "Associated Place"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:18
+msgid "Pick another place"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:21 View/Events/operator_edit.ctp:25
+#: View/Places/admin_edit.ctp:13 View/Places/operator_edit.ctp:20
+msgid "Slug (for URL)"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:22 View/Events/operator_edit.ctp:26
+#: View/Places/admin_edit.ctp:14 View/Places/operator_edit.ctp:21
+msgid "Short Description"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:23 View/Events/operator_edit.ctp:27
+#: View/Places/admin_edit.ctp:15 View/Places/operator_edit.ctp:22
+msgid "Full Description"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:24 View/Events/operator_edit.ctp:28
+msgid "Event status"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:26 View/Events/operator_edit.ctp:30
+msgid "Inactive (will not be activated and displayed to users)"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:29 View/Events/operator_edit.ctp:33
+#: View/Galleries/admin_index.ctp:59 View/Places/admin_edit.ctp:18
+#: View/Places/operator_edit.ctp:24
+msgid "Upload Photos"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:38 View/Events/admin_index.ctp:92
+#: View/Events/operator_edit.ctp:42 View/Events/operator_index.ctp:72
+#: View/Places/admin_edit.ctp:27 View/Places/admin_index.ctp:92
+#: View/Places/operator_edit.ctp:33 View/Places/operator_index.ctp:38
+msgid "Display gallery"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:40 View/Events/operator_edit.ctp:44
+#: View/Places/admin_edit.ctp:29 View/Places/operator_edit.ctp:35
+msgid "No photos"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:45;47;54;55
+#: View/Events/operator_edit.ctp:49;51;58;59
+msgid "Event Type"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:48;56 View/Events/operator_edit.ctp:52;60
+msgid "Normal event"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:49;57 View/Events/operator_edit.ctp:53;61
+msgid "Default event"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:50;58 View/Events/operator_edit.ctp:54;62
+msgid ""
+"Only one default event per place allowed. Once you create event, you cannot "
+"change its type."
+msgstr ""
+
+#: View/Events/admin_edit.ctp:69 View/Events/operator_edit.ctp:72
+msgid "Dates and Times"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:70 View/Events/operator_edit.ctp:73
+msgid "Start On"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:71 View/Events/operator_edit.ctp:74
+msgid "End On"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:72 View/Events/operator_edit.ctp:75
+msgid "Daily Start On"
+msgstr ""
+
+#: View/Events/admin_edit.ctp:73 View/Events/operator_edit.ctp:76
+msgid "Daily End On"
+msgstr ""
+
+#: View/Events/admin_index.ctp:3 View/Events/operator_index.ctp:11
+msgid "List Events"
+msgstr ""
+
+#: View/Events/admin_index.ctp:34 View/Events/operator_index.ctp:20
+msgid "Starts On"
+msgstr ""
+
+#: View/Events/admin_index.ctp:34 View/Events/operator_index.ctp:20
+msgid "Ends On"
+msgstr ""
+
+#: View/Events/admin_index.ctp:40 View/Places/admin_index.ctp:69
+msgid "%s checkins "
+msgstr ""
+
+#: View/Events/admin_index.ctp:42 View/Places/admin_index.ctp:71
+#: View/Places/operator_index.ctp:21
+msgid "no checkins"
+msgstr ""
+
+#: View/Events/admin_index.ctp:46 View/Places/admin_index.ctp:75
+msgid " / %s joins"
+msgstr ""
+
+#: View/Events/admin_index.ctp:48 View/Places/admin_index.ctp:77
+msgid " / no joins"
+msgstr ""
+
+#: View/Events/admin_index.ctp:52 View/Events/operator_index.ctp:25
+msgid "normal"
+msgstr ""
+
+#: View/Events/admin_index.ctp:55 View/Events/operator_index.ctp:28
+msgid "default"
+msgstr ""
+
+#: View/Events/admin_index.ctp:57 View/Events/operator_index.ctp:30
+msgid "default and hidden"
+msgstr ""
+
+#: View/Events/admin_index.ctp:89
+msgid "View Event"
+msgstr ""
+
+#: View/Events/detail.ctp:35
+msgid "Event photo"
+msgstr ""
+
+#: View/Events/detail.ctp:56
+msgid "The event starts on %s"
+msgstr ""
+
+#: View/Events/detail.ctp:57
+msgid " and last until %s"
+msgstr ""
+
+#: View/Events/detail.ctp:77
+msgid "Rating event..."
+msgstr ""
+
+#: View/Events/detail.ctp:105 View/Places/detail.ctp:132
+msgid "People"
+msgstr ""
+
+#: View/Events/gallery.ctp:21 View/Members/gallery.ctp:21
+msgid "Photo from %s at %s"
+msgstr ""
+
+#: View/Events/gallery.ctp:25 View/Members/gallery.ctp:26
+#: View/Places/gallery.ctp:82
+msgid "Photo from %s"
+msgstr ""
+
+#: View/Events/gallery.ctp:40 View/Members/gallery.ctp:48
+msgid "Photo at %s"
+msgstr ""
+
+#: View/Events/gallery.ctp:52 View/Galleries/admin_all.ctp:40
+#: View/Galleries/admin_index.ctp:94 View/Galleries/operator_index.ctp:50
+#: View/Photos/admin_all.ctp:36 View/Places/gallery.ctp:100
+msgid "photo not available"
+msgstr ""
+
+#: View/Events/gallery.ctp:62
+msgid "by %s"
+msgstr ""
+
+#: View/Events/index.ctp:34
+msgid "at"
+msgstr ""
+
+#: View/Events/operator_index.ctp:9
+msgid "List Events for %s"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:1
+msgid "Let's get to know each other"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:4
+msgid "Nationality"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:6;18
+msgid "(choose one)"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:9 View/Regions/admin_edit.ctp:11;73
+#: View/Regions/admin_index.ctp:28
+msgid "City"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:10
+msgid "Occupation"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:11
+msgid "Music"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:12
+msgid "Food"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:13
+msgid "Fashion"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:14
+msgid "Primary language"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:15
+msgid "Secondary language"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:16
+msgid "Looking for"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:17
+msgid "Friendship"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:17
+msgid "Love"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:17
+msgid "Sex"
+msgstr ""
+
+#: View/ExtraInfos/index.ctp:20
+msgid "Save"
+msgstr ""
+
+#: View/Galleries/admin_all.ctp:2 View/Galleries/admin_index.ctp:2
+#: View/Galleries/operator_index.ctp:5
+msgid "Gallery for "
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:5 View/Galleries/operator_index.ctp:8
+msgid "event %s at "
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:15 View/Galleries/operator_index.ctp:14
+msgid "place %s"
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:24 View/Galleries/operator_index.ctp:20
+msgid "Back to event edit"
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:32 View/Galleries/operator_index.ctp:24
+msgid "Back to place edit"
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:98 View/Galleries/operator_index.ctp:55
+msgid "Default photo"
+msgstr ""
+
+#: View/Galleries/admin_index.ctp:101 View/Galleries/operator_index.ctp:58
+msgid "Set as default"
+msgstr ""
+
+#: View/Helper/AdvFormHelper.php:112
+msgid "(check to enable)"
+msgstr ""
+
+#: View/Helper/DateHelper.php:62
+msgid "Today"
+msgstr ""
+
+#: View/Helper/DateHelper.php:64
+msgid "Yesterday"
+msgstr ""
+
+#: View/Helper/MapHelper.php:241;257
+msgid "<span>at</span>"
+msgstr ""
+
+#: View/Helper/MapHelper.php:262 View/Places/index.ctp:50
+msgid "presents"
+msgstr ""
+
+#: View/Helper/MapHelper.php:294
+msgid "There are more than %s items. Zoom in or select category."
+msgstr ""
+
+#: View/Home/index.ctp:3 View/Home/index_first_login.ctp:3
+msgid "Welcome %s"
+msgstr ""
+
+#: View/Home/index_first_login.ctp:17
+msgid "Most Popular Places"
+msgstr ""
+
+#: View/Ignores/index.ctp:5
+msgid "No people in ignore list"
+msgstr ""
+
+#: View/Layouts/Emails/html/default.ctp:27
+msgid "Regards, Team %s"
+msgstr ""
+
+#: View/Layouts/Emails/text/default.ctp:22
+msgid "Regards, Team Haamble"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:3
+msgid "Edit User %s"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:3 View/Members/admin_index.ctp:34
+msgid "New User"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:17 View/Members/edit.ctp:43
+msgid "Account Info"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:20
+msgid "User Type"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:21 View/Members/edit.ctp:46
+msgid "Prefered Communication Language"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:23 View/Members/edit.ctp:48;77
+msgid "Profile Picture"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:24
+msgid "JPG only"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:35
+msgid "Personal Info"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:37 View/Members/edit.ctp:18
+msgid "Middle Name"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:42
+msgid "Operator Info"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:43
+msgid "Company Name"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:44
+msgid "Address Street"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:45
+msgid "Address Street Number"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:46 View/Members/edit.ctp:26
+msgid "Town"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:47 View/Members/edit.ctp:27
+#: View/Places/admin_edit.ctp:46 View/Places/operator_edit.ctp:52
+#: View/Regions/admin_edit.ctp:18;79
+msgid "Province"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:48 View/Members/edit.ctp:28
+#: View/Places/admin_edit.ctp:47 View/Places/operator_edit.ctp:53
+#: View/Regions/admin_edit.ctp:19;80
+msgid "Region"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:49 View/Members/edit.ctp:29
+#: View/Places/admin_edit.ctp:48 View/Places/operator_edit.ctp:54
+#: View/Regions/admin_edit.ctp:12;20
+msgid "Country"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:50
+msgid "Zip"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:51
+msgid "Vat ID"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:52
+msgid "Email"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:62
+msgid "Permissions"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:63
+msgid "Inactive user cannot log in to the application"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:64
+msgid "Can Log In"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:64
+msgid "This might be a duplicity (see \"active\" above). Remove?"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:65
+msgid "Can Upload Photos"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:66
+msgid "Can Use Chat"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:67
+msgid "Can Post Comments"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:67
+msgid "Comments are not implemented yet"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:68
+msgid "Can Join / Check-in To Places"
+msgstr ""
+
+#: View/Members/admin_edit.ctp:69
+msgid "Can Signal Content"
+msgstr ""
+
+#: View/Members/admin_index.ctp:3
+msgid "List Users"
+msgstr ""
+
+#: View/Members/admin_index.ctp:10;16
+msgid "All"
+msgstr ""
+
+#: View/Members/admin_index.ctp:41
+msgid "User Role"
+msgstr ""
+
+#: View/Members/admin_index.ctp:42
+msgid "Language"
+msgstr ""
+
+#: View/Members/admin_index.ctp:43
+msgid "Registered"
+msgstr ""
+
+#: View/Members/change_password.ctp:5 View/Members/forgot_password.ctp:5
+#: View/Places/admin_edit.ctp:36 View/Places/operator_edit.ctp:42
+msgid "E-mail Address"
+msgstr ""
+
+#: View/Members/change_password.ctp:6 View/Members/edit.ctp:44
+msgid "New Password"
+msgstr ""
+
+#: View/Members/change_password.ctp:7 View/Members/edit.ctp:45
+msgid "Repeat Password"
+msgstr ""
+
+#: View/Members/change_password.ctp:9
+msgid "Change"
+msgstr ""
+
+#: View/Members/edit.ctp:3
+msgid "Edit profile"
+msgstr ""
+
+#: View/Members/edit.ctp:20
+msgid "Date of Birth"
+msgstr ""
+
+#: View/Members/edit.ctp:21
+msgid "Place of Birth"
+msgstr ""
+
+#: View/Members/edit.ctp:22
+msgid "Gender"
+msgstr ""
+
+#: View/Members/edit.ctp:22
+msgid "please select"
+msgstr ""
+
+#: View/Members/edit.ctp:22
+msgid "male"
+msgstr ""
+
+#: View/Members/edit.ctp:22
+msgid "female"
+msgstr ""
+
+#: View/Members/edit.ctp:23
+msgid "Phone Number"
+msgstr ""
+
+#: View/Members/edit.ctp:24 View/Places/admin_edit.ctp:42
+#: View/Places/operator_edit.ctp:48
+msgid "Street"
+msgstr ""
+
+#: View/Members/edit.ctp:25 View/Places/admin_edit.ctp:43
+#: View/Places/operator_edit.ctp:49
+msgid "Street Number"
+msgstr ""
+
+#: View/Members/edit.ctp:30 View/Places/admin_edit.ctp:44
+#: View/Places/operator_edit.ctp:50
+msgid "ZIP Code"
+msgstr ""
+
+#: View/Members/edit.ctp:44
+msgid "only fill in if you want to change the password"
+msgstr ""
+
+#: View/Members/edit.ctp:59
+msgid "Social Connect"
+msgstr ""
+
+#: View/Members/edit.ctp:63
+msgid "Connected to Facebook as %s %s"
+msgstr ""
+
+#: View/Members/edit.ctp:66
+msgid "Disconnect Facebook Account"
+msgstr ""
+
+#: View/Members/edit.ctp:68
+msgid "Connect with Facebook Account"
+msgstr ""
+
+#: View/Members/events.ctp:5 View/Places/events.ctp:5
+msgid "No events"
+msgstr ""
+
+#: View/Members/events.ctp:34
+msgid "%s <span>at</span> %s"
+msgstr ""
+
+#: View/Members/events.ctp:54
+msgid "<span>Event at</span><br> %s"
+msgstr ""
+
+#: View/Members/forgot_password.ctp:7
+msgid "Continue"
+msgstr ""
+
+#: View/Members/gallery.ctp:67
+msgid "at %s"
+msgstr ""
+
+#: View/Members/my_profile.ctp:6
+msgid "More info"
+msgstr ""
+
+#: View/Members/my_profile.ctp:18
+msgid "Unsubscribe"
+msgstr ""
+
+#: View/Members/my_profile.ctp:22
+msgid "Are you sure you want to unsubscribe?"
+msgstr ""
+
+#: View/Members/my_profile.ctp:40
+msgid "Male"
+msgstr ""
+
+#: View/Members/my_profile.ctp:40
+msgid "Female"
+msgstr ""
+
+#: View/Members/my_profile.ctp:40
+msgid "Not specified"
+msgstr ""
+
+#: View/Members/my_profile.ctp:50 View/Members/public_profile.ctp:23
+msgid "Checked-in"
+msgstr ""
+
+#: View/Members/my_profile.ctp:50 View/Members/public_profile.ctp:23
+msgid "Joined"
+msgstr ""
+
+#: View/Members/my_profile.ctp:54
+msgid "%s <br>at %s"
+msgstr ""
+
+#: View/Members/my_profile.ctp:74 View/Members/public_profile.ctp:45
+msgid "Currently not checked in or joined anywhere."
+msgstr ""
+
+#: View/Members/my_profile.ctp:85 View/Members/public_profile.ctp:65
+msgid "Uploaded Photos"
+msgstr ""
+
+#: View/Members/my_profile.ctp:86 View/Members/public_profile.ctp:66
+msgid "Attended Events"
+msgstr ""
+
+#: View/Members/my_profile.ctp:87 View/Members/public_profile.ctp:67
+msgid "Visited Places"
+msgstr ""
+
+#: View/Members/my_profile.ctp:92 View/Members/public_profile.ctp:72
+msgid "Ignore List"
+msgstr ""
+
+#: View/Members/my_profile.ctp:93 View/Members/public_profile.ctp:73
+msgid "Bookmarks"
+msgstr ""
+
+#: View/Members/places.ctp:5
+msgid "No places"
+msgstr ""
+
+#: View/Members/public_profile.ctp:26
+msgid "%s at %s"
+msgstr ""
+
+#: View/Members/public_profile.ctp:53
+msgid "Remove from ignore list"
+msgstr ""
+
+#: View/Members/public_profile.ctp:55
+msgid "Add to ignore list"
+msgstr ""
+
+#: View/Members/public_profile.ctp:56
+msgid "Send a chat message"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:3 View/Places/operator_edit.ctp:8
+msgid "Edit Place %s"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:3 View/Places/admin_index.ctp:59
+#: View/Places/operator_edit.ctp:8
+msgid "New Place"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:11
+msgid "Category"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:33 View/Places/operator_edit.ctp:39
+msgid "Contact Info"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:40 View/Places/operator_edit.ctp:46
+msgid "Region and Full Address"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:41 View/Places/operator_edit.ctp:47
+msgid "Available Regions"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:45 View/Places/operator_edit.ctp:51
+#: View/Regions/admin_edit.ctp:17;78
+msgid "Town / City"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:49 View/Places/operator_edit.ctp:55
+msgid "GPS Position"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:49 View/Places/operator_edit.ctp:55
+#: View/Regions/admin_edit.ctp:21;22
+msgid "Format: (longitude,latitude)"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:57 View/Places/operator_edit.ctp:59
+msgid "Additional Info"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:58 View/Places/operator_edit.ctp:60
+msgid "Opening Hours"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:59 View/Places/operator_edit.ctp:61
+msgid "News (Text Only)"
+msgstr ""
+
+#: View/Places/admin_edit.ctp:63;65
+msgid "Operators"
+msgstr ""
+
+#: View/Places/admin_index.ctp:3
+msgid "List Places"
+msgstr ""
+
+#: View/Places/admin_index.ctp:9
+msgid "Created"
+msgstr ""
+
+#: View/Places/admin_index.ctp:9;19
+msgid "From"
+msgstr ""
+
+#: View/Places/admin_index.ctp:13;23
+msgid "To"
+msgstr ""
+
+#: View/Places/admin_index.ctp:19;29
+msgid "Updated"
+msgstr ""
+
+#: View/Places/admin_index.ctp:29
+msgid "By"
+msgstr ""
+
+#: View/Places/admin_index.ctp:37
+msgid "Search by Name"
+msgstr ""
+
+#: View/Places/admin_index.ctp:40
+msgid "With operator(s)"
+msgstr ""
+
+#: View/Places/admin_index.ctp:93 View/Places/operator_index.ctp:33
+msgid "Display Events"
+msgstr ""
+
+#: View/Places/admin_index.ctp:96
+msgid "View Place"
+msgstr ""
+
+#: View/Places/detail.ctp:39
+msgid "Place photo"
+msgstr ""
+
+#: View/Places/detail.ctp:127
+msgid "Recent events"
+msgstr ""
+
+#: View/Places/detail.ctp:128
+msgid "Upcoming events"
+msgstr ""
+
+#: View/Places/detail.ctp:129
+msgid "Past events"
+msgstr ""
+
+#: View/Places/gallery.ctp:87;108
+msgid "Photo from this place"
+msgstr ""
+
+#: View/Places/news.ctp:3
+msgid "%s presents:"
+msgstr ""
+
+#: View/Places/news.ctp:11
+msgid "There are no news"
+msgstr ""
+
+#: View/Places/operator_index.ctp:19
+msgid "%s checkins by %s users"
+msgstr ""
+
+#: View/Places/people.ctp:5
+msgid "No people at this place"
+msgstr ""
+
+#: View/Places/people.ctp:44
+msgid "Checked in at "
+msgstr ""
+
+#: View/Places/people.ctp:44
+msgid "Joined "
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:3
+msgid "Edit Region %s"
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:3 View/Regions/admin_index.ctp:25
+msgid "New Region"
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:16
+msgid "Address"
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:21
+msgid "Lower left corner (GPS Position)"
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:22
+msgid "Top right corner (GPS Position)"
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:72
+msgid "City name for "
+msgstr ""
+
+#: View/Regions/admin_edit.ctp:77
+msgid "Address for "
+msgstr ""
+
+#: View/Regions/admin_index.ctp:3
+msgid "List Regions"
+msgstr ""
+
+#: View/Regions/admin_index.ctp:39
+msgid "Unknown"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:3
+msgid "List of Signalations"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:21;94
+msgid "Resolved"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:21;94
+msgid "Pending"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:50
+msgid "Reported"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:50
+msgid "Type"
+msgstr ""
+
+#: View/Signalations/admin_index.ctp:63
+msgid "Mark as solved"
+msgstr ""
+
+#: Model/Advert.php:validation for field heading
+msgid "Please fill in heading of the advertisment"
+msgstr ""
+
+#: Model/Advert.php:validation for field heading
+msgid "Heading is too long"
+msgstr ""
+
+#: Model/Advert.php:validation for field url
+msgid "Url is too long"
+msgstr ""
+
+#: Model/Advert.php:validation for field text
+msgid "Advertisment text is too long"
+msgstr ""
+
+#: Model/Category.php:validation for field name
+msgid "Please fill in category name"
+msgstr ""
+
+#: Model/CmsEntry.php:validation for field status Model/CmsText.php:validation
+msgid "Incorrect status"
+msgstr ""
+
+#: Model/Event.php:validation for field name Model/Place.php:validation
+msgid "Please fill in place name"
+msgstr ""
+
+#: Model/Event.php:validation for field slug Model/Place.php:validation
+msgid "Please fill in slug"
+msgstr ""
+
+#: Model/Event.php:validation for field lonlat Model/Place.php:validation
+msgid "Please fill in place GPS position"
+msgstr ""
+
+#: Model/Event.php:validation for field password Model/Member.php:validation
+#: Model/Place.php:validation
+msgid "Password must be at least 6 characters long"
+msgstr ""
+
+#: Model/Member.php:validation for field name
+msgid "Please fill in first name"
+msgstr ""
+
+#: Model/Member.php:validation for field name
+msgid "First name is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field middle_name
+msgid "Middle name is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field surname
+msgid "Please fill in last name"
+msgstr ""
+
+#: Model/Member.php:validation for field surname
+msgid "Last name is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field birth_place
+msgid "Birth place is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field birth_place;validation address_town
+msgid "Please enter a valid city name"
+msgstr ""
+
+#: Model/Member.php:validation for field sex
+msgid "Sex is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field birth_date
+msgid "You must be over 18"
+msgstr ""
+
+#: Model/Member.php:validation for field phone
+msgid "Please enter numbers only"
+msgstr ""
+
+#: Model/Member.php:validation for field phone
+msgid "This phone address must be at least 6 characters long"
+msgstr ""
+
+#: Model/Member.php:validation for field address_street_no
+msgid "Street number is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field address_street_no
+msgid "Only numeric characters and a slash allowed for street number"
+msgstr ""
+
+#: Model/Member.php:validation for field address_street
+msgid "Street is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field address_town
+msgid "City is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field address_country
+msgid "State is too long"
+msgstr ""
+
+#: Model/Member.php:validation for field address_zip
+msgid "ZIP code is too long, maximum 5 digits"
+msgstr ""
+
+#: Model/Member.php:validation for field address_zip
+msgid "Please enter a valid ZIP code"
+msgstr ""
+
+#: Model/Member.php:validation for field email
+msgid "Please enter a valid e-mail address"
+msgstr ""
+
+#: Model/Member.php:validation for field email
+msgid "This e-mail address is already in use by another user"
+msgstr ""
+
+#: Model/Member.php:validation for field password2
+msgid "Passwords don't match"
+msgstr ""
+
+#: Model/Place.php:validation for field slug
+msgid ""
+"Gli spazi non sono ammessi, utilizzare il carattere trattino ( - ) invece "
+"dello spazio"
+msgstr ""
+
+#: Model/Place.php:validation for field address_zip
+msgid "Please fill in the zip code"
+msgstr ""
+
+#: Model/Place.php:validation for field address_town
+msgid "Please fill in the town"
+msgstr ""
+
+#: Model/Place.php:validation for field address_province
+msgid "Please fill in the province"
+msgstr ""
+
+#: Model/Place.php:validation for field address_region
+msgid "Please fill in the region"
+msgstr ""
+
+#: Model/Region.php:validation for field city
+msgid "Please fill in region city"
+msgstr ""
+
+#: Model/Region.php:validation for field country
+msgid "Please fill in country"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:52
+msgid "-> Testing :url"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:77
+msgid "Total Requests made: :requests"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:78
+msgid "Total Time elapsed: :duration (seconds)"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:82
+msgid "Requests/Second: :rps req/sec"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:86
+msgid "Average request time: :average-time seconds"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:90
+msgid "Standard deviation of average request time: :std-dev"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:94
+msgid "Longest/shortest request: :longest sec/:shortest sec"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:143
+msgid "DebugKit Benchmark Shell"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:145
+msgid ""
+"\tAllows you to obtain some rough benchmarking statistics \n"
+"\tabout a fully qualified URL."
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:147
+msgid "\tUse:"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:148
+msgid "\t\tcake benchmark [-n iterations] [-t timeout] url"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:150
+msgid "\tParams:"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:151
+msgid ""
+"\t\t-n Number of iterations to perform. Defaults to 10. \n"
+"\t\t   Must be an integer."
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:152
+msgid ""
+"\t\t-t Maximum total time for all iterations, in seconds. \n"
+"\t\t   Defaults to 100. Must be an integer."
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:154
+msgid ""
+"\tIf a single iteration takes more than the \n"
+"\ttimeout specified, only one request will be made."
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:156
+msgid "\tExample Use:"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:157
+msgid "\t\tcake benchmark -n 10 -t 100 http://localhost/testsite"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/BenchmarkShell.php:159
+msgid "\tNote that this benchmark does not include browser render time"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:154
+msgid "Component initialization"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:274
+msgid "Controller action"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:277
+msgid "Controller action start"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:293
+msgid "Processing toolbar state"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:315
+msgid "Processing toolbar data"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:350
+msgid "Controller render start"
+msgstr ""
+
+#: Plugin/DebugKit/Controller/Component/ToolbarComponent.php:430
+msgid "Could not load DebugToolbar panel %s"
+msgstr ""
+
+#: Plugin/DebugKit/Lib/DebugTimer.php:130
+msgid "Core Processing (Derived from $_SERVER[\"REQUEST_TIME\"])"
+msgstr ""
+
+#: Plugin/DebugKit/Lib/FireCake.php:300
+msgid "Headers already sent in %s on line %s. Cannot send log data to FirePHP."
+msgstr ""
+
+#: Plugin/DebugKit/Lib/FireCake.php:321
+msgid "Incorrect parameter count for FireCake::fb()"
+msgstr ""
+
+#: Plugin/DebugKit/Lib/FireCake.php:400
+msgid "Maximum number (99,999) of messages reached!"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/debug_toolbar.ctp:25
+msgid "There are no active panels. You must enable a panel to see its output."
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/environment_panel.ctp:1
+msgid "App Constants"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/environment_panel.ctp:17
+msgid "CakePHP Constants"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/environment_panel.ctp:33
+msgid "PHP Environment"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/environment_panel.ctp:51
+msgid "Hidef Environment"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/history_panel.ctp:21
+msgid "Request History"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/history_panel.ctp:23
+msgid "No previous requests logged."
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/history_panel.ctp:25
+msgid "previous requests available"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/history_panel.ctp:27
+msgid "Restore to current request"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/include_panel.ctp:21
+msgid "Included Files"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/log_panel.ctp:21
+msgid "Logs"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/log_panel.ctp:29
+msgid "Time"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/log_panel.ctp:29
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:44;68
+msgid "Message"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/log_panel.ctp:40
+msgid "There were no log entries made this request"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/request_panel.ctp:21
+msgid "Request"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/request_panel.ctp:29
+msgid "No post data."
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/request_panel.ctp:38
+msgid "No querystring data."
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/request_panel.ctp:51
+msgid "Current Route"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/session_panel.ctp:21
+msgid "Session"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/sqllog_panel.ctp:25
+msgid "Sql Logs"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/sqllog_panel.ctp:39
+msgid "Total Time: %s ms <br />Total Queries: %s queries"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/sqllog_panel.ctp:48
+msgid "Query Explain:"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/sqllog_panel.ctp:51
+msgid "Click an \"Explain\" link above, to see the query explanation."
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/sqllog_panel.ctp:56
+msgid "No active database connections"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:37
+msgid "Memory"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:40
+msgid "Peak Memory Use"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:44
+msgid "Memory use"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:57
+msgid "Timers"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:59
+msgid "%s (ms)"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:60
+msgid "Total Request Time:"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:69
+msgid "Time in ms"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/timer_panel.ctp:70
+msgid "Graph"
+msgstr ""
+
+#: Plugin/DebugKit/View/Elements/variables_panel.ctp:21
+msgid "View Variables"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/DebugTimerHelper.php:45
+msgid "Rendering View"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/DebugTimerHelper.php:60
+msgid "Rendering %s"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/DebugTimerHelper.php:86
+msgid "View render complete"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/HtmlToolbarHelper.php:191
+msgid "Explain"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/SimpleGraphHelper.php:80
+msgid "Starting %sms into the request, taking %sms"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/TidyHelper.php:108
+msgid "No markup errors found"
+msgstr ""
+
+#: Plugin/DebugKit/View/Helper/ToolbarHelper.php:187
+msgid "maybe slow"
+msgstr ""
+
+#: Plugin/DebugKit/Console/Command/WhitespaceShell.php:89
+msgid "Absolute path or relative to APP."
+msgstr ""
+
+#: View/Errors/error400.ctp:21 View/Errors/error500.ctp:21
+msgid "Error"
+msgstr ""
+
+#: View/Errors/error400.ctp:23
+msgid "The requested address %s was not found on this server."
+msgstr ""
+
+#: View/Errors/error500.ctp:22
+msgid "An Internal Error Has Occurred."
+msgstr ""
+
+#: View/Layouts/_default.ctp:19 View/Layouts/error.ctp:19
+msgid "CakePHP: the rapid development php framework"
+msgstr ""
+
+#: View/Layouts/backend.ctp:19
+msgid "Haamble Administration Platform"
+msgstr ""
+
+#: webroot/test.php:87
+msgid "Debug setting does not allow access to this url."
+msgstr ""

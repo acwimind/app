@@ -1,0 +1,16 @@
+/* 
+    Document   : ie8
+    Created on : 4.9.2013, 10:40:36
+    Author     : PEDRO
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+root { 
+    display: block;
+}
+.topbar_filter .input.text, .topbar_filter div.select, .location div.select, .location div.text{
+
+filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#eff0f0, endColorstr=#d8d9da);
+-ms-filter: "progid:DXImageTransform.Microsoft.gradient (GradientType=0, startColorstr=#eff0f0, endColorstr=#d8d9da)";
+}

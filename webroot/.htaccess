@@ -1,0 +1,25 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+	
+	#default place images
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-s
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule ^api/files/places_default/([0-9]+)/(jpeg|jpg|png|gif)(/[0-9]+)?$ /img/places_default/$1.$2 [NC,L]
+	
+	#resized images in webroot /resized_images
+    RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-s
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule ^api/files/([a-z_]+)/([0-9]+/[0-9]+/)?([0-9]+)/(jpeg|jpg|png|gif)/([0-9]/)?([0-9]+)x([0-9]+)$ /resized_images/$1/$2/$3_$6x$7.$4 [NC,L]
+
+	#images in webroot /files
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-s
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule ^api/files/([a-z_]+)/([0-9]+/[0-9]+/)?([0-9]+)/(jpeg|jpg|png|gif)(/[0-9]+)?$ /files/$1/$2/$3.$4 [NC,L]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

@@ -1,0 +1,33 @@
+header, footer, section, article{
+    display:block;
+}
+.topbar_filter .input.text, .topbar_filter div.select, .location div.select, .location div.text{
+
+filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#eff0f0, endColorstr=#d8d9da);
+-ms-filter: "progid:DXImageTransform.Microsoft.gradient (GradientType=0, startColorstr=#eff0f0, endColorstr=#d8d9da)";
+}
+.home-login .fb_login{
+    margin-left: 10px;
+    margin-top: 1px;
+}
+.map-list-1{
+    overflow-x: hidden;
+}
+#header-nav .navigation li,.profile-tabs .nav_tabs li, .topbar_header .nav_tabs li{
+    zoom: 1;
+    *display: inline !important;
+}
+.topbar_filter .input{
+    zoom: 1;
+    display: inline;
+}
+.topbar_filter .submit input{
+text-indent:-9999px;
+text-transform:capitalize;
+font-size:0;
+display:block;
+line-height:0;
+}
+.topbar_header .nav_tabs li{
+margin-top: 17px;
+}
