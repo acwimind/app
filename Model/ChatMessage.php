@@ -42,12 +42,14 @@ class ChatMessage extends AppModel {
 					'Sender.middle_name',
 					'Sender.surname',
 					'Sender.photo_updated',
+						'Sender.sex',
 					'Recipient.name',
 					'Recipient.middle_name',
 					'Recipient.surname',
 					'Recipient.photo_updated',
 					'Sender.big',
 					'Recipient.big',
+						'Recipient.sex',
 				),
 				'recursive' => 0
 			);
@@ -75,6 +77,7 @@ class ChatMessage extends AppModel {
 						'Sender.surname',
 						'Sender.photo_updated',
 						'Sender.big',
+							'Sender.sex',
 					),
 					'recursive' => 0
 				);
@@ -106,6 +109,7 @@ class ChatMessage extends AppModel {
 						'Recipient.surname',
 						'Recipient.photo_updated',
 						'Recipient.big',
+							'Recipient.sex',
 					),
 					'recursive' => 0
 				);
@@ -160,6 +164,7 @@ class ChatMessage extends AppModel {
 				'ChatMessage.created',
 				'ChatMessage.text',
 				'ChatMessage.id',
+				'ChatMessage.photo_updated',
 				'ChatMessage.read'
 			),
 			'order' => array(
@@ -199,6 +204,7 @@ class ChatMessage extends AppModel {
 			$res['recipient_big'] = $res['Recipient']['big'];
 			unset($res['Recipient']); 
 			$res['msg_text'] = $res['ChatMessage']['text'];
+			$res['photo_updated'] = $res['ChatMessage']['photo_updated'];
 			$res['msg_created'] = $res['ChatMessage']['created'];
 			$res['msg_id'] = $res['ChatMessage']['id'];
 			$res['read'] = $res['ChatMessage']['read'];
@@ -270,6 +276,52 @@ class ChatMessage extends AppModel {
 
 	}
 	
+    
+    public function removeMessages($idMessage, $memberBig)
+    {    //delete one or more chat messages
+        // error handling for invalid format (i.e. other than id,id2,id3,...,idn)
+        if (!is_numeric($idMessage))
+        {
+            $idMessages = explode(',', $idMessage);
+            foreach ($idMessages as $key=>$idMessage)
+            {
+                if (!is_numeric($idMessage))
+                    unset($idMessages[$key]);
+            }
+            $idMessage = implode(',', $idMessages);
+        } 
+        
+        $db = $this->getDataSource();
+        $sql = 'UPDATE chat_messages SET from_status = ' . DELETED . ' WHERE id IN (' . $idMessage . ') AND from_big = '. intval($memberBig);
+        try {
+            $db->fetchAll($sql);
+        }
+        catch (Exception $e)
+        {
+            //debug($e);
+            return false;
+        }
+
+
+        $db = $this->getDataSource();
+        $sql = 'UPDATE chat_messages SET to_status = ' . DELETED . ' WHERE id IN (' . $idMessage . ') AND to_big = '. intval($memberBig);
+        try {
+            $db->fetchAll($sql);
+        }
+        catch (Exception $e)
+        {
+            //debug($e);
+            return false;
+        }
+
+        return true;
+
+    }
+    
+    
+    
+    
+    
 	public function getMessagesForSignalation($memBig, $flgBig)
 	{
 		$params = array(

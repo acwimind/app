@@ -7,7 +7,8 @@ class MembersController extends AppController {
 			'Checkin',
 			'Contact',
 			'ProfileVisit',
-			'Friend' 
+			'Friend',
+			'PrivacySetting' 
 	);
 	public function beforeFilter() {
 		parent::beforeFilter ();
@@ -779,6 +780,9 @@ class MembersController extends AppController {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
 		
+		// INSERISCE I PRIVACY SETTINGS tutti a 1!!
+		$this->PrivacySetting->CreateSettings($member ['big']);
+		
 		$this->_apiOk ( $response );
 	}
 	
@@ -786,6 +790,7 @@ class MembersController extends AppController {
 	 * update existing member profile
 	 */
 	public function api_edit() {
+		
 		
 		// update existing member
 		$member = $this->_save ( $this->logged ['Member'] ['big'] );
@@ -806,6 +811,10 @@ class MembersController extends AppController {
 		
 		$this->_apiOk ( $response );
 	}
+	
+	
+	
+	
 	
 	// TODO: move this function to model, makes more sense there? or not, if we need to call component
 	private function _api_photo_upload() {
@@ -859,6 +868,34 @@ class MembersController extends AppController {
 			);
 		}
 		
+	//	debug($this->request['data']['address_town']);
+		if (isset($this->request['data']['address_street']) or 
+			isset($this->request['data']['address_town']) or
+			isset($this->request['data']['address_country']) or
+			isset($this->request['data']['lang']) or
+			isset($this->request['data']['address_zip'])
+			)
+		{
+			$optional_fields += array (
+					'photo' => 'photo',
+					'middle_name' => 'middle_name',
+					'lang' => 'lang',
+					'birth_date' => 'birth_date',
+					'sex' => 'sex',
+					'phone' => 'phone',
+					'birth_place' => 'birth_place',
+					'address_street' => 'address_street',
+					'address_street_no' => 'address_street_no',
+					'address_town' => 'address_town',
+					'address_province' => 'address_province',
+					'address_region' => 'address_region',
+					'address_country' => 'address_country',
+					'address_zip' => 'address_zip'
+			);
+			
+		}
+		else 
+		{
 		$optional_fields += array (
 				'photo' => 'photo',
 				'middle_name' => 'middle_name',
@@ -875,6 +912,7 @@ class MembersController extends AppController {
 				'address_country' => 'state',
 				'address_zip' => 'zip' 
 		);
+		}
 		$all_fields = array_merge ( $required_fields, $optional_fields );
 		
 		$this->_checkVars ( $required_fields, $optional_fields );
@@ -935,6 +973,10 @@ class MembersController extends AppController {
 		} catch ( Exception $e ) {
 			$this->_apiEr ( "Error" );
 		}
+		
+		// AUTO CHECKIN!!!
+		
+		$myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
 		
 		$this->_apiOk ( "Position set" );
 	}
@@ -1017,6 +1059,9 @@ class MembersController extends AppController {
 		
 		// save profil visit
 		$this->ProfileVisit->saveVisit ( $this->logged ['Member'] ['big'], $this->api ['big'] );
+		
+		// TODO : do we want to add push for visits??
+		
 		
 		$this->_apiOk ( $data );
 	}
@@ -1228,6 +1273,7 @@ class MembersController extends AppController {
 			// query
 		$params = array (
 				'conditions' => array (
+						'Member.status' => 1,
 						"OR" => array (
 								
 								array (
@@ -1236,7 +1282,7 @@ class MembersController extends AppController {
 								array (
 										'Member.phone' => $membersPhones 
 								) 
-						) 
+						),
 				),
 				'recursive' => - 1,
 				
@@ -1286,11 +1332,11 @@ class MembersController extends AppController {
 		
 		}
 		
-		$dbo = $this->Member->getDatasource ();
+/*		$dbo = $this->Member->getDatasource ();
 		$logs = $dbo->getLog ();
 		$lastLog = end ( $logs ['log'] );
 		debug ( $lastLog ['query'] );
-		
+*/		
 		$this->_apiOk ( $AppoMem );
 	}
 	
@@ -1562,4 +1608,41 @@ class MembersController extends AppController {
 		
 		$this->set ( 'loggedBig', $this->logged ['Member'] ['big'] );
 	}
+    
+    
+    public function api_getAffinityMembers() {
+        
+          $this->_checkVars ( array (
+                'member_big'                 
+        ), array ('big'));
+        
+        (empty($this->api ['big'])) ? $memBig=$this->api ['member_big'] : $memBig=$this->api ['big'];
+        
+        
+        $MySugAffinity=array();
+        
+        $MySugAffinity=$this->Member->getAffinityMembers( $memBig );
+        
+        debug($MySugAffinity);
+        
+        foreach ( $MySugAffinity as $key => &$val ) {
+        
+            // ADD MEMBER PHOTO
+            // debug( $val ['Member']['Member'] ['photo_updated'] );
+            if ($MySugAffinity [$key] ['Member'] ['photo_updated'] > 0) {
+                $MySugAffinity [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val['Member'] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($MySugAffinity [$key]  ['Member'] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+        
+                $MySugAffinity [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+        }
+                          
+          $this->_apiOK($MySugAffinity); 
+                   
+    }
+    
 }

@@ -447,6 +447,7 @@ class CheckinsController extends AppController {
 		
 		foreach ( $all_nearby as $ami ) {
 
+			die(debug($ami));
 				
 			$xami [] = $ami ;
 			
@@ -469,7 +470,6 @@ class CheckinsController extends AppController {
 				);
 				
 				$data = $this->Member->find ( 'first', $params );
-debug( $data['Member']['name']);
 				
 			if (isset ( $data['Member']['photo_updated'] ) && $data['Member']['photo_updated'] > 0) {
 				$data['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data['Member']['big'], $data['Member']['photo_updated'] );
@@ -498,6 +498,113 @@ debug( $data['Member']['name']);
 	
 	
 
+	public function api_nearbyPeople() {
+	
+		$this->_checkVars(array('lon', 'lat'),
+			array(
+				'offset')
+			);
+		$memBig = $this->logged['Member']['big'];
+		$lon = $this->api['lon'];
+		$lat = $this->api['lat'];
+		$coords = '(' . $lon . ',' . $lat . ')';
+		$offset = isset($this->api['offset']) ? $this->api['offset'] * API_MAP_LIMIT : 0;
+		
+	
+		// Match coords against regular expression ('41.873114', '12.510547')
+		$crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
+		if ($crdsMatch == FALSE) {
+			$this->_apiEr('The following API variables are invalid: lon and/or lat');
+		}
+	
+	
+		
+		$all_nearby = $this->Checkin->getNearbyPeople($coords,$memBig,$offset);
+		
+	
+		$xresponse = array ();
+		$xami = array ();
+	
+		foreach ( $all_nearby as $key => &$val ) {
+		
+	
+		// SECONDS!!
+		if (!isset($val[0]['updated']) or $val[0]['updated']<(date("Y-m-d H:i:s")-86400)   )
+		{
+			// REMOVE
+			
+		}
+		else 
+			
+		{
+			$privacy=true;
+			if (! $privacy)
+			{
+				//not il list
+			}
+			else 
+			{
+				// COMPLETE DATA AND ADD TO REQUEST!!
+				//FIND CHECKIN AND PLACE
+				
+				// add photo
+			
+				if ($val[0]['photo_updated'] > 0) {
+					$val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated'] );
+				}
+				else
+				{
+					// standard image
+					$sexpic=2;
+					if($val[0]['sex']=='f' )
+					{
+						$sexpic=3;
+					}
+					$val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			
+				}
+				
+				$aa=array();
+		        $allx=false;
+				$val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big'],$allx);
+			
+				if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
+					if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+						 $val[0]['Checkin'][0]['Place'] ['photo'] = $this->FileUrl->place_photo ( $val[0]['Checkin'][0] ['Place'] ['big'], $val[0]['Checkin'][0] ['Gallery'] [0] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['original_ext'] );
+					} else {
+						 $val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+					}
+				} else {
+				
+					 $val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+				}
+				
+				unset($val [0] ['Checkin'][0] ['DefaultPhoto']);
+				unset($val [0] ['Checkin'][0] ['Gallery']);
+			/*		
+				if (isset ( $val[0]['Place'] ['DefaultPhotobig'] ) && $val[0]['Place'] ['DefaultPhotobig'] > 0) { // add URLs to default photos
+					if (isset ( $val[0]['Place'] ['DefaultPhotostatus'] ) && $val ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+						$data [$key] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['big'], $val ['Gallery'] [0] ['big'], $val ['DefaultPhoto'] ['big'], $val ['DefaultPhoto'] ['original_ext'] );
+					} else {
+						$data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+					}
+				} else {
+					$data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+				}
+				
+*/				
+				$xresponse[]=$val[0];
+				
+						}
+				
+						}
+			
+		}
+	
+		$this->_apiOk($xresponse) ;
+	}
+	
+	
 }
 
 

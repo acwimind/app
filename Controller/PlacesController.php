@@ -2,7 +2,7 @@
 
 class PlacesController extends AppController {
 
-	public $uses = array('Place', 'Bookmark', 'Operator','Member');//load these models
+	public $uses = array('Place', 'Bookmark', 'Operator','Member','Checkin');//load these models
 
 	public function operator_index() {
 
@@ -735,7 +735,95 @@ class PlacesController extends AppController {
 
 		}
 
+		// NEW for Win app
+		
+		$all_nearby = $this->Checkin->getNearbyPeople($coords,$memBig);
+		
+		
+		$xresponse = array ();
+		$xami = array ();
+		
+		foreach ( $all_nearby as $key => &$val ) {
+		
+		
+			// SECONDS!!
+			if (!isset($val[0]['updated']) or $val[0]['updated']<(date("Y-m-d H:i:s")-86400)   )
+			{
+				// REMOVE
+					
+			}
+			else
+					
+			{
+				$privacy=true;
+				if (! $privacy)
+				{
+					//not il list
+				}
+				else
+				{
+					// COMPLETE DATA AND ADD TO REQUEST!!
+					//FIND CHECKIN AND PLACE
+		
+					// add photo
+					if ($val[0]['photo_updated'] > 0) {
+						$val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated'] );
+					}
+					else
+					{
+						// standard image
+						$sexpic=2;
+						if($val[0]['sex']=='f' )
+						{
+							$sexpic=3;
+						}
+						$val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+							
+					}
+		
+					$aa=array();
+		
+					$val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big']);
+	
+		
+					if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
+						if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+							$val[0]['Checkin'][0]['Place'] ['photo'] = $this->FileUrl->place_photo ( $val[0]['Checkin'][0] ['Place'] ['big'], $val[0]['Checkin'][0] ['Gallery'] [0] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['original_ext'] );
+						} else {
+							$val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+						}
+					} else {
+					
+						$val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+					}
+		
+					unset($val [0] ['Checkin'][0] ['DefaultPhoto']);
+					unset($val [0] ['Checkin'][0] ['Gallery']);
+					/*
+						if (isset ( $val[0]['Place'] ['DefaultPhotobig'] ) && $val[0]['Place'] ['DefaultPhotobig'] > 0) { // add URLs to default photos
+					if (isset ( $val[0]['Place'] ['DefaultPhotostatus'] ) && $val ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+					$data [$key] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['big'], $val ['Gallery'] [0] ['big'], $val ['DefaultPhoto'] ['big'], $val ['DefaultPhoto'] ['original_ext'] );
+					} else {
+					$data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+					}
+					} else {
+					$data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+					}
+		
+					*/
+					$xresponse[]=$val[0];
+		
+				}
+		
+			}
+				
+		}
+		
+		
+		
+		
 		$result = array('nearby' => $nearby, 'checkable' => $checkable);
+		$result['People'] =$xresponse; 
 		if (empty($result)) {
 			$this->_apiEr('Error occured. No places found nearby.', 'There are no places in your vicinity');
 		} else {

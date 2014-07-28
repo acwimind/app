@@ -24,6 +24,28 @@ class FileUrlComponent extends Component {
 		}
 	}
 	
+
+	public function chatmsg_picture($member_big, $updated=null) {
+		$exts = array('jpg', 'jpeg', 'png');
+		$usedExt = '';
+		foreach ($exts as $ext)
+		{
+			$path = CHATS_UPLOAD_PATH . $member_big . '.' . $ext;
+			if (is_file($path))
+			{
+				$usedExt = $ext;
+				break;
+			}
+		}
+		if (is_file($path)) {
+			return $this->_url('chats', $member_big, $usedExt) . '/' . ($updated==null ? '0' : strtotime($updated));
+		} else {
+			return null;
+		}
+	}
+	
+	
+	
 	public function event_photo($event_big, $gallery_big, $photo_big, $ext) {
 		$path = EVENTS_UPLOAD_PATH . $event_big . '/' . $gallery_big . '/' . $photo_big . '.' . $ext;
 		if ($path != false) {

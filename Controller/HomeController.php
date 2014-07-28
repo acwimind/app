@@ -44,7 +44,7 @@ class HomeController extends AppController {
 			),
 			'fields' => array(
 				'Event.big', 'Event.name', 'Event.place_big', '("Event"."type"=2 and "Event"."status"=0) as "Event__hidden"', 'Event.rating_avg',
-				'Place.big', 'Place.name',
+				'Place.big', 'Place.name','Place.address_street','Place.address_street_no','Place.address_town',
 				'DefaultPhoto.big', 'DefaultPhoto.original_ext',
 			),
 			'limit' => 10,
@@ -68,7 +68,7 @@ class HomeController extends AppController {
 					'Place.big' => $place_bigs,
 				),
 				'fields' => array(
-					'Place.big', 'Place.name', 'Place.category_id', 'Place.rating_avg',
+					'Place.big', 'Place.name', 'Place.category_id', 'Place.rating_avg','Place.address_street','Place.address_street_no','Place.address_town',
 					'DefaultPhoto.big', 'DefaultPhoto.original_ext',
 				),
 			));
@@ -83,38 +83,36 @@ class HomeController extends AppController {
 		
 		$this->_apiOk(array('events' => $events));
 		
-		if (!empty($checkins)) {	//we have checkins
+		if (! empty ( $checkins )) { // we have checkins
 			
-			$checkins = $this->_addEventPhotoUrls($checkins);
+			$checkins = $this->_addEventPhotoUrls ( $checkins );
 			
-			//add places with photos to last checkin events
-			foreach($checkins as $key=>$checkin) {
-				$checkins[$key]['Place'] = $places[ $checkin['Place']['big'] ];
+			// add places with photos to last checkin events
+			foreach ( $checkins as $key => $checkin ) {
+				$checkins [$key] ['Place'] = $places [$checkin ['Place'] ['big']];
 			}
 			
-			$this->_apiOk(array(
-				'checkins' => $checkins,
-			));
+			$this->_apiOk ( array (
+					'checkins' => $checkins 
+			) );
 			
-			$conversations = $this->MemberRel->findConversations($this->logged['Member']['big']);
-			$this->Util->transform_name($conversations);
+			$conversations = $this->MemberRel->findConversations ( $this->logged ['Member'] ['big'] );
+			$this->Util->transform_name ( $conversations );
 			
 			// Add photos
-			$result = $conversations['conversations'];
-			foreach($result as &$val) {
-				//Sender
-				if ($val['Sender']['photo_updated'] > 0) {
-					$val['Sender']['photo'] = $this->FileUrl->profile_picture($val['Sender']['big'], $val['Sender']['photo_updated']);
-				}else  {
-			$sexpic=2;
-			if($val['Sender']['sex']=='f' )
-			{
-				$sexpic=3;
-			}
-				
-			$val['Sender']['photo'] = $this->FileUrl->profile_picture ( $sexpic );
-			
-		}
+			$result = $conversations ['conversations'];
+			foreach ( $result as &$val ) {
+				// Sender
+				if ($val ['Sender'] ['photo_updated'] > 0) {
+					$val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Sender'] ['big'], $val ['Sender'] ['photo_updated'] );
+				} else {
+					$sexpic = 2;
+					if ($val ['Sender'] ['sex'] == 'f') {
+						$sexpic = 3;
+					}
+					
+					$val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $sexpic );
+				}
 				unset($val['Sender']['photo_updated']);
 				//Recipient
 				if ($val['Recipient']['photo_updated'] > 0) {
@@ -169,7 +167,7 @@ class HomeController extends AppController {
 			'conditions' => array('Event.big' => $event_big),
 			'fields' => array(
 				'Event.big', 'Event.name', '("Event"."type"=2 and "Event"."status"=0) as "Event__hidden"', 'Event.rating_avg',
-				'Place.big', 'Place.name', 'Place.rating_avg',
+				'Place.big', 'Place.name','Place.address_street','Place.address_street_no','Place.address_town', 'Place.rating_avg',
 				'DefaultPhoto.big', 'DefaultPhoto.original_ext',
 				'Checkin.created', 'Checkin.physical'
 			),
@@ -180,7 +178,7 @@ class HomeController extends AppController {
 		$place = $this->Event->Place->find('first', array(
 			'conditions' => array('Place.big' => $event['Place']['big']),
 			'fields' => array(
-				'Place.big', 'Place.name', 'Place.category_id', 'Place.rating_avg',
+				'Place.big', 'Place.name', 'Place.category_id', 'Place.rating_avg','Place.address_street','Place.address_street_no','Place.address_town',
 				'Region.city', 'Region.country',
 				'DefaultPhoto.big', 'DefaultPhoto.original_ext',
 			),
@@ -203,6 +201,53 @@ class HomeController extends AppController {
 		$event['Event']['joins_count'] = $this->Checkin->getJoinsCountFor($event_big, $memBig);
 		
 		$this->_apiOk($event);
+		
+		
+		
+		// ADDED CHECKINS !!!!!
+		
+		//find latest checkins
+		$event_bigs = $this->Checkin->find('list', array(
+				'conditions' => array(
+						'Checkin.member_big' => $this->logged['Member']['big'],
+						'Checkin.created !=' => null,
+						'Checkin.checkout !=' => null,
+				),
+				'fields' => array('Checkin.event_big', 'Checkin.event_big'),//'MAX(Checkin.created) as "Checkin__created"'),
+				'order' => array('MAX(Checkin.created)' => 'desc'),
+				'group' => array('Checkin.event_big'),
+				'recursive' => -1,
+		));
+		
+		//events for latest checkins
+		unbindAllBut($this->Checkin->Event, array('Place', 'DefaultPhoto', 'Gallery'));
+		$checkins = $this->Checkin->Event->find('all', array(
+				'conditions' => array(
+						'Event.big' => $event_bigs,
+						'Place.status !=' => DELETED
+				),
+				'fields' => array(
+						'Event.big', 'Event.name', 'Event.place_big', '("Event"."type"=2 and "Event"."status"=0) as "Event__hidden"', 'Event.rating_avg',
+						'Place.big', 'Place.name','Place.address_street','Place.address_street_no','Place.address_town',
+						'DefaultPhoto.big', 'DefaultPhoto.original_ext',
+				),
+				'limit' => 10,
+		));
+		
+		if (! empty ( $checkins )) { // we have checkins
+				
+			$checkins = $this->_addEventPhotoUrls ( $checkins );
+				
+			// add places with photos to last checkin events
+			foreach ( $checkins as $key => $checkin ) {
+				$checkins [$key] ['Place'] = $places [$checkin ['Place'] ['big']];
+			}
+				
+			$this->_apiOk ( array (
+					'checkins' => $checkins
+			) );
+		
+		}
 		$this->_apiOk(array('screen_type' => HOME_CHECKED_IN));
 		return true;
 		

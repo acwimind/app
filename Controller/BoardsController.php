@@ -1,120 +1,576 @@
 <?php
 class BoardsController extends AppController {
-	public $uses = array('Place', 'Operator','Member','Friend','Advert','Photo','Comment');//load these models
+	public $uses = array (
+			'Place',
+			'Operator',
+			'Member',
+			'Friend',
+			'Advert',
+			'Photo',
+			'Comment',
+			'Contact',
+			'Checkin',
+			'PrivacySetting'
+	); // load these models
+	
+	/**
+	 * get board content for logged user
+	 */
+	public function api_GetBoardContent() {
+		$MyPlaces = array ();
+		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'] );
+		
+		foreach ( $MyPlaces as $key => $val ) {
+			
+			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
+				
+				$DefPic = $this->Photo->find ( 'first', array (
+						'conditions' => array (
+								'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
+						),
+						'recursive' => - 1 
+				) );
+				
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+				
+				/*
+				 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+				 */
+			} else {
+				
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
+			}
+			// check if i liked it
+			$xlike = 0;
+			$xlike = $this->Comment->find ( 'count', array (
+					'conditions' => array (
+							'Comment.member_big' => $this->logged ['Member'] ['big'],
+							'Comment.likeit' => 1,
+						//	'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
+							'Comment.checkin_big' => $MyPlaces [$key] [0]['checkinbig']
+							//'Comment.place_big'
+					)
+					 
+			) );
+			
+			
+			// TODO: ARRIVATO QUI !!!! LIKE COUNT
+			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0]['checkinbig'],1 );
+			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0]['checkinbig'], 1 );
+			
+			$MyPlaces [$key] ['ILike'] = $xlike;
+		}
+		
+		// recovery friends order by checkins
+		
+		$MyFriends = array ();
+		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'] );
+		
+		foreach ( $MyFriends as $key => $val ) {
+			
+			// ADD MEMBER PHOTO
+			// debug( $val ['Member']['Member'] ['photo_updated'] );
+			if (isset($MyFriends [$key] ['Member'] ['Member'] ['photo_updated']) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
+				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if (isset($MyFriends [$key] ['Member'] ['Member'] ['sex']) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+				
+				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+			
+			
+			
+			// ADD PLACE PHOTO
+			$DefPic = $this->Photo->find ( 'first', array (
+					'conditions' => array (
+							'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
+					),
+					'recursive' => - 1 
+			) );
+			
+	//	die(debug( $DefPic) );
+		$appho = "";
+		if (count($DefPic)>0){	
+			$appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+		}
+		$MyFriends [$key] ['Place'] ['Place'] ['photo']=$appho;
+
+			// check if i liked it
+			$xlike = 0;
+			$xlike = $this->Comment->find ( 'count', array (
+					'conditions' => array (
+							'Comment.member_big' => $this->logged ['Member'] ['big'],
+							'Comment.likeit' => 1,
+							'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
+					)
+					 
+			) );
+			
+			$MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'] ,0 );
+				
+			$MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'] , 0 );
+				
+				
+			
+			$MyFriends [$key]['ILike'] = $xlike;
+		}
+	
+
+		
+		// recovery suggested friends order by ?
+		
+		$MySugFriends = array ();
+		$MySugFriends = $this->BoardContacts( $this->logged ['Member'] ['big'] );
+		
+		
+		foreach ( $MySugFriends as $key => &$val ) {
+				
+			// ADD MEMBER PHOTO
+			// debug( $val ['Member']['Member'] ['photo_updated'] );
+			if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0) {
+				$MySugFriends [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val['Member'] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if ($MySugFriends [$key]  ['Member'] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+		
+				$MySugFriends [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+		}
+		
+		
+		//die(debug($MySugFriends));
+		
+		$MySugAffinity = array ();
+		$MySugAffinity = $this->Member->getAffinityMembers( $this->logged ['Member'] ['big'] );
+		
+		
+		foreach ( $MySugAffinity as $key => &$val ) {
+		
+			// ADD MEMBER PHOTO
+			// debug( $val ['Member']['Member'] ['photo_updated'] );
+			if ($MySugAffinity [$key] ['Member'] ['photo_updated'] > 0) {
+				$MySugAffinity [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val['Member'] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if ($MySugAffinity [$key]  ['Member'] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+		
+				$MySugAffinity [$key]  ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+		}
+		
+		
+		
+		// recovery members members order by checkins
+		
+		$MyAds = array ();
+		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
+		
+		// recovery ads
+		
+		// compose a board
+		
+		$MyBoard = array ();
+		
+		for($i = 0; $i <= 5; $i ++) {
+			if ($i < count ( $MyPlaces )) {
+				$MyPlaces [$i] ["BoardType"] = "Place";
+				$MyBoard [] = $MyPlaces [$i];
+			}
+			if ($i < count ( $MyFriends )) {
+				$MyFriends [$i] ["BoardType"] = "Friend";
+				$MyBoard [] = $MyFriends [$i];
+			}
+			if ($i < count ( $MyAds )) {
+				$MyAds [$i] ["BoardType"] = "Ad";
+				$MyBoard [] = $MyAds [$i];
+			}
+			
+			if ($i < count ( $MySugFriends ) and $i < 3 ) {
+				$MySugFriends [$i] ["BoardType"] = "SuggestedMember";
+				$MyBoard [] = $MySugFriends [$i];
+			}
+			
+			if ($i < count ( $MySugAffinity ) ) {
+				$MySugAffinity [$i] ["BoardType"] = "AffinityMember";
+				$MyBoard [] = $MySugAffinity [$i];
+			}
+		}
+		
+		$this->_apiOk ( $MyBoard );
+	}
+	
+
+
+	
+	/**
+	 * get board content for logged user
+	 */
+	public function api_GetDiaryContent() {
+
+		
+		// TORNARE FOTO,POSTI, AMICIZIE
+		
+		
+		$this->_checkVars ( array (), array (
+				'big'
+		) );
+		
+		if (! isset ( $this->api ['big'] )) {
+			$this->api ['big'] = $this->logged ['Member'] ['big'];
+		}
+		
+		$MyBig=	$this->api ['big'] ;
+		
+		$MyCheckins = array ();
+		$Checkins = array ();
+		
+		$allx=true;
+		$MyCheckins=$this->Checkin->getNearbyCheckinsMember($MyBig,$allx);
+		
+		
+		foreach ( $MyCheckins as $key => $val ) {
+		
+		if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
+			if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+				$val[0]['Checkin'][0]['Place'] ['photo'] = $this->FileUrl->place_photo ( $val[0]['Checkin'][0] ['Place'] ['big'], $val[0]['Checkin'][0] ['Gallery'] [0] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['original_ext'] );
+			} else {
+				$val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+			}
+		} else {
+		
+			$val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+		}
+		
+		unset($val [0] ['Checkin'][0] ['DefaultPhoto']);
+		unset($val [0] ['Checkin'][0] ['Gallery']);
+		
+		
+		
+		$Privacyok = $this->PrivacySetting->getPrivacySettings ( $MyBig );
+		
+		$goonPrivacy = true;
+		if (count ( $Privacyok ) > 0) {
+			// PARTE  PRIVACY TO DO
+			if ($Privacyok [0]['PrivacySetting'] ['showvisitedplaces'] == 0) {
+				$goonPrivacy = false;
+			}
+		}
+		if ($goonPrivacy) {
+			//	!! aggiungere agli amici
+			$Checkins[]=$MyCheckins;
+		}
+		
+		
+		
+		}
+		
+		
+		$MyPhotos=$this->Photo->getMemberPhotos($MyBig);
+		
+		$MyFriends = array();
+		$Amici = $this->Friend->findFriends($MyBig);
+	
+		
+		foreach ( $Amici as $ami ) {
+			// add only if privacy ok
+			if ($ami ["Friend1"] ["big"] == $MyBig) {
+				$friendID = $ami ["Friend2"] ["big"] ;
+			}
+		
+			else {
+				$friendID = $ami ["Friend1"] ["big"] ;
+			}
+			$Privacyok = $this->PrivacySetting->getPrivacySettings ( $friendID );
+			$goonPrivacy = true;
+			if (count ( $Privacyok ) > 0) {
+// PARTE  PRIVACY TO DO
+				if ($Privacyok [0] ['PrivacySetting'] ['visibletousers'] == 0) {
+					$goonPrivacy = false;	
+			
+				}
+			}
+			if ($goonPrivacy) {
+			//	!! aggiungere agli amici
+				$MyFriends[]=$ami;
+			
+			}
+		}
+		
+		
+		
+			// recovery friends order by checkins
+	
+	
+	
+		// recovery members members order by checkins
+	
+		$MyAds = array ();
+		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
+	
+		// recovery ads
+	
+		// compose a board
+	
+		$MyBoard = array ();
+	
+		for($i = 0; $i <= 5; $i ++) {
+			if ($i < count ( $MyPhotos )) {
+				$MyPhotos [$i] ["BoardType"] = "Photo";
+				$MyBoard [] = $MyPlaces [$i];
+			}
+			if ($i < count ( $MyFriends )) {
+				$MyFriends[$i] ["BoardType"] = "Friends";
+				$MyBoard [] = $MyFriends [$i];
+			}
+			if ($i < count ( $Checkins )) {
+				$Checkins[$i] ["BoardType"] = "Places";
+				$MyBoard [] = $Checkins [$i];
+			}
+			if ($i < count ( $MyAds )) {
+				$MyAds [$i] ["BoardType"] = "Ad";
+				$MyBoard [] = $MyAds [$i];
+			}
+				
+
+		}
+	
+		$this->_apiOk ( $MyBoard );
+	}
+	
 	
 	
 	
 	/**
-	 * get board content for logged user 
+	 * get radar content for logged user
 	 */
-	public function api_GetBoardContent() {
-	       
-		$MyPlaces=array();
-		$MyPlaces=$this->Place->getBoardPlaces($this->logged['Member']['big']);
-
-		foreach ( $MyPlaces as $key => $val ) {
-		
-			
-			
-			if (isset ( $val['Place']['Place']['default_photo_big'] ) && $val['Place']['Place']['default_photo_big'] > 0) { // add URLs to default photos
-				
-				$DefPic=$this->Photo->find(
-						'first', array(
-								'conditions' => array(
-										'Photo.big' => $val['Place']['Place']['default_photo_big'] 
-								),
-								'recursive'=>-1));
-				
-			$MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'],$DefPic['Photo']['gallery_big'] , $DefPic['Photo'] ['big'],$DefPic['Photo'] ['original_ext'] );
-				
-		/*	TODO: put again conditrions for updated
-		 * 	if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
-					
-					
-					$MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] );
-				} else {
-					$MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] );
-				}*/
-			} else {
-				
-				$MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val['Place'] ['Place'] ['category_id'] );
-			}
-		
-		//TODO: ARRIVATO QUI !!!! LIKE COUNT 
-			$MyPlaces [$key]['CountOfComments'] = $this->Comment->getCommentsCount ($val['Checkinbig']  );
-			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $val ['Place']['Place'] ['big'],$DefPic['Photo']['gallery_big'] , $DefPic['Photo'] ['big'],$DefPic['Photo'] ['original_ext'] );
-	//		die(debug($MyPlaces));
-		
-		}
-		
-		
-		// recovery friends  order by checkins
-
-		$MyFriends=array();
-		$MyFriends=$this->Friend->getBoardFriends($this->logged['Member']['big']);
-		foreach ( $MyFriends as $key => $val ) {
-			
-			// ADD MEMBER PHOTO
-	//	debug( $val ['Member']['Member'] ['photo_updated'] );
-			if ($MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
-			$MyFriends [$key] ['Member'] ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member']['Member'] ['big'], $val ['Member']['Member'] ['photo_updated'] );
-			}	else {
-			$sexpic=2;
-			if($MyFriends [$key] ['Member'] ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
-			}
-		
-		$MyFriends [$key] ['Member'] ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				
-		}
-		// ADD PLACE PHOTO
-		$DefPic=$this->Photo->find(
-				'first', array(
-						'conditions' => array(
-								'Photo.big' => $val['Place']['Place']['default_photo_big']
-						),
-						'recursive'=>-1));
-		
-//		debug( $DefPic );
-		
-		$MyFriends [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'],$DefPic['Photo']['gallery_big'] , $DefPic['Photo'] ['big'],$DefPic['Photo'] ['original_ext'] );
-		
-		}
-	//	debug($MyFriends);
-		
-		//recovery members  members order by checkins
-		
-		$MyAds=array();
-		$MyAds=$this->Advert->getBoardAds($this->logged['Member']['big']);
-		
-		// recovery ads
-		
+	public function api_GetRadarContentOLD() {
+		$MyPlaces = array ();
 	
-		// compose a board
-		
-		$MyBoard=array();
-		
-		
-		for ($i = 0; $i <= 5; $i++) {
-			if ($i<count($MyPlaces)) {
-				$MyPlaces[$i]["BoardType"] = "Place";
-				$MyBoard[]=$MyPlaces[$i];
+		$IPmember=($this->Member->getMemberByBig($this->logged ['Member'] ['big']));
+		$Imember=$IPmember['Member'];
+		$coords =$Imember['last_lonlat'];
+		debug($coords);
+		//$MyPlaces = $this->Place->getRadardPlaces ($coords );
+	
+		$plar=$this->Place->getRadarPlaces($coords);
+	
+	
+		foreach ( $plar as $key => $val ) {
+	
+			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
+	
+				$DefPic = $this->Photo->find ( 'first', array (
+						'conditions' => array (
+								'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big']
+						),
+						'recursive' => - 1
+				) );
+	
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+	
+				/*
+				 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+				*/
+			} else {
+	
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
 			}
-			if ($i<count($MyFriends)) {
-				$MyFriends[$i]["BoardType"] = "Friend";
-				$MyBoard[]=$MyFriends[$i];
-			}
-			if ($i<count($MyAds)) {
-				$MyAds[$i]["BoardType"] = "Ad";
-				$MyBoard[]=$MyAds[$i];
-			}
-			
+			// check if i liked it
+			$xlike = 0;
+			$xlike = $this->Comment->find ( 'count', array (
+					'conditions' => array (
+							'Comment.member_big' => $this->logged ['Member'] ['big'],
+							'Comment.likeit' => 1,
+							//	'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
+							'Comment.checkin_big' => $MyPlaces [$key] [0]['checkinbig']
+							//'Comment.place_big'
+					)
+	
+			) );
+	
+	
+			// TODO: ARRIVATO QUI !!!! LIKE COUNT
+			//			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0]['checkinbig'],1 );
+			//			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0]['checkinbig'], 1 );
+	
+			//			$MyPlaces [$key] ['ILike'] = $xlike;
 		}
-			
-		
+	
+		// recovery friends order by checkins
+	
+		$MyFriends = array ();
+		$MyFriends = $this->Member->getRadarMembers ( $this->logged ['Member'] ['big'] );
+	
+		foreach ( $MyFriends as $key => $val ) {
+	
+			// ADD MEMBER PHOTO
+			// debug( $val ['Member']['Member'] ['photo_updated'] );
+			if (isset($MyFriends [$key] ['Member'] ['Member'] ['photo_updated']) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
+				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if (isset($MyFriends [$key] ['Member'] ['Member'] ['sex']) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+	
+				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+	
+	
+	
+			// ADD PLACE PHOTO
+			$DefPic = $this->Photo->find ( 'first', array (
+					'conditions' => array (
+							'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big']
+					),
+					'recursive' => - 1
+			) );
+	
+			//	die(debug( $DefPic) );
+			$appho = "";
+			if (count($DefPic)>0){
+				$appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+			}
+			$MyFriends [$key] ['Place'] ['Place'] ['photo']=$appho;
+			/*
+				// check if i liked it
+			$xlike = 0;
+			$xlike = $this->Comment->find ( 'count', array (
+					'conditions' => array (
+							'Comment.member_big' => $this->logged ['Member'] ['big'],
+							'Comment.likeit' => 1,
+							'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig']
+					)
+	
+			) );
+	
+			$MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'] ,0 );
+	
+			$MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'] , 0 );
+	
+	
+	
+			$MyFriends [$key]['ILike'] = $xlike;
+	
+			*/
+		}
+	
+	
+	
+	
+	
+		//die(debug($MySugFriends));
+	
+		$MyBoard = array ();
+	
+		for($i = 0; $i <= 10; $i ++) {
+			if ($i < count ( $MyPlaces )) {
+				$MyPlaces [$i] ["BoardType"] = "Place";
+				$MyBoard [] = $MyPlaces [$i];
+			}
+			if ($i < count ( $MyFriends )) {
+				$MyFriends [$i] ["BoardType"] = "Member";
+				$MyBoard [] = $MyFriends [$i];
+			}
+				
+		}
+	
+	
 		$this->_apiOk ( $MyBoard );
 	}
+	
+	
+	
+	
+	/**
+	 * get radar content for logged user
+	 */
+	public function api_GetRadarContent() {
+		$MyPlaces = array ();
+		
+		$IPmember=($this->Member->getMemberByBig($this->logged ['Member'] ['big']));
+		$Imember=$IPmember['Member'];
+		$coords =$Imember['last_lonlat'];
+	
+		$MyPlaces=$this->Place->getRadarPlaces($coords);
+		
+		
+		foreach ( $MyPlaces as $key => $val ) {
+		//	debug($val[0] );
+			if (isset ( $val ['DefaultPhoto'] ) && $val ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
+	
+				$DefPic = $this->Photo->find ( 'first', array (
+						'conditions' => array (
+								'Photo.big' => $val ['DefaultPhoto'] ['big']
+						),
+						'recursive' => - 1
+				) );
+	
+				$MyPlaces [$key][0] ['photo'] = $this->FileUrl->place_photo ( $val [0] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+	
+				/*
+				 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+				*/
+			} else {
+	
+				$MyPlaces [$key][0]  ['photo'] = $this->FileUrl->default_place_photo ( $val [0]['category_id'] );
+			}
+			// check if i liked it
+		}
+	
+		// recovery friends order by checkins
+	
+		$MyFriends = array ();
+		$MyFriends = $this->Member->getRadarMembers ( $this->logged ['Member'] ['big'] );
+	
+		foreach ( $MyFriends as $key => $val ) {
+				
+			// ADD MEMBER PHOTO
+			 
+			if (isset($MyFriends [$key] [0] ['photo_updated']) and $MyFriends [$key] [0] ['photo_updated'] > 0) {
+				$MyFriends [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if (isset($MyFriends [$key] [0] ['sex']) and $MyFriends [$key][0] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+	
+				$MyFriends [$key][0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+				
+		}
+	
+	
+	
+	
+	
+		//die(debug($MySugFriends));
+	
+		$MyBoard = array ();
+		
+		for($i = 0; $i <= 10; $i ++) {
+			if ($i < count ( $MyPlaces )) {
+				$MyPlaces [$i][0] ["BoardType"] = "Place";
+				$MyBoard [] = $MyPlaces [$i][0];
+			}
+			if ($i < count ( $MyFriends )) {
+				$MyFriends [$i][0] ["BoardType"] = "Member";
+				$MyBoard [] = $MyFriends [$i][0];
+			}
+			
+		}
+	
+	
+		$this->_apiOk ( $MyBoard );
+	}
+	
 	
 	/**
 	 * update existing member profile
@@ -276,16 +732,13 @@ class BoardsController extends AppController {
 		
 		if ($data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
-		}
-		else {
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+		} else {
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-		
-			$data ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				
+			
+			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 		}
 		$this->_apiOk ( $data );
 	}
@@ -589,14 +1042,12 @@ class BoardsController extends AppController {
 		if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
 		} else {
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-				
-			$data ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			
+			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 		}
 		unset ( $data ['Member'] ['photo_updated'] );
 		
@@ -773,4 +1224,125 @@ class BoardsController extends AppController {
 		
 		$this->set ( 'loggedBig', $this->logged ['Member'] ['big'] );
 	}
+	
+	
+	
+	public function api_BoardContacts() {
+	
+	$MySugFriends = array ();
+	$MySugFriends = $this->BoardContacts( $this->logged ['Member'] ['big'] );
+	$this->_apiOk ( $MySugFriends );
+	}
+	
+	
+	public function BoardContacts($ContactBIG) {
+		
+		
+		$membersMails = array ();
+		$membersPhones = array ();
+		$ContactBIG = $this->api ['member_big'];
+		$PhoneContacts = array ();
+	
+		
+		// array_merge
+		// delete all existing contacts
+		$SugContacts= $this->Contact->find ( 'all',array (
+				'Contact.member_big' => $ContactBIG
+		) );
+	
+	
+		
+		foreach ( $SugContacts as $key => $val ) {
+			$Contacts = array ();
+			// preparazione per ricerca
+			if (isset ( $val['Contact']['email'] )) {
+				$membersMails [] = $val['Contact']['email'];
+			}
+			;
+			if (isset ( $val['Contact']['phone'] )) {
+				$membersPhones [] = $val['Contact'] ['phone'];
+			}
+			;
+		}
+	
+		// TODO: find a better way
+		// fast fix for empties
+		if (count ( $membersMails ) == 0)
+			$membersMails [] = 'nomail';
+	
+		if (count ( $membersPhones ) == 0)
+			$membersPhones [] = 'nophone';
+			
+		// query
+		$params = array (
+				'conditions' => array (
+						"OR" => array (
+	
+								array (
+										'Member.email' => $membersMails
+								),
+								array (
+										'Member.phone' => $membersPhones
+								)
+						)
+				),
+				'recursive' => - 1,
+	
+				'fields' => array (
+						'Member.big',
+						'Member.name',
+						'Member.middle_name',
+						'Member.surname',
+						'Member.photo_updated',
+						'Member.sex',
+						'Member.phone',
+						'Member.birth_date',
+						'Member.address_town',
+						'Member.address_country'
+				)
+		);
+	
+		$data = $this->Member->find ( 'all', $params );
+		$dbo = $this->Member->getDatasource ();
+			$logs = $dbo->getLog ();
+		$lastLog = end ( $logs ['log'] );
+		$AppoMem = array ();
+	
+		foreach ( $data as $key => &$mem ) {
+				
+			// check if any friendship exists yet
+			$AlreadyFr = $this->Friend->FriendsAllRelationship ( $ContactBIG, $mem ['Member'] ['big'] );
+				
+			if (count ( $AlreadyFr ) == 0) {
+					
+				if ($mem ['Member'] ['photo_updated'] > 0) {
+					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $mem ['Member'] ['big'], $mem ['Member'] ['photo_updated'] );
+				}
+				else
+				{
+					// standard image
+					$sexpic=2;
+					if($mem ['Member']['sex']=='f' )
+					{
+						$sexpic=3;
+					}
+						
+					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+						
+				}
+				$AppoMem [] = $mem;
+			}
+				
+	
+		}
+	
+		/*		
+		*/
+	
+		return $AppoMem ;
+	}
+	
+	
+	
+	
 }

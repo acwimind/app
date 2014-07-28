@@ -207,7 +207,10 @@ class Member extends AppModel {
 
 	}
 
-		
+	
+	
+
+	
 	public function getAffinityMembers($memberBig)
 	{//debug($check);
 	
@@ -220,54 +223,32 @@ class Member extends AppModel {
 	//$date = DateTime::createFromFormat("Y-m-d", $birthdate);
 	//	$Iyear =  $birthdate->format("Y");
 	$db = $this->getDataSource ();
-    
-    $ageAttempts=array(10,15,20);  //increasing values
-    $distanceAttempts=array(10,50,100);   //increasing values
-    
-    //for loops first search the nearest members and then search for the most distant members     
-    for ($i=0; $i<count($distanceAttempts); $i++){ //distance array iterator index
-                                                        
-        
-        for ($j=0; $j<count($ageAttempts); $j++){ //age array iterator index
-    
-                         
-        $sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,members.sex,
-	             members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-             
-                FROM public.members
-             
-                WHERE	 (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[$j].' AND '.$ageAttempts[$j].' ) AND sex != \''.$Imember['sex'].'\'
-			        AND	(members.big <> '.$memberBig	.')
-	                AND	( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[$i].')
-					ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT;
+	$sql2 = 'SELECT
+ members.big,
+  members.name,
+				members.updated,
+				members.photo_updated,
+				members.sex,
+	members.last_lonlat AS "coordinates",
+((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
 	
-         
-        $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));
-        
-        if (count($result)>0) {
-                                break 2;
-                                }
-        }
-            
-    } 
-     
-     if (!count($result)>0){// extreme attempt : max age diff, max distance and any members sex
-         
-         $sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,members.sex,
-                  members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-             
-                  FROM public.members
-             
-                  WHERE     (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[count($ageAttempts)-1].' AND '.$ageAttempts[count($ageAttempts)-1].' )
-                    AND    (members.big <> '.$memberBig    .')
-                    AND    ( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[count($distanceAttempts)-1].')
-                    ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT; 
-         
-          $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords    ) );
-     }
-      
+FROM
+  public.members
+WHERE	 (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -10 AND 10 ) AND sex != \''.$Imember['sex'].'\'
+			AND 	(members.big <> '.$memberBig	.')
+	AND	( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*10)
+						order by  ( members.last_lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT;
+	
+	
+	
+	//debug($sql2));
+	
+	// try {
+	$result = $db->fetchAll ( $sql2, array (
+			$coords,  $coords,  $coords
+	) );
+	
+	
 	/*
 	
 	*

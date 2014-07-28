@@ -1,10 +1,13 @@
 <?php
+App::uses ( 'Logger', 'Lib' );
 class ChatMessagesController extends AppController {
 	var $uses = array (
 			'ChatMessage',
 			'PushToken',
 			'Member',
-			'Friend' 
+			'Friend' ,
+			'PrivacySetting',
+			'MemberSetting'
 	);
 	public function index() {
 	}
@@ -68,9 +71,18 @@ class ChatMessagesController extends AppController {
 			$result ['members'] = $members;
 		}
 		
+		// message image
 		
 		// Put file url if any
-		
+		$chatmsgs = $result ['chat_messages'];
+	//	debug($result ['chat_messages']);
+		foreach ( $result ['chat_messages'] as $key =>&$res ) {
+			if ($res ['photo_updated'] > 0) {
+				Logger::Info('in foto2'.$res ['photo_updated']);
+				$res ['photo'] = $this->FileUrl->chatmsg_picture ( $res ['msg_id'] );
+		//		Logger::Info('in foto3'.$res ['photo']);
+			}
+		}
 		// Mark mesaages as read
 		if (! empty ( $result ['chat_messages'] )) {
 			$updated = $this->ChatMessage->markAsRead ( $memBig, $partnerBig );
@@ -88,6 +100,20 @@ class ChatMessagesController extends AppController {
 		$conversations = $result ['conversations'];
 		// debug($result);
 		foreach ( $conversations as &$val ) {
+
+		//	if (! $this->MemberSetting->isOnIgnoreList($val ['Sender'] ['big'],$val ['Recipient'] ['big']))
+		//	{
+				
+		//		debug('not in');
+		//	}
+		//	else
+		//	{
+		//		debug('in');
+		//	}
+			
+			
+			
+			
 			// Sender
 			if ($val ['Sender'] ['photo_updated'] > 0) {
 				$val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Sender'] ['big'], $val ['Sender'] ['photo_updated'] );
@@ -124,8 +150,7 @@ class ChatMessagesController extends AppController {
 							'ChatMessage.read ' => 0,
 							'ChatMessage.status != ' => 255 
 					) 
-			)
-			;
+			);
 			
 			$resultNR = $this->ChatMessage->find ( 'count', $params );
 			// debug($resultNR);
@@ -159,14 +184,15 @@ class ChatMessagesController extends AppController {
 	public function api_send() {
 		
 		/*
-		 * Needed values: rel_id - based on member_big and partner_big find a member_rel record. If does not exists, create it from_big - the sender of the message,member_big to_big - recipient of the message, partner_big checkin_big - (optional) text - message/text - text of the message from_status - sender status (joined/checkedin) based on current checkin of member field physical to_status - recipient status (joined/checkedin) based on current checkin of member field physical created - now() status - 1 Push notifications will be part of this call.
+		 * Needed values: rel_id - based on member_big and partner_big find a member_rel record. If does not exists, create it from_big - the sender of the message,member_big to_big - recipient of the message, partner_big checkin_big - (optional) text - message/text - text of the message from_status - sender status (joined/checkedin) based on current checkin of member field physical to_status - recipient status (joined/checkedin) based on current checkin of member field physical created - now() status - 1 Push notifications will be part of this call. $pollo=$this->api['photo']; Logger::Info($this->api[$pollo]);
 		 */
 		$this->_checkVars ( array (
 				'partner_big',
 				'text' 
 		), array (
 				'rel_id',
-				'newer_than' 
+				'newer_than',
+				'photo' 
 		) );
 		
 		$memBig = $this->logged ['Member'] ['big'];
@@ -227,8 +253,6 @@ class ChatMessagesController extends AppController {
 			$relId = $memRel ['MemberRel'] ['id'];
 		}
 		
-		$hasphoto = isset ( $this->api ['photo'] );
-		
 		// Create chat message record
 		$message = array (
 				'rel_id' => $relId,
@@ -265,13 +289,15 @@ class ChatMessagesController extends AppController {
 			);
 			$chatMsg = $this->ChatMessage->find ( 'first', $pars );
 			// Crack for image save!!
+			 
 			if (isset ( $this->api ['photo'] )) {
 				
+				$myphoto = $_FILES [$this->api ['photo']];
 				try {
 					$exts = array (
 							'jpg',
 							'jpeg',
-							'png'
+							'png' 
 					);
 					foreach ( $exts as $ext ) {
 						$path = CHATS_UPLOAD_PATH . $msgId . '.' . $ext;
@@ -280,11 +306,20 @@ class ChatMessagesController extends AppController {
 							break;
 						}
 					}
+					$extension = pathinfo ( $myphoto ['name'], PATHINFO_EXTENSION );
 					
-					$uploaded = $this->Upload->upload ( $_FILES [$this->api ['photo']], 			// data from form (temporary filenames, token)
-			CHATS_UPLOAD_PATH, 			// path
-			$msgId ); // filename $this->_upload ( $_FILES [$this->api ['photo']], $this->Member->id, true );
+					try {
+						$uploaded = $this->Upload->directUpload ( $_FILES [$this->api ['photo']], 						// data from form (temporary filenames, token)
+						CHATS_UPLOAD_PATH . $msgId . '.' . $extension )						// path
+						;
+					} catch ( UploadException $e ) {
+						Logger::Info ( 'QUIERRER!!' . $e->getMessage () );
+					}
+					
+					// filename $this->_upload ( $_FILES [$this->api ['photo']], $this->Member->id, true );
+					// Logger::Info('photo up'. $uploaded);
 				} catch ( UploadException $e ) {
+					Logger::Info ( 'photo er' . $e->getMessage () );
 					throw new UploadException ( __ ( $msg ) . ': ' . $e->getMessage () );
 				}
 				
@@ -309,6 +344,17 @@ class ChatMessagesController extends AppController {
 		// debug($unreadCount);
 		
 		// Send push notifications
+		$Privacyok=$this->PrivacySetting->getPrivacySettings($idMember2);
+		$goonPrivacy=true;
+		if (count($Privacyok)>0)
+		{
+			if ($Privacyok[0]['notifychatmessages']==0)
+			{
+				$goonPrivacy=false;
+			}
+		}
+		if 	($goonPrivacy)
+		{
 		$strLen = 50;
 		$name = $this->logged ['Member'] ['name'] . (! empty ( $this->logged ['Member'] ['middle_name'] ) ? ' ' . $this->logged ['Member'] ['middle_name'] . ' ' : ' ') . $this->logged ['Member'] ['surname'];
 		$msg = (strlen ( $text ) > $strLen + 4) ? substr ( $text, 0, $strLen ) . ($text [$strLen + 1] == ' ' ? ' ...' : '...') : $text;
@@ -323,6 +369,7 @@ class ChatMessagesController extends AppController {
 				$partnerBig 
 		), 'chat', 'new' );
 		
+		}
 		// return chat messages like in the receive call with refresh enabled
 		$newMsgs = $this->ChatMessage->findConversations ( $memBig, $partnerBig, null, $newerThan, 0, true );
 		

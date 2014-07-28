@@ -1,13 +1,12 @@
 <?php
-
-App::uses('Logger', 'Lib');
-
+App::uses ( 'Logger', 'Lib' );
 class FriendsController extends AppController {
 	public $uses = array (
 			'Friend',
-			'Member' ,
-			'ChatMessage', 
-			'PushToken'
+			'Member',
+			'ChatMessage',
+			'PushToken',
+			'PrivacySetting' 
 	);
 	public function recursiveRemoval(&$array, $val) {
 		if (is_array ( $array )) {
@@ -45,6 +44,8 @@ class FriendsController extends AppController {
 		$xami = array ();
 		
 		foreach ( $Amici as $ami ) {
+			$deleted = false;
+			
 			if ($ami ["Friend1"] ["big"] == $idMember) {
 				$ami ["Friend2"] ["friendstatus"] = $ami ["Friend"] ["status"];
 				$ami ["Friend2"] ["friendtype"] = "Passive";
@@ -61,24 +62,21 @@ class FriendsController extends AppController {
 			
 			if (isset ( $xami [0] ['photo_updated'] ) && $xami [0] ['photo_updated'] > 0) {
 				$xami [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $xami [0] ['big'], $xami [0] ['photo_updated'] );
-			} 				else 
-				{
-					// standard image
-					$sexpic=2;
-					if($xami [0]['sex']=='f' )
-					{
-						$sexpic=3;
-					}
-					
-					$xami [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-					
+			} else {
+				// standard image
+				$sexpic = 2;
+				if ($xami [0] ['sex'] == 'f') {
+					$sexpic = 3;
 				}
+				
+				$xami [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
 			
-			
-			// debug($xami[0]);
-			
-			$xresponse [] = $xami [0];
-			
+			// CHECK USER NOT DELETED
+			if ($this->Member->isActive ( $xami [0] ['big'] )) {
+				debug ( "trovato" . $xami [0] ['big'] );
+				$xresponse [] = $xami [0];
+			}
 			unset ( $xami );
 		}
 		
@@ -164,8 +162,6 @@ class FriendsController extends AppController {
 	 */
 	public function api_ManageFriendship() {
 		
-		
-		
 		/*
 		 * $this->_checkVars ( array ( '$idMember1', '$idMember2', '$action' ) );
 		 */
@@ -178,14 +174,12 @@ class FriendsController extends AppController {
 		 */
 		
 		// Check if user is not on partners ignore list
-		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList($idMember1 , $idMember2);
-		if ($isIgnored)
-		{
-			$this->_apiEr('Cannot send chat message. User is blocked by the second party.', false, false, array('error_code' => '510'));
+		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $idMember1, $idMember2 );
+		if ($isIgnored) {
+			$this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
+					'error_code' => '510' 
+			) );
 		}
-		
-		
-		
 		
 		$SearchState = $action;
 		if ($SearchState == 'A' || $SearchState == 'D') {
@@ -210,33 +204,38 @@ class FriendsController extends AppController {
 									'member2_big' => $idMember2,
 									'status' => $action 
 							) );
-
-							
 							
 							// Model::$validationErrors:
 							if ($this->Friend->save ()) {
 								$response ['test'] = $action;
 								
-								
-								debug("qui");
 								// push if request
-								Logger::Info('before sendNotification');
+								Logger::Info ( 'before sendNotification' );
 								
-								$this->PushToken->sendNotification('Haamble', 'Hai ricevuto una richiesta di amicizia!!',
-										array(
-												'partner_big' => $this->logged['Member']['big'],
-										    	'created' => date("Y-m-d H:i:s"),
-												'rel_id' => 1,
-												'msg_id' => 1,
-												'unread' => 1,
-										), array($idMember2), 'Friends', 'new');
-								
-								Logger::Info('afetr sendNotification');
-								
+								$Privacyok = $this->PrivacySetting->getPrivacySettings ( $idMember2 );
+								$goonPrivacy = true;
+								if (count ( $Privacyok ) > 0) {
+									if ($Privacyok [0] ['notifyfriendshiprequests'] == 0) {
+										$goonPrivacy = false;
+									}
+								}
+								if ($goonPrivacy) {
+									$this->PushToken->sendNotification ( 'Haamble', 'Hai ricevuto una richiesta di amicizia!!', array (
+											'partner_big' => $this->logged ['Member'] ['big'],
+											'created' => date ( "Y-m-d H:i:s" ),
+											'rel_id' => 1,
+											'msg_id' => 1,
+											'unread' => 1 
+									), array (
+											$idMember2 
+									), 'Friends', 'new' );
+									
+									Logger::Info ( 'afetr sendNotification' );
+								}
 							} else {
 								$response ['test'] = "not saved";
 							}
-						} // debug($response ['test']);
+						}
 					}
 				} else {
 					$this->_apiEr ( "Record already found" );
@@ -260,6 +259,31 @@ class FriendsController extends AppController {
 				} else {
 					$this->_apiEr ( "Record not found" );
 				}
+				
+				// PUSH FOR ACCEPTED FRIENDSHIP
+				if ($action == 'A') {
+					$Privacyok = $this->PrivacySetting->getPrivacySettings ( $idMember1 );
+					$goonPrivacy = true;
+					if (count ( $Privacyok ) > 0) {
+						if ($Privacyok [0] ['notifyfriendshiprequests'] == 0) {
+							$goonPrivacy = false;
+						}
+					}
+					if ($goonPrivacy) {
+						$this->PushToken->sendNotification ( 'Haamble', 'Una richiesta di amicizia è stata accettata!!', array (
+								'partner_big' => $this->logged ['Member'] ['big'],
+								'created' => date ( "Y-m-d H:i:s" ),
+								'rel_id' => 1,
+								'msg_id' => 1,
+								'unread' => 1 
+						), array (
+								$idMember1 
+						), 'Friends', 'new' );
+						
+						Logger::Info ( 'afetr sendNotification' );
+					}
+				}
+				
 				break;
 			
 			default :
@@ -312,8 +336,6 @@ class FriendsController extends AppController {
 							'member2_big' => $idMember2,
 							'status' => $action 
 					) );
-
-					
 					
 					// Model::$validationErrors:
 					if ($this->Friend->save ()) {

@@ -1,20 +1,20 @@
 <?php
-class CommentsController extends AppController {
-	public $uses = array( 'Comment','Member');//load these models
+class PrivacySettingsController extends AppController {
+	public $uses = array( 'PrivacySetting','Member');//load these models
 	
 	
 	
 	/**
-	 * get board content for logged user 
+	 * get PrivacySettings for logged user 
 	 */
-	public function api_getComments() {
+	public function api_getPrivacySettings() {
 		$this->_checkVars ( array (
-				'checkin_big'
+				'member_big'
 		) );
 		
-		$MyComments= $this->Comment->getComments($this->api ['checkin_big']);
+		$MyComments= $this->PrivacySetting->getPrivacySettings($this->api ['member_big']);
 	
-		foreach ( $MyComments as $key => $val ) {
+	/*	foreach ( $MyComments as $key => $val ) {
 			
 			$params = array (
 					'conditions' => array (
@@ -55,23 +55,23 @@ class CommentsController extends AppController {
 				
 			
 			}
-		
+		*/
 		$this->_apiOk ( $MyComments );
 	}
 	
 	/**
 	 * save a acooment
 	 */
-	public function api_saveComment() {
+	public function api_setPrivacySettings() {
 		
 		// update existing member
 	
-	if ($this->Comment->saveComment($this->api ))	
-	{$this->_apiOk ( "Comment/Like Saved" );
+	if ($this->PrivacySetting->savePrivacySettings($this->api ))	
+	{$this->_apiOk ( "PrivacySettings Saved" );
 	}
 	else 
 	{	
-		$this->_apiEr( "Comment/Like not saved" );
+		$this->_apiEr( "PrivacySettings not saved" );
 	}
 	}
 

@@ -1,6 +1,7 @@
 <?php
 class Comment extends AppModel {
 	public $primaryKey = 'big';
+
 	public $belongsTo = array (
 			'Member1' => array (
 					'className' => 'Member',
@@ -13,13 +14,13 @@ class Comment extends AppModel {
 */
 	);
 	
-	
-/*	public $hasMany = array (
+	/*
+	public $hasMany = array (
 			'Member' => array (
 					'foreignKey' => 'big'
 			)
 	);
-*/	
+	*/
 	public function saveComment($data) {
 		$res =false;
 		$comment = array ();
@@ -78,15 +79,16 @@ class Comment extends AppModel {
 		*/
 		return $res;
 	}
-	public function getLikesCount($checkin_big) {
+	public function getLikesCount($checkin_big,$isplace) {
 		$type = 'count';
 		
-			
+		if ($isplace==1)
+		{	
 		$params = array (
 				'conditions' => array (
 		
-						'checkin_big' => $checkin_big ,
-						'likeit '=> true
+						'place_big' => $checkin_big ,
+						'likeit '=> TRUE
 						// NON NEL COUNT!! 'comment !=' => ''
 				),
 				'fields' => array (
@@ -97,24 +99,43 @@ class Comment extends AppModel {
 				'recursive' => -1,
 		)
 		;
+		} else {
+			$params = array (
+					'conditions' => array (
+			
+							'checkin_big' => $checkin_big ,
+							'likeit '=> TRUE
+							// NON NEL COUNT!! 'comment !=' => ''
+					),
+					'fields' => array (
+							'Comment.big' ,
+							'Comment.created'
+					) ,
+					'order' => array('Comment.created' => 'desc'),
+					'recursive' => -1,
+			)
+			;
+
+		}
 		
 		$result = $this->find ( $type, $params );
-		//die(debug($result));
+	//	die(debug($result));
 		return $result;
 		
 	
 	}
 	
-	public function getCommentsCount($checkin_big) {
+	public function getCommentsCount($checkin_big,$isplace) {
 		$type = 'count';
 		
-		 
+		 if ($isplace==1)
+		 {
 		 $params = array (
 				'conditions' => array (
 						
-						'checkin_big' => $checkin_big ,
-						'likeit != '=> true
-						// NON NEL COUNT!! 'comment !=' => ''
+						'place_big' => $checkin_big ,
+						'likeit '=> FALSE,
+						'comment !=' => ''
 				),
 				'fields' => array (
 						'Comment.big' ,
@@ -124,6 +145,27 @@ class Comment extends AppModel {
 				'recursive' => -1,
 		)
 		;
+		 }
+		 else 
+		 {
+		 	
+		 	$params = array (
+		 			'conditions' => array (
+		 	
+		 					'checkin_big' => $checkin_big ,
+		 				'likeit '=> FALSE,
+		 			 'comment !=' => ''
+		 			),
+		 			'fields' => array (
+		 					'Comment.big' ,
+		 					'Comment.created'
+		 			) ,
+		 			'order' => array('Comment.created' => 'desc'),
+		 			'recursive' => -1,
+		 	)
+		 	;
+	 	
+		 }
 		
 		$result = $this->find ( $type, $params );
 //die(debug($result));
