@@ -2,6 +2,8 @@
 
 class Member extends AppModel {
 
+    public $uses = array ('Wallet','Member');
+    
 	public $primaryKey = 'big';
 
 	public $hasMany = array(
@@ -245,14 +247,14 @@ class Member extends AppModel {
          
         $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));
         
-        if (count($result)>0) {
+        if (count($result)>=MIN_AFFINITY_MEMBERS) {
                                 break 2;
                                 }
         }
             
     } 
      
-     if (!count($result)>0){// extreme attempt : max age diff, max distance and any members sex
+     if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and any members sex
          
          $sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,members.sex,
                   members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
@@ -277,10 +279,23 @@ class Member extends AppModel {
 	die(debug($lastLog['query']));
 	*/
 	
-	return $result;
-	
+	$serviceList=explode(",",ID_VISIBILITY_PRODUCTS);
+    
+    $ordered_result=$result;
+    
+    $modelWallet = ClassRegistry::init ( 'Wallet' );  
+           
+    foreach ($ordered_result as $key=>$value){
+        
+        $ordered_result[$key][0]['position_bonus']=$modelWallet->hasActiveService($serviceList,$value[0]['big']);
+               
+    }
+    
+      
+    //print_r($ordered_result);
+    return $ordered_result;
+        	
 	}
-	
 	
 	
 	
@@ -434,9 +449,6 @@ FROM
 		 $return=$this->find('first', $params);
 		 return $return;
 	}
-	
-	
-	
-	
+		   
 
 }

@@ -5,7 +5,8 @@ class CheckinsController extends AppController {
 	public $uses = array (
 			'Member',
 			'Checkin',
-			'Friend'
+			'Friend',
+            'Wallet'
 			
 	);
 	
@@ -422,6 +423,7 @@ class CheckinsController extends AppController {
 
 	}
 	
+          
 	/**
 	 * Get nearby checkedin members
 	 * We checkout from all events, because member cannot be checked at more than 1 events at a time
@@ -440,17 +442,19 @@ class CheckinsController extends AppController {
 			$this->_apiEr('The following API variables are invalid: lon and/or lat');
 		}
 
-		$all_nearby = $this->Checkin->getNearbyCheckins($coords);
+		$all_nearby = $this->Checkin->getNearbyCheckins($coords,$memBig);
 		
 		$xresponse = array ();
 		$xami = array ();
-		
+		//print_r($all_nearby);
 		foreach ( $all_nearby as $ami ) {
 
-			die(debug($ami));
-				
+			//die(debug($ami));
+			
 			$xami [] = $ami ;
 			
+            //print_r($ami);
+            
 				$params = array (
 						'conditions' => array (
 								'Member.big' => $ami[0]['member_big']
@@ -488,17 +492,90 @@ class CheckinsController extends AppController {
 			$xami[0]['Member']= $data['Member'];
 				
 			$xresponse [] = $xami [0];
-			/*debug($xresponse);
-		  
-				 */
+			//debug($xresponse); 
 		}
-		
+		//print_r("---".$xresponse);
 		$this->_apiOk($xresponse) ;
 	}
 	
-	
+	public function api_nearbynew() {
 
-	public function api_nearbyPeople() {
+        $this->_checkVars(array('lon', 'lat'),array('sex','age','distance','category'));
+        $memBig = $this->logged['Member']['big'];
+        $lon = $this->api['lon'];
+        $lat = $this->api['lat'];
+        $coords = '(' . $lon . ',' . $lat . ')';
+        
+        $sex=isset($this->api['sex']) ? $this->api['sex'] : null; //values are m or f
+        $age=isset($this->api['age']) ? $this->api['age'] : null; //values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55 
+        $distance=isset($this->api['distance']) ? $this->api['distance'] : null; //values are number=km or over for >100km
+        $category=isset($this->api['category']) ? $this->api['category'] : null; //values are id in categories table 
+        
+        $optParams['sex']=$sex;
+        $optParams['age']=$age;
+        $optParams['distance']=$distance;
+        $optParams['category']=$category;
+                
+        //print_r($optParams);
+        // Match coords against regular expression ('41.873114', '12.510547')
+        $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
+        if ($crdsMatch == FALSE) {
+            $this->_apiEr('The following API variables are invalid: lon and/or lat');
+        }
+
+        $all_nearby = $this->Checkin->getNearbyCheckinsNew($coords,$optParams,$memBig);
+        //print_r($all_nearby);
+        $xresponse = array ();
+        $xami = array ();
+        //print_r($all_nearby);
+        foreach ( $all_nearby as $ami ) {
+                       
+            $xami [] = $ami ;
+            
+                $params = array (
+                        'conditions' => array (
+                                'Member.big' => $ami[0]['member_big']
+                        ),
+                        'fields' => array (
+                                'Member.big',
+                                'Member.name',
+                                'Member.middle_name',
+                                'Member.surname',
+                                'Member.photo_updated',
+                                'Member.sex',
+                                'Member.birth_date',
+                                'Member.address_town',
+                                'Member.address_country'
+                        ),
+                        'recursive' => - 1 
+                );
+                
+                $data = $this->Member->find ( 'first', $params );
+            
+            if (isset ( $data['Member']['photo_updated'] ) && $data['Member']['photo_updated'] > 0) {
+                $data['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data['Member']['big'], $data['Member']['photo_updated'] );
+            } else {
+            $sexpic=2;
+            if($data ['Member']['sex']=='f' )
+            {
+                $sexpic=3;
+            }
+                
+            $data ['Member']['photo'] = $this->FileUrl->profile_picture ( $sexpic );
+            
+        }
+                
+            
+            $xami[0]['Member']= $data['Member'];
+                
+            $xresponse [] = $xami [0];
+            //debug($xresponse); 
+        }
+        //print_r("---".$xresponse);
+        $this->_apiOk($xresponse) ;
+    }
+
+	public function api_nearbyPeopleOLD() {
 	
 		$this->_checkVars(array('lon', 'lat'),
 			array(
@@ -521,7 +598,7 @@ class CheckinsController extends AppController {
 		
 		$all_nearby = $this->Checkin->getNearbyPeople($coords,$memBig,$offset);
 		
-	
+	    //print_r($all_nearby);
 		$xresponse = array ();
 		$xami = array ();
 	
@@ -564,9 +641,14 @@ class CheckinsController extends AppController {
 			
 				}
 				
+                //Id prodotti top visibility
+                $serviceList=explode(",",ID_VISIBILITY_PRODUCTS);
+                $activeService=$this->Wallet->hasActiveService($serviceList,$val[0]['big']);
+                $val[0]['position_bonus']=$activeService;
+                
 				$aa=array();
-		        $allx=false;
-				$val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big'],$allx);
+		
+				$val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big']);
 			
 				if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
 					if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
@@ -593,18 +675,170 @@ class CheckinsController extends AppController {
 				}
 				
 */				
-				$xresponse[]=$val[0];
+				
+               // if ($activeService>0) {//mette in cima il member con servizi di posizionamento a pagamento e ancora attivi
+//                                        array_unshift($xresponse,$val[0]);
+//                                        }
+//                                           else
+                $xresponse[]=$val[0];
 				
 						}
 				
 						}
 			
 		}
-	
-		$this->_apiOk($xresponse) ;
+	    
+       
+        usort($xresponse,'CheckinsController::multiFieldSortArray');
+        		
+        $this->_apiOk($xresponse) ;
 	}
-	
-	
+    
+    
+    
+    public function api_nearbyPeople() {
+    
+        $this->_checkVars(array('lon', 'lat'),array('sex','age','distance','category','offset'));
+               
+        $memBig = $this->logged['Member']['big'];
+        $lon = $this->api['lon'];
+        $lat = $this->api['lat'];
+        $coords = '(' . $lon . ',' . $lat . ')';
+        $offset = isset($this->api['offset']) ? $this->api['offset'] * API_MAP_LIMIT : 0;
+        
+    
+        $sex=isset($this->api['sex']) ? $this->api['sex'] : null; //values are m or f
+        $age=isset($this->api['age']) ? $this->api['age'] : null; //values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55 
+        $distance=isset($this->api['distance']) ? $this->api['distance'] : null; //values are number=km or over for >100km
+        $category=isset($this->api['category']) ? $this->api['category'] : null; //values are id in categories table 
+        
+        $optParams['sex']=$sex;
+        $optParams['age']=$age;
+        $optParams['distance']=$distance;
+        $optParams['category']=$category;
+    
+    
+        // Match coords against regular expression ('41.873114', '12.510547')
+        $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
+        if ($crdsMatch == FALSE) {
+            $this->_apiEr('The following API variables are invalid: lon and/or lat');
+        }
+    
+    
+        
+        $all_nearby = $this->Checkin->getNearbyPeopleNew($coords,$optParams,$memBig,$offset);
+        
+        //print_r($all_nearby);
+        $xresponse = array ();
+        $xami = array ();
+    
+        foreach ( $all_nearby as $key => &$val ) {
+        
+    
+        // SECONDS!!
+        if (!isset($val[0]['updated']) or $val[0]['updated']<(date("Y-m-d H:i:s")-86400)   )
+        {
+            // REMOVE
+            
+        }
+        else 
+            
+        {
+            $privacy=true;
+            if (! $privacy)
+            {
+                //not il list
+            }
+            else 
+            {
+                // COMPLETE DATA AND ADD TO REQUEST!!
+                //FIND CHECKIN AND PLACE
+                
+                // add photo
+            
+                if ($val[0]['photo_updated'] > 0) {
+                    $val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated'] );
+                }
+                else
+                {
+                    // standard image
+                    $sexpic=2;
+                    if($val[0]['sex']=='f' )
+                    {
+                        $sexpic=3;
+                    }
+                    $val[0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            
+                }
+                
+                //Id prodotti top visibility
+                $serviceList=explode(",",ID_VISIBILITY_PRODUCTS);
+                $activeService=$this->Wallet->hasActiveService($serviceList,$val[0]['big']);
+                $val[0]['position_bonus']=$activeService;
+                
+                $aa=array();
+        
+                $val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big']);
+            
+                if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
+                    if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+                         $val[0]['Checkin'][0]['Place'] ['photo'] = $this->FileUrl->place_photo ( $val[0]['Checkin'][0] ['Place'] ['big'], $val[0]['Checkin'][0] ['Gallery'] [0] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'], $val[0]['Checkin'][0] ['DefaultPhoto'] ['original_ext'] );
+                    } else {
+                         $val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+                    }
+                } else {
+                
+                     $val[0]['Checkin'][0] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val[0]['Checkin'][0] ['Place'] ['category_id'] );
+                }
+                
+                unset($val [0] ['Checkin'][0] ['DefaultPhoto']);
+                unset($val [0] ['Checkin'][0] ['Gallery']);
+            /*        
+                if (isset ( $val[0]['Place'] ['DefaultPhotobig'] ) && $val[0]['Place'] ['DefaultPhotobig'] > 0) { // add URLs to default photos
+                    if (isset ( $val[0]['Place'] ['DefaultPhotostatus'] ) && $val ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos
+                        $data [$key] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['big'], $val ['Gallery'] [0] ['big'], $val ['DefaultPhoto'] ['big'], $val ['DefaultPhoto'] ['original_ext'] );
+                    } else {
+                        $data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+                    }
+                } else {
+                    $data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] );
+                }
+                
+*/                
+                
+               // if ($activeService>0) {//mette in cima il member con servizi di posizionamento a pagamento e ancora attivi
+//                                        array_unshift($xresponse,$val[0]);
+//                                        }
+//                                           else
+                $xresponse[]=$val[0];
+                
+                        }
+                
+                        }
+            
+        }
+        
+       
+        usort($xresponse,'CheckinsController::multiFieldSortArray');
+                
+        $this->_apiOk($xresponse) ;
+    }
+    
+    
+    
+    
+	  
+	public static function multiFieldSortArray( $x, $y ) 
+{ //sort an array by position_bonus DESC and distance ASC
+    
+    if ( $x['position_bonus'] == $y['position_bonus'] ) {
+    
+                                     return ( $x['distance'] < $y['distance'] ) ? -1 : +1; 
+                            }  else
+
+    return ( $x['position_bonus'] > $y['position_bonus'] ) ? -1 : +1; 
+
+}
 }
 
 

@@ -63,6 +63,53 @@ class ProfileVisit extends AppModel {
 		;
 		
 		$result = $this->find ( $type, $params );
+        
+        //print_r($result);
+        
 		return $result;
 	}
+    
+    
+    public function markAsRead($memBig)
+    {
+       
+        $db = $this->getDataSource();
+        $sql = 'UPDATE profile_visits SET read=1 WHERE read= ? AND visited_big= ? ';
+        try {
+            $db->fetchAll($sql,array('0',$memBig));
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+            return false;
+        }
+
+        return true;
+                       
+        
+    }
+    
+    
+    
+    public function getNotReadVisits($memBig){
+        
+        
+        $counter = $this->find('count', array(
+            'conditions' => array(
+                'read' => 0, 'visited_big' => $memBig
+            )));
+        
+               
+        //$db = $this->getDataSource();
+        //$sql = 'SELECT COUNT(*) AS visits FROM public.profile_visits WHERE read=0 AND visited_big='.$memBig;
+        //        
+        //$result=$db->fetchAll($sql);
+        
+        return $counter;
+         
+        
+    }
+    
+    
+    
 }

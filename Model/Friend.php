@@ -114,6 +114,92 @@ class Friend extends AppModel {
 		return $xresponse;
 	}
 	
+	
+	public function getDiaryFriends($MemberID) {
+		$Amici = $this->findFriends ( $MemberID );
+	
+		// create array of friends and populate with checkins places and last chat messages if any
+		$PrivacySettingModel = ClassRegistry::init ( 'PrivacySetting' );
+	
+		$FriendsID = "(";
+		foreach ( $Amici as $ami ) {
+			// add only if privacy ok
+			if ($ami ["Friend1"] ["big"] == $MemberID) {
+				$friendID = $ami ["Friend2"] ["big"] ;
+			}
+	
+			else {
+				$friendID = $ami ["Friend1"] ["big"] ;
+			}
+			$Privacyok = $PrivacySettingModel->getPrivacySettings ( $friendID );
+			$goonPrivacy = true;
+			if (count ( $Privacyok ) > 0) {
+				if ($Privacyok [0] ['checkinsvisibility'] == 0) {
+					$goonPrivacy = false;
+				}
+			}
+			if ($goonPrivacy) {
+				$FriendsID .= $friendID . ',';
+			}
+		}
+	
+		if (strlen ( $FriendsID ) > 1) {
+			$FriendsID = substr ( $FriendsID, 0, - 1 ) . ")";
+				
+			$MySql = 'SELECT
+	     *
+		FROM
+		public.members
+		WHERE members.big IN ' . $FriendsID . ' LIMIT 50';
+			//todo:	ORDER BY RANK??
+  // checkins.created DESC 
+			$db = $this->getDataSource ();
+				
+			// try {
+			$result = $db->fetchAll ( $MySql );
+				
+			// die(debug($result));
+				
+			if (empty ( $result ))
+				return array ();
+	
+			// Transform to a friendlier format
+				
+			$xresponse = array ();
+				
+
+			$TheMember = array ();
+				
+				
+			// App::import('MemberModel','Member');
+			$MemberModel = ClassRegistry::init ( 'Member' );
+		
+				
+			foreach ( $result as $r ) {
+
+	
+				unset ( $TheMember );
+				$TheMember = $MemberModel->find ( 'first', array (
+						'conditions' => array (
+								'Member.big' => $r [0] ["member_big"] ,
+								'Member.status !=' => DELETED
+						)
+				) );
+	
+				// die(debug($key));
+				// die(debug($r[0]["place_big"]));
+				$r ["Member"] = $TheMember;
+				unset ( $TheMember );
+	
+	
+				$xresponse [] = $r;
+			}
+		} // IF HAS FRIENDS!!
+	
+		return $xresponse;
+	}
+	
+	
 	/*
 	 * public $hasMany = array( 'ChatMessage' => array( 'className' => 'ChatMessage', 'foreignKey' => 'rel_id', //			'order' => 'ChatMessage.created DESC', //			'fields' => 'ChatMessage.created', ), );
 	 */
@@ -285,11 +371,50 @@ class Friend extends AppModel {
 										'Friend.status' => 'A' 
 								) 
 						) 
-				),
-				'order' => array('Friend.created DESC')
+				) 
 		);
 		
 		$result = $this->find ( $type, $params );
 		return $result;
 	}
+    
+    
+    public function countFriendRequest($memBig){
+        
+        //$status='R';
+//               
+//        $counter = $this->find('count', array(
+//            'conditions' => array(
+//                'read' => 0, 'status' => $status, 'member2_big' => $memBig
+//            )));
+//        
+        
+         $db = $this->getDataSource();
+         $sql = 'SELECT COUNT(*) AS request FROM friends WHERE read=0 AND status=\'R\''.' AND member2_big='.$memBig;
+         $result=$db->fetchAll($sql);
+                       
+        return $result;
+        
+    }
+    
+    
+    public function setReadFriendRequest($memBig){
+        
+         $db = $this->getDataSource();
+         $sql = 'UPDATE friends SET read=1 WHERE read=0 AND status=\'R\''.' AND member2_big='.$memBig;
+         
+         try {
+            $db->fetchAll($sql);
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+            return false;
+        }
+
+        return true;
+                  
+    }
+         
+    
 }

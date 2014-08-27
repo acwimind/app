@@ -21,25 +21,6 @@ class BoardsController extends AppController {
 		$MyPlaces = array ();
 		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'] );
 		
-        /*$this->log("------------MyPlaces------------");
-        $this->log($MyPlaces);
-        $this->log("------------Fine MyPlaces-------");*/
-        
-         foreach ( $MyPlaces as $key => $val ) {
-             
-             unset($MyPlaces[$key]['Place']['Place']['region_id']);
-             unset($MyPlaces[$key]['Place']['Place']['external_id']);
-             unset($MyPlaces[$key]['Place']['Place']['external_source']);
-             unset($MyPlaces[$key]['Place']['Place']['slug']);
-             unset($MyPlaces[$key]['Place']['Place']['opening_hours']);
-             unset($MyPlaces[$key]['Place']['Place']['news']);
-             unset($MyPlaces[$key]['Place']['Place']['photo_updated']);
-             unset($MyPlaces[$key]['Place']['Place']['status']);
-             unset($MyPlaces[$key]['Place']['Place']['created']);
-             unset($MyPlaces[$key]['Place']['Place']['updated']);
-                        
-         }  
-        
 		foreach ( $MyPlaces as $key => $val ) {
 			
 			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
@@ -85,10 +66,6 @@ class BoardsController extends AppController {
 		$MyFriends = array ();
 		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'] );
 		
-        /*$this->log("------------MyFriends------------");
-        $this->log($MyFriends);
-        $this->log("------------Fine MyFriends-------");*/
-        
 		foreach ( $MyFriends as $key => $val ) {
 			
 			// ADD MEMBER PHOTO
@@ -162,11 +139,6 @@ class BoardsController extends AppController {
 		$MySugFriends = array ();
 		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big'] );
 		
-       /* $this->log("------------MySugFriends------------");
-        $this->log($MySugFriends);
-        $this->log("------------Fine MySugFriends-------");*/
-        
-        
 		foreach ( $MySugFriends as $key => &$val ) {
 			
 			// ADD MEMBER PHOTO
@@ -188,12 +160,6 @@ class BoardsController extends AppController {
 		$MySugAffinity = array ();
 		$MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'] );
 		
-        
-        /*$this->log("------------MySugAffinity------------");
-        $this->log($MySugAffinity);
-        $this->log("------------Fine MySugAffinity-------");*/
-        
-        
 		foreach ( $MySugAffinity as $key => &$val ) {
 			
 			// ADD MEMBER PHOTO
@@ -217,14 +183,6 @@ class BoardsController extends AppController {
 		$MyAds = array ();
 		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
 		
-        foreach($MyAds as $key=>$val){
-        
-        unset($MyAds[$key]['Advert']['photo_ext']);
-        unset($MyAds[$key]['Advert']['status']);
-        unset($MyAds[$key]['Advert']['photo_updated']);
-        
-        }
-        
 		// recovery ads
 		
 		// compose a board
@@ -234,12 +192,6 @@ class BoardsController extends AppController {
 		
 		$nume = 0;
 		
-        /*$this->log("------------MyAds------------");
-        $this->log($MyAds);
-        $this->log("------------Fine MyAds-------");*/
-        
-        
-        
 		foreach ( $MySugAffinity as $key => $val ) {
 			
 			if ($nume < count ( $MySugAffinity )) {
@@ -826,7 +778,7 @@ class BoardsController extends AppController {
 				if (isset ( $val ['phone_number'] )) {
 					$Contacts ['phone'] = $val ['phone_number'];
 				}
-				$Contacts ['name'] = str_replace("'"," ",$val ['internal_name']);
+				$Contacts ['name'] = $val ['internal_name'];
 				$this->Contact->set ( $Contacts );
 				$this->Contact->save ();
 			}
@@ -923,14 +875,7 @@ class BoardsController extends AppController {
             
             $PhoneContacts = $this->api ['contacts' . $i];
         }
-
-		$this->log("------------BOARDS CONTROLLER3-----------");
-		$this->log("------------PhoneContacts--BIG ".$ContactBIG);
-		$this->log("------------Chunks ".$numChunks);
-		$this->log("-----------------------------------------");
-		$this->log(serialize($PhoneContacts));
-		$this->log("-----------------------------------------");
-		        
+        
         // $XCo2 = json_decode($this->api ['contacts'],true);
         foreach ( $PhoneContacts as $val ) {
             $Contacts = array ();
@@ -971,8 +916,7 @@ class BoardsController extends AppController {
                 if (isset ( $val ['phone_number'] )) {
                     $Contacts ['phone'] = $val ['phone_number'];
                 }
-                $Contacts ['name'] = str_replace("'"," ",$val ['internal_name']);
-              
+                $Contacts ['name'] = $val ['internal_name'];
                 $this->Contact->set ( $Contacts );
                 $this->Contact->save ();
             }
@@ -994,7 +938,6 @@ class BoardsController extends AppController {
         
         //$membersMails=array('ciaccia@wimind.itqq','qwe@qweqwe.qwe','peter.krauspe@stradiware.sk','paulavesho@gmail.com','r.tomassetti@gmail.com','nome35@live.it','nome43@live.it');
         //$membersPhones=array('3338938102','123456','3339997727');
-           
            $this->log("------------BOARDS CONTROLLER------------");
            $this->log("------------Archivio email---------------");
            $this->log(serialize($membersMails));
@@ -1035,20 +978,12 @@ class BoardsController extends AppController {
                         'Member.email',
                         'Member.middle_name',
                         'Member.surname',
-                        //'Member.photo_updated',
+                        'Member.photo_updated',
                         'Member.sex',
                         'Member.phone',
-                        'Member.birth_place',
                         'Member.birth_date',
-                        'Member.address_street_no',
-                        'Member.address_street',
-                        'Member.address_province',
-                        'Member.address_region',
-                        'Member.address_zip',
                         'Member.address_town',
-                        'Member.address_country',
-                        'Member.lang',
-                        'Member.last_lonlat'
+                        'Member.address_country' 
                 ) 
         );
                 
@@ -1396,13 +1331,6 @@ class BoardsController extends AppController {
 				'Contact.member_big' => $ContactBIG 
 		) );
 		
-
-		$this->log("------------BOARDS CONTROLLER4-----------");
-		$this->log("------------Archivio SugContacts---------");
-		$this->log(serialize($SugContacts));
-		$this->log("-----------------------------------------");
-
-
 		foreach ( $SugContacts as $key => $val ) {
 			$Contacts = array ();
 			// preparazione per ricerca
@@ -1426,14 +1354,13 @@ class BoardsController extends AppController {
 			
 		
 		$this->log("------------BOARDS CONTROLLER2------------");
-		$this->log("BIG ".$ContactBIG);
 		$this->log("------------Archivio email---------------");
 		$this->log(serialize($membersMails));
 		$this->log("-----------------------------------------");
 		$this->log("------------Archivio Phones--------------");
 		$this->log(serialize($membersPhones));
 		$this->log("-----------------------------------------");
-        		
+		
 			// query
 		//$params = array (
 //				'conditions' => array (
@@ -1464,11 +1391,7 @@ class BoardsController extends AppController {
 //		);
 //		
 //		$data = $this->Member->find ( 'all', $params );
-	
-
-	    $membersMails=array_unique($membersMails);
-	    $membersPhones=array_unique($membersPhones);	
-        
+		
         $data=$this->multipleShortQueries($membersMails,$membersPhones,50); 
         $dbo = $this->Member->getDatasource ();
 		$logs = $dbo->getLog ();

@@ -181,6 +181,28 @@ class ChatMessagesController extends AppController {
 			$this->_apiEr ( 'Error occured. Conversation not removed.' );
 		}
 	}
+    
+    public function api_remove_messages() {
+        /* Need member_big and message id values
+        */  
+        $this->_checkVars ( array (
+                'member_big',
+                'id_msg' 
+        ) );
+        
+        $memBig = $this->api ['member_big'];
+        $idMessage = $this->api ['id_msg'];
+        
+        $result = $this->ChatMessage->removeMessages ( $idMessage, $memBig );
+        if ($result !== false) {
+            $this->_apiOk ();
+        } else {
+            $this->_apiEr ( 'Error occured. Message not removed.' );
+        }
+    }
+    
+    
+    
 	public function api_send() {
 		
 		/*

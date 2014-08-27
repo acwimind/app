@@ -132,6 +132,12 @@ define('HOME_CHECKED_IN', 1);
 define('HOME_MATURE_USER', 2);
 define('HOME_FIRST_LOGIN', 3);
 
+// Type of friendship status
+define('FRIENDSHIP_ACCEPTED', 1);
+define('FRIENDSHIP_REQUESTED', 2);
+define('FRIENDSHIP_REFUSED', 3);
+//define('FRIENDSHIP_IGNORED', 4);
+
 define('HOME_LIST_LIMIT', 6); // Limit of last visited places/events and bookmarks listed on home page. Add +1 for blue box
 
 // Status for chat messages
@@ -144,13 +150,6 @@ define('FRONTEND_PER_PAGE', 10); // The number of places/events displayed in the
 define('MAP_MAXIMUM_RESULTS', 100);
 
 define('RATING_MAXIMUM', 5);
-
-// Affinity Members
-define('MIN_AFFINITY_MEMBERS',3); // The min number of affinity members displayed in the list
-
-
-// Visibility Product
-define('ID_VISIBILITY_PRODUCTS','1,2,3,4,5'); // ID prodotti sulla visibilità
 
 class Defines {
 	

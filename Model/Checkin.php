@@ -226,6 +226,26 @@ class Checkin extends AppModel {
 		return intval ( $this->find ( 'count', $params ) );
 	}
 	
+	
+	
+	public function getJoinsandCheckinsCountFor($eventBig, $memberBig = null) {
+		$params = array (
+				'conditions' => array (
+						'Checkin.event_big' => $eventBig,
+						'Member.status !=' => DELETED,
+						'OR' => array (
+								'Checkin.checkout' => null,
+								'Checkin.checkout >' => 'NOW()'
+						)
+				)
+		);
+	
+		if (! empty ( $memberBig ))
+			$params ['conditions'] ['Checkin.member_big !='] = $memberBig;
+	
+		return intval ( $this->find ( 'count', $params ) );
+	}
+	
 	/**
 	 * Chcek out / join out from all events (you can have oinly 1 at a time)
 	 * 
@@ -384,28 +404,63 @@ class Checkin extends AppModel {
 		
 		return $this->find ( 'list', $params );
 	}
-	public function getNearbyCheckins($coords, $membig) {
-		$db = $this->getDataSource ();
-		$sql2 = 'SELECT 
-  checkins.member_big, 
-  checkins.checkout, 
-  Places.big, 
-  Places.name,
-	Places.lonlat AS "Place__coordinates",
-(( Places.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance"
-				
-FROM 
-  public.checkins, 
-  public.events, 
-  public.places as Places
-WHERE 
-				checkins.member_big<> ' . $membig . ' AND
- checkins.checkout ISNULL and
-  checkins.event_big = events.big AND
-  events.place_big = Places.big AND
-				( Places.lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . ' 
-				
-  order by  ( Places.lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT;
+	public function getNearbyCheckinsNew($coords, $optParams,$membig) {
+		
+        
+        if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]'";
+        
+        if ($optParams['age']!=null) {
+            
+            switch ($optParams['age']){
+              //0: <25; 1: 25-35; 2: 35-45; 3: 45-55; 4: >55  
+                case 0: $filter[]=" (date_part('year',age(now(),members.birth_date)) < 25) ";
+                    break;
+                case 1: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 25 AND 35) ";
+                    break;
+                case 2: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 35 AND 45) ";
+                    break;
+                case 3: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 45 AND 55) ";
+                    break;
+                case 4: $filter[]=" (date_part('year',age(now(),members.birth_date)) > 55) ";
+                    break;
+                              
+            }
+                        
+        }
+        //over: > 62 miglia; 1..n: 1..n miglia 1km=0.62mi
+        if ($optParams['distance']!=null) {
+            
+            if ($optParams['distance']=='over') $nearby_radius='> 62'; 
+                        else
+                         $nearby_radius='< '.$optParams['distance']*.6; 
+           } else // if null uses default value
+                    $nearby_radius='< '.NEARBY_RADIUS; 
+        
+       
+        if ($optParams['category']!=null) $filter[]=" places.category_id=$optParams[category] ";
+        
+        if (count($filter)>0) {
+                                $filterString=implode('AND',$filter);
+                                $filterString='AND '.$filterString;
+                                } else 
+                                    $filterString='';
+                                            
+        $db = $this->getDataSource ();
+		$sql2 = 'SELECT checkins.member_big,checkins.checkout,Places.big,Places.name,
+	             Places.lonlat AS "Place__coordinates",(( Places.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance"
+				 FROM public.checkins, 
+                      public.events, 
+                      public.places as Places, 
+                      public.members
+                 WHERE checkins.member_big<> ' . $membig . ' 
+                       AND checkins.checkout ISNULL 
+                       AND checkins.event_big = events.big                          
+                       AND checkins.member_big=members.big
+                       AND members.status < 255
+                       AND events.place_big = Places.big '.$filterString. '
+                       AND ( Places.lonlat <@> ? )::numeric(10,1) ' . $nearby_radius . ' 
+                 ORDER BY ( Places.lonlat <@> ?)::numeric(10,1) ASC
+                 LIMIT ' . API_MAP_LIMIT;
 		
 		// try {
 		$result = $db->fetchAll ( $sql2, array (
@@ -424,6 +479,39 @@ WHERE
 		 */
 		return $result;
 	}
+    
+    public function getNearbyCheckins($coords, $membig) {
+        $db = $this->getDataSource ();
+        $sql2 = 'SELECT checkins.member_big,checkins.checkout,Places.big,Places.name,Places.lonlat AS "Place__coordinates",
+                (( Places.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance"
+                FROM public.checkins, public.events, public.places as Places
+                WHERE checkins.member_big<> ' . $membig . ' AND checkins.checkout ISNULL AND checkins.event_big = events.big 
+                AND events.place_big = Places.big AND ( Places.lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . ' 
+                ORDER BY ( Places.lonlat <@> ?)::numeric(10,1) ASC 
+                LIMIT ' . API_MAP_LIMIT;
+        
+        // try {
+        $result = $db->fetchAll ( $sql2, array (
+                $coords,
+                $coords,
+                $coords 
+        ) );
+        // }
+        // catch (Exception $e)
+        // {
+        // debug($e);
+        // }
+        
+        /*
+         * AND ( checkins.lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . ' if (empty ( $result )) return array (); // Transform to a friendlier format $res = array (); foreach ( $result as $key => $r ) { // Transform coordinates into lon and lat if (! empty ( $r ['Place'] ['lonlat'] )) { $lonlat = explode ( ',', preg_replace ( '/[\(\)]/', '', $r ['Place'] ['lonlat'] ) ); $r ['Place'] ['lon'] = $lonlat [0]; $r ['Place'] ['lat'] = $lonlat [1]; unset ( $r [0] ['lonlat'] ); } // Posprocess to match Cake like result for gallery $r ['Gallery'] = array ( $r ['Gallery'] ); $result [$key] = $r; }
+         */
+        return $result;
+    }
+
+    
+    
+    
+    
 	public function getNearbyCheckinsMember($Idmem,$all) {
 		$db = $this->getDataSource ();
 		$sql2 = 'SELECT
@@ -472,19 +560,13 @@ $sql2 .= ' checkins.checkout ISNULL AND ';
 	}
 	public function getNearbyPeopleWithinLimit($coords, $membig) {
 		$db = $this->getDataSource ();
-		$sql2 = 'SELECT
- members.big,
-  members.name,
-				members.updated,
-				members.photo_updated,
-				members.sex,
-	members.last_lonlat AS "coordinates",
-((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-FROM   public.members WHERE		
-				(members.big <> ' . $membig . ')	 AND 
-								( members.last_lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . '
-	
-  order by  ( members.last_lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT;
+		$sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,	members.sex,
+	                    members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
+                 FROM public.members 
+                 WHERE (members.big <> ' . $membig . ')	 AND ( members.last_lonlat <@> ? )::numeric(10,1) < ' . NEARBY_RADIUS . '
+	             AND members.status < 255 
+                 ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ASC 
+                 LIMIT ' . API_MAP_LIMIT;
 		
 		// try {
 		$result = $db->fetchAll ( $sql2, array (
@@ -512,8 +594,8 @@ FROM   public.members WHERE
 				members.sex,
 			members.last_lonlat AS "coordinates",
 		((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-		FROM   public.members WHERE
-				(members.big <> ' . $membig . ')	 order by  ( members.last_lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT ;
+		FROM   public.members WHERE members.status < 255 AND (members.big <> ' . $membig . ')	 
+        ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ASC LIMIT ' . API_MAP_LIMIT ;
 		if(isset($offset))
 		{
 			
@@ -527,6 +609,111 @@ FROM   public.members WHERE
 		return $result;
 	}
 	
+    
+    public function getNearbyPeopleNew($coords, $optParams,$membig,$offset) {
+        $myc = $this->AutoCheckout ();
+        
+        
+        if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]'";
+        
+        if ($optParams['age']!=null) {
+            
+            switch ($optParams['age']){
+              //0: <25; 1: 25-35; 2: 35-45; 3: 45-55; 4: >55  
+                case 0: $filter[]=" (date_part('year',age(now(),members.birth_date)) < 25) ";
+                    break;
+                case 1: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 25 AND 35) ";
+                    break;
+                case 2: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 35 AND 45) ";
+                    break;
+                case 3: $filter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 45 AND 55) ";
+                    break;
+                case 4: $filter[]=" (date_part('year',age(now(),members.birth_date)) > 55) ";
+                    break;
+                              
+            }
+                        
+        }
+        //over: > 62 miglia; 1..n: 1..n miglia 1km=0.62mi
+        if ($optParams['distance']!=null) {
+            
+            if ($optParams['distance']=='over') $nearby_radius='> 62'; 
+                        else
+                         $nearby_radius='< '.$optParams['distance']*.6; 
+           } else // if null uses default value
+                    $nearby_radius='< '.NEARBY_RADIUS; 
+        
+       
+        if ($optParams['category']!=null) $filter[]=" places.category_id=$optParams[category] ";
+        
+        if (count($filter)>0) {
+                                $filterString=implode('AND',$filter);
+                                $filterString='AND '.$filterString;
+                                } else 
+                                    $filterString='';
+        
+        $db = $this->getDataSource ();
+        
+         if ($optParams['category']!=null) {
+             
+              $sql2 = 'WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,
+                                            members.surname,members.updated,members.photo_updated,
+                                            members.sex,
+                                            date_part('."'year'".',age(now(),members.birth_date)) AS "age",                                                members.last_lonlat AS "coordinates",
+                                            ((members.last_lonlat <@> '."'$coords'".' )::numeric(10,1) * 1.6) AS "distance"
+                                            FROM public.members
+                                            JOIN checkins on members.big=checkins.member_big
+                                            JOIN events on events.big=checkins.event_big
+                                            JOIN places on places.big=events.place_big 
+                                            WHERE members.status<255 AND 
+                                                  checkins.checkout IS NULL AND 
+                                                  places.status < 255 AND 
+                                                  events.status < 255 AND 
+                                                  (members.big <> ' . $membig . ') '.$filterString.'      
+                                            ORDER BY members.big ) '.'
+                       SELECT * FROM tblcategory
+                       ORDER BY distance ASC 
+                       LIMIT '. API_MAP_LIMIT ;
+               
+             
+         } else {
+        
+               
+        $sql2 = 'SELECT
+                members.big,
+                members.name,
+                members.surname,
+                members.updated,
+                members.photo_updated,
+                members.sex,
+                date_part('."'year'".',age(now(),members.birth_date)) AS "age",members.last_lonlat AS "coordinates",
+                ((members.last_lonlat <@> '."'$coords'".' )::numeric(10,1) * 1.6) AS "distance"
+                FROM public.members 
+                WHERE members.status<255 AND (members.big <> ' . $membig . ') '.$filterString.'      
+                ORDER BY ( members.last_lonlat <@> '."'$coords'".')::numeric(10,1) ASC
+                LIMIT ' . API_MAP_LIMIT ;
+         }      
+               
+        if(isset($offset))
+        {
+            
+            $sql2 .= " OFFSET ". $offset;
+        }
+        //$result = $db->fetchAll ( $sql2, array ($coords, $coords) );
+        
+        $result = $db->fetchAll ( $sql2 );
+        
+        /* istruzioni debug query
+        $modelAnimal = ClassRegistry::init ( 'Animal' );  
+        $result=$modelAnimal->AddQuery($sql2);
+        */
+                      
+        return $result;
+    }
+    
+    
+    
+    
 	/*
 	 * AutoCheckout after 2 days!!
 	 */

@@ -2,13 +2,15 @@
 
 class HomeController extends AppController {
 	
-	var $uses = array('Checkin', 'Event', 'MemberRel', 'Bookmark', 'Region');
+	var $uses = array('Checkin', 'Event', 'MemberRel', 'Bookmark', 'Region', 'Wallet', 'ProfileVisit','Friend');
 	
 	public function api_show() {
 		
 		$event_big = $this->Checkin->getCheckedinEventFor($this->logged['Member']['big']);	// Is checked in?
-		
-		if (!empty($event_big)) {	//checked in -> show place detail
+		                          
+		//$event_big=null;
+        
+        if (!empty($event_big)) {	//checked in -> show place detail
 			
 			return $this->_homeEvent($event_big);
 			
@@ -50,12 +52,15 @@ class HomeController extends AppController {
 			'limit' => 10,
 		));
 		
+        
 		//most popular events
 		{
 			$events = $this->Event->getMostPopularEvents();
 			$events = $this->_addEventPhotoUrls($events);
 		}
-		
+           $this->_apiOk(array('visitNotRead' => $this->ProfileVisit->getNotReadVisits($this->logged['Member']['big']))); 
+		   $this->_apiOk(array('credit_count' => $this->Wallet->getCredit($this->logged['Member']['big'])));
+           $this->_apiOk(array('numFriendRequest'=>$this->Friend->countFriendRequest($this->logged['Member']['big'])));
 		//find places with photos
 		{
 			$place_bigs = array();
@@ -81,6 +86,7 @@ class HomeController extends AppController {
 			$events[$key]['Place'] = $places[ $event['Place']['big'] ];
 		}
 		
+              
 		$this->_apiOk(array('events' => $events));
 		
 		if (! empty ( $checkins )) { // we have checkins
@@ -163,6 +169,10 @@ class HomeController extends AppController {
 				),
 			),
 		);
+        
+        $this->_apiOk(array('visitNotRead' => $this->ProfileVisit->getNotReadVisits($this->logged['Member']['big'])));
+        $this->_apiOk(array('credit_count'=>$this->Wallet->getCredit($this->logged['Member']['big'])));
+        $this->_apiOk(array('numFriendRequest'=>$this->Friend->countFriendRequest($this->logged['Member']['big'])));
 		$event = $this->Event->find('first', array(
 			'conditions' => array('Event.big' => $event_big),
 			'fields' => array(

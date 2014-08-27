@@ -33,16 +33,13 @@ class FriendsController extends AppController {
 		
 		if (isset ( $this->request->data ['action'] ) && $this->request->data ['action'] != null) {
 			$action = $this->request->data ['action'];
-			
 			$Amici = $this->Friend->FriendsRelated ( $idMember, $action );
 		} else {
-			
 			$Amici = $this->Friend->findAllFriends ( $idMember );
 		}
 		
 		$xresponse = array ();
 		$xami = array ();
-		
 		foreach ( $Amici as $ami ) {
 			$deleted = false;
 			
@@ -72,13 +69,19 @@ class FriendsController extends AppController {
 				$xami [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			}
 			
+			$TheMem=$this->Member->getMemberByBig($xami [0] ['big']);
+			$xami [0]['coordinates']=$TheMem['Member']['last_lonlat'];
+			
 			// CHECK USER NOT DELETED
 			if ($this->Member->isActive ( $xami [0] ['big'] )) {
-				debug ( "trovato" . $xami [0] ['big'] );
 				$xresponse [] = $xami [0];
 			}
 			unset ( $xami );
 		}
+		
+		
+		// reset counter
+		$this->Friend->setReadFriendRequest($idMember);
 		
 		$this->_apiOk ( $xresponse );
 	}
