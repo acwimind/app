@@ -13,6 +13,7 @@ class MembersController extends AppController {
 			'Category',
 			'ExtraInfos',
 			'Wallet'
+			
 	);
 	public function beforeFilter() {
 		parent::beforeFilter ();
@@ -789,6 +790,7 @@ class MembersController extends AppController {
 		// give some credit
 		$this->Wallet->addAmount($member ['big'],'50','Welcome to Haamble');
 		
+		
 		$this->_apiOk ( $response );
 	}
 	
@@ -811,7 +813,10 @@ class MembersController extends AppController {
 		
 		try {
 			$this->_api_photo_upload ( $member ['big'] );
-		} catch ( UploadException $e ) {
+			$amount=30;
+			$reason="Uploaded picture";
+			$this->Wallet->addAmount($member ['big'],$amount,$reason);
+				} catch ( UploadException $e ) {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
 		
@@ -1016,35 +1021,6 @@ class MembersController extends AppController {
 		}
 	}
 	
-
-	
-
-	/**
-	 * get member extraindfos
-	 */
-	public function api_getExtraInfos() {
-		if (! isset ( $this->api ['big'] )) {
-			$this->api ['big'] = $this->logged ['Member'] ['big'];
-		}
-	
-		$params = array (
-				'conditions' => array (
-						'member_big' => $this->api ['big']
-				),
-				'recursive' => - 1
-		);
-	
-		try {
-			$data = $this->ExtraInfos->find ( 'first', $params );
-				
-			$this->_apiOk ( $data );
-		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
-		}
-	}
-	
-	
-	
 	/**
 	 * view member profile
 	 * TODO: at the moment this is method is still incomplete
@@ -1143,6 +1119,34 @@ class MembersController extends AppController {
 		}
 		$this->_apiOk ( $data );
 	}
+
+	
+	/**
+	 * get member extraindfos
+	 */
+	public function api_getExtraInfos() {
+		if (! isset ( $this->api ['big'] )) {
+			$this->api ['big'] = $this->logged ['Member'] ['big'];
+		}
+	
+		$params = array (
+				'conditions' => array (
+						'member_big' => $this->api ['big']
+				),
+				'recursive' => - 1
+		);
+	
+		try {
+			$data = $this->ExtraInfos->find ( 'first', $params );
+	
+			$this->_apiOk ( $data );
+		} catch ( Exception $e ) {
+			$this->_apiEr ( "Error" );
+		}
+	}
+	
+	
+	
 	
 	/**
 	 * view member profile visits
@@ -1160,11 +1164,18 @@ class MembersController extends AppController {
 		$all_nearby = $this->ProfileVisit->getVisits ( $this->api ['big'] );
 		$xresponse = array ();
 		$xami = array ();
-		
+        $counter=0;
+		  
+        //print_r($all_nearby);
 		foreach ( $all_nearby as $ami ) {
 			
+            $ami['ProfileVisit']['last_visit']=$ami[0]['created'];
+            $ami['ProfileVisit']['number_of_visits']=$ami[0]['number_of_visits'];
+            unset($ami[0]);
+            
 			$xami [] = $ami;
-			
+			//print_r($ami);
+            //print_r($xami);
 			$params = array (
 					'conditions' => array (
 							'Member.big' => strval ( $ami ['ProfileVisit'] ['visitor_big'] ) 
@@ -1185,7 +1196,8 @@ class MembersController extends AppController {
 			
 			$data = $this->Member->find ( 'first', $params );
 			
-			debug ( $data ['Member'] );
+            //print_r($data);
+			//debug ( $data ['Member'] );
 			
 			if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
 				$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
@@ -1202,12 +1214,14 @@ class MembersController extends AppController {
 				
 		}
 			
-			$xami [0] ['Member'] = $data ['Member'];
+			$xami [$counter] ['Member'] = $data ['Member'];
 			
-			$xresponse [] = $xami [0];
+			$xresponse [] = $xami [$counter];
 			/*
 			 * debug($xresponse);
 			 */
+             
+             $counter+=1;
 		}
 		
 		// reset visits read count
@@ -1420,13 +1434,22 @@ class MembersController extends AppController {
 		
 		
 		$data = $this->Member->find ( 'first', $params );
+		$xisFriend=0;
+		$xfriend= $this->Friend->FriendsAllRelationship($this->api ['user_big'] ,$this->api ['member_big']);
+		if (count($xfriend)>0)
+		{
+			$xisFriend=1;
+			  	$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
+		}
+		$data['Member']['isFriend']=$xisFriend;
+		
 	//	debug($data);
 		// Get checkin or join
 		$checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
 	//	debug($checkin);
 		if (! empty ( $checkin ) && $checkin ['Event'] ['type'] == 2 && $checkin ['Event'] ['status'] == 0) {
 						
-			debug("qui1");
+			
 			$params = array (
 					'conditions' => array (
 							'Place.big' => $checkin ['Event'] ['place_big'] 
@@ -1469,7 +1492,7 @@ class MembersController extends AppController {
 			$data ['Member'] ['Place']= $place ['Place'] ;
 				
 		} elseif (! empty ( $checkin )) {
-			debug("qui2");
+	
 			$params = array (
 					'conditions' => array (
 							'Place.big' => $checkin ['Event'] ['place_big'] 
@@ -1503,7 +1526,7 @@ class MembersController extends AppController {
 		$checkinsCount = $this->Member->Checkin->getCheckinsCountForMember ( $memBig );
 		$data ['Member'] ['checkins_count'] = intval ( $checkinsCount );
 		
-		debug ( $data ['Member'] ['photo_updated'] );
+
 		// Photos processing
 		if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
@@ -1709,11 +1732,26 @@ class MembersController extends AppController {
         (empty($this->api ['big'])) ? $memBig=$this->api ['member_big'] : $memBig=$this->api ['big'];
         
         
+        $MySugAffinityAll=array();
         $MySugAffinity=array();
+        $MySugAffinityAll=$this->Member->getAffinityMembers( $memBig );
         
-        $MySugAffinity=$this->Member->getAffinityMembers( $memBig );
+      //  debug($MySugAffinityAll);
         
-        //debug($MySugAffinity);
+        // REMOVE FRIENDS!!
+        foreach ( $MySugAffinityAll as $key => &$val ) {
+        	
+        	// check if any friendship exists yet
+     //   	debug($val[0] ['big']);
+        	$AlreadyFr = $this->Friend->FriendsAllRelationship ($val[0] ['big'], $memBig);
+        	$dbo = $this->Friend->getDatasource();
+        	$logs = $dbo->getLog();
+        	$lastLog = end($logs['log']);
+        	if (count ( $AlreadyFr ) == 0) {       	
+        	$MySugAffinity[]=$MySugAffinityAll[$key] ;
+        	}
+        }
+        
         
         foreach ( $MySugAffinity as $key => &$val ) {
         

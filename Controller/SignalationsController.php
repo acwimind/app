@@ -109,24 +109,23 @@ class SignalationsController extends AppController {
 
 	public function api_add()
 	{
+        /* $member_big = big del member segnalatore
+           $type = tipo di segnalazione 1=chat, 2=foto, 3=commento 
+           $id_object = id del messaggio, commento o foto
+           $reason = 0 = FLAG_SPAM; 1 = FLAG_INAPPROPRIATE; 2 = FLAG_OFFENSIVE; 
+           */ 
 
-		$this->_checkVars(array('member_big', 'flagged_big', 'reason'));
+		$this->_checkVars(array('type', 'id_object','reason'));
+                      
 
-
-		$this->logged = $this->Member->findByBig( $this->Auth->user('big') );//don't understand why it's not already filled
+		//$this->logged = $this->Member->findByBig( $this->Auth->user('big') );//don't understand why it's not already filled
 		$memBig = $this->logged['Member']['big'];
-		$flgBig = $this->api['flagged_big'];
-		$type = isset($this->api['type']) ? $this->api['type'] : null;
+        $type = $this->api['type'];
 		$reason = $this->api['reason'];
-		$photo_id = $flgBig;
-
-		if (empty($type)) {
-			$this->Gem->recursive = -1;
-			$gem = $this->Gem->findByBig($flgBig);
-			$type = $gem['Gem']['type'];
-		}
-
-		// Check if reason matches predefined ones
+        $idObj= $this->api['id_object'];
+		    
+       	
+        // Check if reason matches predefined ones
 		if (array_key_exists($reason, Defines::$flag_types))
 		{
 			$text = Defines::$flag_types[$reason];
@@ -138,43 +137,54 @@ class SignalationsController extends AppController {
 
 		// Check if type of signalation is valid
 		if (!array_key_exists($type, Defines::$signalations))
-		{
-			$this->_apiEr('Bad signalation type');
+		{//TODO in bootstrap aggiungere anche Comment in signalations
+			
+            $this->_apiEr('Bad signalation type');
 		}
-
+        
+        //Search member_big of bad member
+        $BadMemBig=$this->Signalation->findBadMemBig($type,$idObj);
+        if ($BadMemBig==null OR $BadMemBig=='')
+        {
+            $this->_apiEr('Missing author identificator');
+        }
+        
+        
 		// Can be this signalation added?
-		$canSignal = $this->Signalation->canSignal($memBig, $flgBig, $type);
+		$canSignal = $this->Signalation->canSignal($memBig, $BadMemBig, $type, $idObj);
 		if (!$canSignal)
 		{
 			$this->_apiEr('Cannot signal. A signalation with this parameters is already active or was added not long ago.');
 		}
-
+     
+        
 		// If signalation is made of type CHAT , add member to ignore list.
-		if ($type == SIGNAL_CHAT)
+		if ($type == 1)
 		{
 			// Check if member exists? Not needed, the method has a try catch block so there won't be any dirty messages errored out
-			$isOnList  = $this->MemberSetting->isOnIgnoreList($memBig, $flgBig);
+			$isOnList  = $this->MemberSetting->isOnIgnoreList($memBig, $BadMemBig);
 			if (!$isOnList)
 			{
-				$res = $this->MemberSetting->addToIgnoreList($memBig, $flgBig);
+				$res = $this->MemberSetting->addToIgnoreList($memBig, $BadMemBig);
 				if ($res === FALSE)
 				{
 					$this->_apiEr('Error occured. Member not added to ignore list.');
 				}
 			}
 			// If this is a chat, send last M chat messages with up to N characters
-			$ress = $this->ChatMessage->getMessagesForSignalation($memBig, $flgBig);
+            // TODO migliorare prendendo N messaggi precedenti e N successivi a quello incriminato
+			$ress = $this->ChatMessage->getMessagesForSignalation($memBig, $BadMemBig);
 		}
-		else
+		elseif ($type == 2)
 		{
 			// Signalation of type photo - add link to the photo and link to delete the photo
-			if (empty($photo_id))
+			if (empty($idObj))
 			{
 				echo json_encode('We are sorry. The report cannot be processed. The reason is: Missing photo identificator.');
 				return;
 			}
 
-			$photo = $this->Photo->getSignaledPhoto($photo_id);
+			$photo = $this->Photo->getSignaledPhoto($idObj);
 			if (empty($photo['Gallery']['event_big']))
 			{
 				$img = $this->FileUrl->place_photo($photo['Gallery']['place_big'], $photo['Photo']['gallery_big'], $photo['Photo']['big'], $photo['Photo']['original_ext']);
@@ -185,12 +195,30 @@ class SignalationsController extends AppController {
 			}
 
 		}
-
-		$result = $this->Signalation->addSignalation($memBig, $flgBig, $type, $text);
+        elseif ($type == 3)
+        { // Signalation of type comment
+            
+            if (empty($idObj))
+            {
+                echo json_encode('We are sorry. The report cannot be processed. The reason is: Missing comment identificator.');
+                return;
+            }
+            
+            //TODO quali dati riportiamo e cosa facciamo nel caso di commenti impropri ?
+            
+        }
+        
+        /*$this->log("membig ".$memBig);
+        $this->log("badmembig ".$BadMemBig);
+        $this->log("type ".$type);
+        $this->log("text ".$text);//$this->log("type ".$type);
+        $this->log("idObj ".$idObj);*/
+        
+		$result = $this->Signalation->addSignalation($memBig, $BadMemBig, $type, $text, $idObj);
 
 		// Send email report to admins
 		$member = $this->Signalation->Member->getMemberByBig($memBig);
-		$flagged = $this->Signalation->Member->getMemberByBig($flgBig);
+		$flagged = $this->Signalation->Member->getMemberByBig($BadMemBig);
 		$memberName = !empty($member) ? $member['Member']['name'] .
 			(!empty($member['Member']['middle_name']) ? ' ' . $member['Member']['middle_name'] . ' ' : ' ') . $member['Member']['surname'] : 'Deleted member';
 		$flaggedName = !empty($flagged) ? $flagged['Member']['name'] .
@@ -201,16 +229,16 @@ class SignalationsController extends AppController {
 			'member_name' => $memberName,
 			'member_big' => $memBig,
 			'flagged_name' => $flaggedName,
-			'flagged_big' => $flgBig,
+			'flagged_big' => $BadMemBig,
 		);
-		if ($type == SIGNAL_CHAT)
-		{
+		if ($type == 1)
+		{//SIGNAL_CHAT
 			$params['messages'] = $ress;
 		}
 		else
 		{
 			$params['img'] = $img;
-			$params['photoBig'] = $photo_id;
+			$params['photoBig'] = $idObj;
 		}
 		App::uses('Emailer', 'Lib');
 		Emailer::sendEmail('chat_signalation', null, $params, __('New signalation'), FLAG_MAIL_TO);
@@ -354,4 +382,125 @@ class SignalationsController extends AppController {
 			return;
 		}
 	}
+    
+    public function api_addOLD()
+    {
+
+        $this->_checkVars(array('member_big', 'flagged_big', 'reason'));
+
+
+        //$this->logged = $this->Member->findByBig( $this->Auth->user('big') );//don't understand why it's not already filled
+        $memBig = $this->logged['Member']['big'];
+        $flgBig = $this->api['flagged_big'];
+        $type = isset($this->api['type']) ? $this->api['type'] : null;
+        $reason = $this->api['reason'];
+        $photo_id = $flgBig;
+
+        if (empty($type)) {
+            $this->Gem->recursive = -1;
+            $gem = $this->Gem->findByBig($flgBig);
+            $type = $gem['Gem']['type'];
+        }
+
+        // Check if reason matches predefined ones
+        if (array_key_exists($reason, Defines::$flag_types))
+        {
+            $text = Defines::$flag_types[$reason];
+        }
+        else
+        {
+            $this->_apiEr('Bad reason value');
+        }
+
+        // Check if type of signalation is valid
+        if (!array_key_exists($type, Defines::$signalations))
+        {
+            $this->_apiEr('Bad signalation type');
+        }
+
+        // Can be this signalation added?
+        $canSignal = $this->Signalation->canSignal($memBig, $flgBig, $type);
+        if (!$canSignal)
+        {
+            $this->_apiEr('Cannot signal. A signalation with this parameters is already active or was added not long ago.');
+        }
+
+        // If signalation is made of type CHAT , add member to ignore list.
+        if ($type == SIGNAL_CHAT)
+        {
+            // Check if member exists? Not needed, the method has a try catch block so there won't be any dirty messages errored out
+            $isOnList  = $this->MemberSetting->isOnIgnoreList($memBig, $flgBig);
+            if (!$isOnList)
+            {
+                $res = $this->MemberSetting->addToIgnoreList($memBig, $flgBig);
+                if ($res === FALSE)
+                {
+                    $this->_apiEr('Error occured. Member not added to ignore list.');
+                }
+            }
+            // If this is a chat, send last M chat messages with up to N characters
+            $ress = $this->ChatMessage->getMessagesForSignalation($memBig, $flgBig);
+        }
+        else
+        {
+            // Signalation of type photo - add link to the photo and link to delete the photo
+            if (empty($photo_id))
+            {
+                echo json_encode('We are sorry. The report cannot be processed. The reason is: Missing photo identificator.');
+                return;
+            }
+
+            $photo = $this->Photo->getSignaledPhoto($photo_id);
+            if (empty($photo['Gallery']['event_big']))
+            {
+                $img = $this->FileUrl->place_photo($photo['Gallery']['place_big'], $photo['Photo']['gallery_big'], $photo['Photo']['big'], $photo['Photo']['original_ext']);
+            }
+            else
+            {
+                $img = $this->FileUrl->event_photo($photo['Gallery']['event_big'], $photo['Photo']['gallery_big'], $photo['Photo']['big'], $photo['Photo']['original_ext']);
+            }
+
+        }
+
+        $result = $this->Signalation->addSignalation($memBig, $flgBig, $type, $text);
+
+        // Send email report to admins
+        $member = $this->Signalation->Member->getMemberByBig($memBig);
+        $flagged = $this->Signalation->Member->getMemberByBig($flgBig);
+        $memberName = !empty($member) ? $member['Member']['name'] .
+            (!empty($member['Member']['middle_name']) ? ' ' . $member['Member']['middle_name'] . ' ' : ' ') . $member['Member']['surname'] : 'Deleted member';
+        $flaggedName = !empty($flagged) ? $flagged['Member']['name'] .
+            (!empty($flagged['Member']['middle_name']) ? ' ' . $flagged['Member']['middle_name'] . ' ' : ' ') . $flagged['Member']['surname'] : 'Deleted member';
+        $params = array(
+            'reason' => $text,
+            'type' => $type,
+            'member_name' => $memberName,
+            'member_big' => $memBig,
+            'flagged_name' => $flaggedName,
+            'flagged_big' => $flgBig,
+        );
+        if ($type == SIGNAL_CHAT)
+        {
+            $params['messages'] = $ress;
+        }
+        else
+        {
+            $params['img'] = $img;
+            $params['photoBig'] = $photo_id;
+        }
+        App::uses('Emailer', 'Lib');
+        Emailer::sendEmail('chat_signalation', null, $params, __('New signalation'), FLAG_MAIL_TO);
+
+
+        if ($result !== false)
+        {
+            $this->_apiOk();
+        }
+        else
+        {
+            $this->_apiEr('Error occured. Signalation not added.');
+        }
+
+    }
+   
 }

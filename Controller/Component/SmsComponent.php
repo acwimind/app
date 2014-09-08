@@ -135,7 +135,7 @@ class SmsComponent extends Component {
 		$recipients = array (
 				$phone 
 		);
-		$result =$this->_skebbyGatewaySendSMS( 'haamble', 'haamble2014', $recipients, 'Ecco il tuo codice di registrazione ad Haamble: ' . $code, SMS_TYPE_CLASSIC, '', 'Haamble' );
+		$result =$this->_skebbyGatewaySendSMS( 'haamble', 'haamble2014', $recipients, 'Ecco il tuo codice di registrazione ad Haamble: ' . $code, SMS_TYPE_CLASSIC, '', 'HAAMBLE' );
  		return $result;
 	}
 	// Invio SMS CLASSIC con mittente personalizzato di tipo numerico

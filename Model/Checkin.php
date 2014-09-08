@@ -545,7 +545,7 @@ checkins.member_big = ' . $Idmem . ' AND';
 $sql2 .= ' checkins.checkout ISNULL AND ';
 	}
 		
- $sql2 .= ' checkins.checkout ISNULL AND
+ $sql2 .= ' 
   checkins.event_big = events.big AND
   events.place_big = Places.big  order by checkins.created  desc ';
 		

@@ -18,28 +18,28 @@ class BoardsController extends AppController {
 	 * get board content for logged user
 	 */
 	public function api_GetBoardContent() {
+		$this->log ( "------------you are in api_GetBoardContent--------" );
 		$MyPlaces = array ();
 		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'] );
 		
-        /*$this->log("------------MyPlaces------------");
-        $this->log($MyPlaces);
-        $this->log("------------Fine MyPlaces-------");*/
-        
-         foreach ( $MyPlaces as $key => $val ) {
-             
-             unset($MyPlaces[$key]['Place']['Place']['region_id']);
-             unset($MyPlaces[$key]['Place']['Place']['external_id']);
-             unset($MyPlaces[$key]['Place']['Place']['external_source']);
-             unset($MyPlaces[$key]['Place']['Place']['slug']);
-             unset($MyPlaces[$key]['Place']['Place']['opening_hours']);
-             unset($MyPlaces[$key]['Place']['Place']['news']);
-             unset($MyPlaces[$key]['Place']['Place']['photo_updated']);
-             unset($MyPlaces[$key]['Place']['Place']['status']);
-             unset($MyPlaces[$key]['Place']['Place']['created']);
-             unset($MyPlaces[$key]['Place']['Place']['updated']);
-                        
-         }  
-        
+		/*
+		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
+		 */
+		
+		foreach ( $MyPlaces as $key => $val ) {
+			
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_id'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_source'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['slug'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['opening_hours'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['news'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['photo_updated'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['status'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['created'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['updated'] );
+		}
+		
 		foreach ( $MyPlaces as $key => $val ) {
 			
 			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
@@ -70,8 +70,7 @@ class BoardsController extends AppController {
 							'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig'] 
 					// 'Comment.place_big'
 										) 
-			)
-			 );
+			) );
 			
 			// TODO: ARRIVATO QUI !!!! LIKE COUNT
 			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
@@ -85,88 +84,73 @@ class BoardsController extends AppController {
 		$MyFriends = array ();
 		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'] );
 		
-        /*$this->log("------------MyFriends------------");
-        $this->log($MyFriends);
-        $this->log("------------Fine MyFriends-------");*/
-        
-		foreach ( $MyFriends as $key => $val ) {
+		/*
+		 * $this->log("------------MyFriends------------"); $this->log($MyFriends); $this->log("------------Fine MyFriends-------");
+		 */
+		if (is_array ( $MyFriends )) {
 			
-			// ADD MEMBER PHOTO
-			// debug( $val ['Member']['Member'] ['photo_updated'] );
-			if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
-				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
-			} else {
-				$sexpic = 2;
-				if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['sex'] ) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
-					$sexpic = 3;
+			foreach ( $MyFriends as $key => $val ) {
+				
+				// ADD MEMBER PHOTO
+				// debug( $val ['Member']['Member'] ['photo_updated'] );
+				if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
+					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
+				} else {
+					$sexpic = 2;
+					if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['sex'] ) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
+						$sexpic = 3;
+					}
+					
+					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 				}
 				
-				$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+				// debug( $val ['Place']['Place'] ['big']);
+				// ADD PLACE PHOTO
+				$params = array (
+						'conditions' => array (
+								'Place.big' => $val ['Place'] ['Place'] ['big'] 
+						) 
+				// recursive => 0
+								);
+				
+				$places = $this->Place->find ( 'first', $params );
+				
+				$places = $this->_addPlacePhotoUrls ( $places );
+				
+				// debug($places);
+				
+				$MyFriends [$key] ['Place'] ['Place'] ['photo'] = $places ['Place'] ['photo'];
+				
+				/*
+				 * $DefPic = $this->Photo->find ( 'first', array ( 'conditions' => array ( 'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] ), 'recursive' => - 1 ) ); // die(debug( $DefPic) ); $appho = ""; if (count ( $DefPic ) > 0) { $appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] ); } $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $appho;
+				 */
+				
+				// check if i liked it
+				$xlike = 0;
+				$xlike = $this->Comment->find ( 'count', array (
+						'conditions' => array (
+								'Comment.member_big' => $this->logged ['Member'] ['big'],
+								'Comment.likeit' => 1,
+								'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
+						) 
+				) );
+				
+				$MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+				
+				$MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+				
+				$MyFriends [$key] ['ILike'] = $xlike;
 			}
-			
-			//debug( $val ['Place']['Place'] ['big']);
-			// ADD PLACE PHOTO
-			$params = array(
-					'conditions' => array(
-							'Place.big' => $val ['Place'] ['Place'] ['big']
-					),
-					//			recursive => 0
-			);
-			
-			$places = $this->Place->find('first', $params);
-			
-			 
-		   $places = $this->_addPlacePhotoUrls ( $places );
-			
-		   //debug($places); 
-		   
-		   $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $places['Place'] ['photo'];
-		   
-			
-		/*	$DefPic = $this->Photo->find ( 'first', array (
-					'conditions' => array (
-							'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
-					),
-					'recursive' => - 1 
-			) );
-			
-			// die(debug( $DefPic) );
-			$appho = "";
-			if (count ( $DefPic ) > 0) {
-				$appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
-			}
-			$MyFriends [$key] ['Place'] ['Place'] ['photo'] = $appho;
-			*/
-		   
-		   
-			// check if i liked it
-			$xlike = 0;
-			$xlike = $this->Comment->find ( 'count', array (
-					'conditions' => array (
-							'Comment.member_big' => $this->logged ['Member'] ['big'],
-							'Comment.likeit' => 1,
-							'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
-					) 
-			)
-			 );
-			
-			$MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'], 0 );
-			
-			$MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'], 0 );
-			
-			$MyFriends [$key] ['ILike'] = $xlike;
 		}
-		
 		// recovery suggested friends order by ?
 		
 		$MySugFriends = array ();
 		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big'] );
 		
-       /* $this->log("------------MySugFriends------------");
-        $this->log($MySugFriends);
-        $this->log("------------Fine MySugFriends-------");*/
-        
-        
+		/*
+		 * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
+		 */
+		
 		foreach ( $MySugFriends as $key => &$val ) {
 			
 			// ADD MEMBER PHOTO
@@ -188,12 +172,10 @@ class BoardsController extends AppController {
 		$MySugAffinity = array ();
 		$MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'] );
 		
-        
-        /*$this->log("------------MySugAffinity------------");
-        $this->log($MySugAffinity);
-        $this->log("------------Fine MySugAffinity-------");*/
-        
-        
+		/*
+		 * $this->log("------------MySugAffinity------------"); $this->log($MySugAffinity); $this->log("------------Fine MySugAffinity-------");
+		 */
+		
 		foreach ( $MySugAffinity as $key => &$val ) {
 			
 			// ADD MEMBER PHOTO
@@ -208,6 +190,7 @@ class BoardsController extends AppController {
 				
 				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			}
+			$MySugAffinity [$key] [0] ['surname']=substr($MySugAffinity [$key] [0] ['surname'],0,1).'.';
 		}
 		
 		// debug($MySugAffinity);
@@ -217,14 +200,13 @@ class BoardsController extends AppController {
 		$MyAds = array ();
 		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
 		
-        foreach($MyAds as $key=>$val){
-        
-        unset($MyAds[$key]['Advert']['photo_ext']);
-        unset($MyAds[$key]['Advert']['status']);
-        unset($MyAds[$key]['Advert']['photo_updated']);
-        
-        }
-        
+		foreach ( $MyAds as $key => $val ) {
+			
+			unset ( $MyAds [$key] ['Advert'] ['photo_ext'] );
+			unset ( $MyAds [$key] ['Advert'] ['status'] );
+			unset ( $MyAds [$key] ['Advert'] ['photo_updated'] );
+		}
+		
 		// recovery ads
 		
 		// compose a board
@@ -234,12 +216,10 @@ class BoardsController extends AppController {
 		
 		$nume = 0;
 		
-        /*$this->log("------------MyAds------------");
-        $this->log($MyAds);
-        $this->log("------------Fine MyAds-------");*/
-        
-        
-        
+		/*
+		 * $this->log("------------MyAds------------"); $this->log($MyAds); $this->log("------------Fine MyAds-------");
+		 */
+		
 		foreach ( $MySugAffinity as $key => $val ) {
 			
 			if ($nume < count ( $MySugAffinity )) {
@@ -345,33 +325,34 @@ class BoardsController extends AppController {
 		}
 		
 		$MyPhotos = $this->Photo->getMemberPhotos ( $MyBig );
-		debug($MyPhotos);
+		debug ( $MyPhotos );
 		$MyFriends = array ();
 		$Amici = $this->Friend->GetDiaryFriends ( $MyBig );
 		
-		foreach ( $Amici as $ami ) {
-			// add only if privacy ok
-			if ($ami ["Friend1"] ["big"] == $MyBig) {
-				$friendID = $ami ["Friend2"] ["big"];
-			} 
+		if (is_array ( $Amici )) { // previene il warning Invalid argument supplied for foreach()
+			foreach ( $Amici as $ami ) {
+				// add only if privacy ok
+				if ($ami ["Friend1"] ["big"] == $MyBig) {
+					$friendID = $ami ["Friend2"] ["big"];
+				} 
 
-			else {
-				$friendID = $ami ["Friend1"] ["big"];
-			}
-			$Privacyok = $this->PrivacySetting->getPrivacySettings ( $friendID );
-			$goonPrivacy = true;
-			if (count ( $Privacyok ) > 0) {
-				// PARTE PRIVACY TO DO
-				if ($Privacyok [0] ['PrivacySetting'] ['visibletousers'] == 0) {
-					$goonPrivacy = false;
+				else {
+					$friendID = $ami ["Friend1"] ["big"];
+				}
+				$Privacyok = $this->PrivacySetting->getPrivacySettings ( $friendID );
+				$goonPrivacy = true;
+				if (count ( $Privacyok ) > 0) {
+					// PARTE PRIVACY TO DO
+					if ($Privacyok [0] ['PrivacySetting'] ['visibletousers'] == 0) {
+						$goonPrivacy = false;
+					}
+				}
+				if ($goonPrivacy) {
+					// !! aggiungere agli amici
+					$MyFriends [] = $ami;
 				}
 			}
-			if ($goonPrivacy) {
-				// !! aggiungere agli amici
-				$MyFriends [] = $ami;
-			}
 		}
-		
 		// recovery friends order by checkins
 		
 		// recovery members members order by checkins
@@ -399,10 +380,14 @@ class BoardsController extends AppController {
 				$Checkins [$i] ["BoardType"] = "Places";
 				$MyBoard [] = $Checkins [$i];
 			}
-			if ($i < count ( $MyAds )) {
-				$MyAds [$i] ["BoardType"] = "Ad";
-				$MyBoard [] = $MyAds [$i];
+		/*	if (count ( $Checkins ) > 0 || count ( $MyPhotos ) > 0 || count ( $MyFriends ) > 0) {
+				// put ads only if there is other contents!!
+				if ($i < count ( $MyAds )) {
+					$MyAds [$i] ["BoardType"] = "Ad";
+					$MyBoard [] = $MyAds [$i];
+				}
 			}
+		*/	
 		}
 		
 		$this->_apiOk ( $MyBoard );
@@ -452,8 +437,7 @@ class BoardsController extends AppController {
 							'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig'] 
 					// 'Comment.place_big'
 										) 
-			)
-			 );
+			) );
 			
 			// TODO: ARRIVATO QUI !!!! LIKE COUNT
 			// $MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0]['checkinbig'],1 );
@@ -580,6 +564,15 @@ class BoardsController extends AppController {
 				
 				$MyFriends [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			}
+			
+			// if not friend NO surname please
+			$IsFriend=$this->Friend->FriendsRelationship($MyFriends [$key] [0]['big'],$this->logged ['Member'] ['big'],'A');
+			if (count($IsFriend)<1)
+			{			
+			
+			$MyFriends [$key] [0]['surname']=substr($MyFriends [$key] [0]['surname'],0,1).'.';
+			}
+			
 		}
 		
 		// die(debug($MySugFriends));
@@ -770,7 +763,7 @@ class BoardsController extends AppController {
 		}
 		$this->_apiOk ( $data );
 	}
-		public function api_CheckContactsprofileOLD() {
+	public function api_CheckContactsprofileOLD() {
 		$InputData = $this->api; // request->input ( 'json_decode', true );
 		                         
 		// debug($this->request);7
@@ -809,24 +802,25 @@ class BoardsController extends AppController {
 				);
 			}
 			;
-			//debug ( $paramsCont );
+			// debug ( $paramsCont );
 			
 			$contactCount = $this->Contact->find ( 'count', $paramsCont );
 			
-			//debug ( $contactCount );
+			// debug ( $contactCount );
 			
 			// se non c'è lo inserisco
 			
 			if ($contactCount == 0) {
 				
 				$Contacts ['member_big'] = $ContactBIG;
+				
 				if (isset ( $val ['mail_address'] )) {
 					$Contacts ['email'] = $val ['mail_address'];
 				}
 				if (isset ( $val ['phone_number'] )) {
 					$Contacts ['phone'] = $val ['phone_number'];
 				}
-				$Contacts ['name'] = str_replace("'"," ",$val ['internal_name']);
+				$Contacts ['name'] = str_replace ( "'", " ", $val ['internal_name'] );
 				$this->Contact->set ( $Contacts );
 				$this->Contact->save ();
 			}
@@ -844,8 +838,7 @@ class BoardsController extends AppController {
 			}
 			;
 		}
-	    
-        
+		
 		// query
 		$params = array (
 				'conditions' => array (
@@ -874,7 +867,7 @@ class BoardsController extends AppController {
 				) 
 		);
 		
-        $data = $this->Member->find ( 'all', $params );
+		$data = $this->Member->find ( 'all', $params );
 		
 		// debug ( $data ); // ['contact']['internal_name']);
 		// $test=$this->viewVars[0]; //array(("pippo"),("aaa"));
@@ -885,151 +878,182 @@ class BoardsController extends AppController {
 		 * $this->_checkVars(array(), array('big')); if (!isset($this->api['big'])) { $this->api['big'] = $this->logged['Member']['big']; } $params = array( 'conditions' => array( 'Member.big' => $this->api['big'] ), 'recursive' => -1 ); $data = $this->Member->find('first', $params); unset($data['Member']['password']); unset($data['Member']['salt']); unset($data['Member']['created']); unset($data['Member']['updated']); unset($data['Member']['last_mobile_activity']); unset($data['Member']['last_web_activity']); unset($data['Member']['status']); unset($data['Member']['type']); if ($data['Member']['photo_updated'] > 0) { $data['Member']['profile_picture'] = $this->FileUrl->profile_picture($data['Member']['big'], $data['Member']['photo_updated']); } $this->_apiOk($data);
 		 */
 	}
-          
-    public function mergeArr($a,$b) {//unisce due array del tipo [n]->[Member]->array 
-        
-	$data=array();
-
-        if (count($a)>0){
-        foreach ( $a as $k => $v ) {
-           
-            $data[]=$v;
-                     
-                     }
-    }
-        if (count($b)>0){
-        foreach( $b as $k => $v){
-            
-           $data[]=$v; 
-            
-            
-            }
-    }
-    
-    return $data;
-  }
-    	
-        public function api_CheckContactsprofile() {
-        $InputData = $this->api; // request->input ( 'json_decode', true );
-                                 
-        // debug($this->request);
-        $membersMails = array ();
-        $membersPhones = array ();
-        $ContactBIG = $this->api ['member_big']; // $InputData ['member_big'];
-        $PhoneContacts = array ();
-        
-        $numChunks = $this->api ['chunksCount'];
-        for($i = 1; $i <= $numChunks; $i ++) {
-            
-            $PhoneContacts = $this->api ['contacts' . $i];
-        }
-
-		$this->log("------------BOARDS CONTROLLER3-----------");
-		$this->log("------------PhoneContacts--BIG ".$ContactBIG);
-		$this->log("------------Chunks ".$numChunks);
-		$this->log("-----------------------------------------");
-		$this->log(serialize($PhoneContacts));
-		$this->log("-----------------------------------------");
-		        
-        // $XCo2 = json_decode($this->api ['contacts'],true);
-        foreach ( $PhoneContacts as $val ) {
-            $Contacts = array ();
-            // parte inserimento nel db...
-            // se non esiste
-            $paramsCont = array (
-                    'conditions' => array (
-                            'Contact.name' => $val ['internal_name'] 
-                    // 'Contact.phone' => $val ['phone_number'],
-                    // 'Contact.email' => $val ['mail_address']
-                                        ) 
-            );
-            if (isset ( $val ['phone_number'] )) {
-                $paramsCont ["conditions"] [] = array (
-                        'Contact.phone' => $val ['phone_number'] 
-                );
-            }
-            ;
-            if (isset ( $val ['mail_address'] )) {
-                $paramsCont ["conditions"] [] = array (
-                        'Contact.email' => $val ['mail_address'] 
-                );
-            }
-            ;
-            
-            
-            $contactCount = $this->Contact->find ( 'count', $paramsCont );
-            
-                        
-            // se non c'è lo inserisco
-            
-            if ($contactCount == 0) {
+	public function mergeArr($a, $b) { // unisce due array del tipo [n]->[Member]->array
+		$this->log ( "------------you are in mergeArr--------" );
+		$data = array ();
+		
+		if (count ( $a ) > 0) {
+			foreach ( $a as $k => $v ) {
+				
+				$data [] = $v;
+			}
+		}
+		if (count ( $b ) > 0) {
+			foreach ( $b as $k => $v ) {
+				
+				$data [] = $v;
+			}
+		}
+		
+		return $data;
+	}
+	public function api_CheckContactsprofile() {
+		$this->log ( "------------you are in api_CheckContactsprofile--------" );
+		$InputData = $this->api; // request->input ( 'json_decode', true );
+		                         
+		// debug($this->request);
+		$membersMails = array ();
+		$membersPhones = array ();
+		$ContactBIG = $this->api ['member_big']; // $InputData ['member_big'];
+		$PhoneContacts = array ();
+		
+		$numChunks = $this->api ['chunksCount'];
+		for($i = 1; $i <= $numChunks; $i ++) {
+			
+			$PhoneContacts = $this->api ['contacts' . $i];
+		}
+		
+		$this->log ( "------------BOARDS CONTROLLER-----------" );
+		$this->log ( "------------PhoneContacts---BIG " . $ContactBIG );
+		$this->log ( "------------Chunks " . $numChunks );
+		$this->log ( "-----------------------------------------" );
+		$this->log ( serialize ( $PhoneContacts ) );
+		$this->log ( "-----------------------------------------" );
+		
+		// $XCo2 = json_decode($this->api ['contacts'],true);
+		foreach ( $PhoneContacts as $val ) {
+			$Contacts = array ();
+			// parte inserimento nel db...
+			// se non esiste
+			$paramsCont = array (
+					'conditions' => array (
+							'Contact.name' => $val ['internal_name'] 
+					// 'Contact.phone' => $val ['phone_number'],
+					// 'Contact.email' => $val ['mail_address']
+										) 
+			);
+			if (isset ( $val ['phone_number'] )) {
+                $val['phone_number']=(strlen($val['phone_number'])<32) ? $val['phone_number']: substr($val['phone_number'],0,32);
                 
-                $Contacts ['member_big'] = $ContactBIG;
-                if (isset ( $val ['mail_address'] )) {
-                    $Contacts ['email'] = $val ['mail_address'];
-                }
-                if (isset ( $val ['phone_number'] )) {
-                    $Contacts ['phone'] = $val ['phone_number'];
-                }
-                $Contacts ['name'] = str_replace("'"," ",$val ['internal_name']);
-              
-                $this->Contact->set ( $Contacts );
-                $this->Contact->save ();
-            }
-            ;
-            unset ( $Contacts );
-            unset ( $this->Contact->id );
-            
-            // preparazione per ricerca
-            if (isset ( $val ['mail_address'] )) {
-                $membersMails [] = $val ['mail_address'];
-            }
-            ;
-            if (isset ( $val ['phone_number'] )) {
-                $membersPhones [] = $val ['phone_number'];
-            }
-            ;
-        }
-              
-        
-        //$membersMails=array('ciaccia@wimind.itqq','qwe@qweqwe.qwe','peter.krauspe@stradiware.sk','paulavesho@gmail.com','r.tomassetti@gmail.com','nome35@live.it','nome43@live.it');
-        //$membersPhones=array('3338938102','123456','3339997727');
-           
-           $this->log("------------BOARDS CONTROLLER------------");
-           $this->log("------------Archivio email---------------");
-           $this->log(serialize($membersMails));
-           $this->log("-----------------------------------------");
-           $this->log("------------Archivio Phones--------------");
-           $this->log(serialize($membersPhones));
-           $this->log("-----------------------------------------");
+				$paramsCont ["conditions"] [] = array (
+						'Contact.phone' => $val ['phone_number'] 
+				);
+			}
+			;
+			if (isset ( $val ['mail_address'] )) {
                 
-           $data=$this->multipleShortQueries($membersMails,$membersPhones,50); 
-                                  
-        $this->_apiOk ( $data );
-             
-    }
-        
-    public function multipleShortQueries($membersMails,$membersPhones,$maxPerQuery){
-    //verifica se nei contatti della rubrica del telefono ci sono membri haamble
-               
-               $maxElem=$maxPerQuery;                  
-               $smallMembersMails=$membersMails; 
-               $totalDataByEmails=array();   
-               $start=0;
-               $stop=0;
-               $mv=0; 
+            $val['mail_address']=(strlen($val['mail_address'])<50) ? $val['mail_address']: substr($val['mail_address'],0,50);   
+				$paramsCont ["conditions"] [] = array (
+						'Contact.email' => $val ['mail_address'] 
+				);
+			}
+			;
+			
+			$contactCount = $this->Contact->find ( 'count', $paramsCont );
+			
+			$this->log ( "------------BOARDS CONTROLLER-----------" );
+			$this->log ( "------------contactCount---" . $contactCount );
+			$this->log ( "------------Fine contactCount-----------" );
+			
+			// se non c'è lo inserisco
+			
+			if ($contactCount == 0) {
+				
                 
-               $smallMembersMails=array_slice($membersMails,$start,$maxElem); 
+                $tox_chars=array('.',',',' ','(',')');
                 
-            while (count($smallMembersMails)>0){
-                          
-                //print_r($smallMembersMails);
-                $params = array (
-                'conditions' => array (array('Member.email' => $smallMembersMails) 
-                                                
-                ),
-                'recursive' => - 1,
-                'fields' => array (
+                $pattern='/[()]+|[a-zA-Z]+|[.]+|[ ]+|[#*]+[0-9]+[#*]+|[\\/]+[0-9]+|[-]+|[#*]$/';
+                  
+                $val['phone_number']=preg_replace($pattern,'',str_replace($tox_chars,'',$val['phone_number']));
+                                
+				$Contacts ['member_big'] = $ContactBIG;
+				if (isset ( $val ['mail_address'] )) {
+					$Contacts ['email'] =$val['mail_address'];
+				}
+				if (isset ( $val ['phone_number'] )) {
+					$Contacts ['phone'] = (strlen($val['phone_number'])<32) ? $val['phone_number']: substr($val['phone_number'],0,32);
+				}
+				$Contacts ['name'] = (strlen($val['internal_name'])<300) ? $val['internal_name']: substr($val['internal_name'],0,300);
+				$this->Contact->set ( $Contacts );
+				
+				$logSaveStatus = $this->Contact->save ();
+				
+				$this->log ( "------------BOARDS CONTROLLER-----------" );
+				$this->log ( "------------Contacts------" . $Contacts );
+				$this->log ( "------------logSaveStatus----" . $logSaveStatus );
+				$this->log ( "------------Fine Contacts e logSave---------" );
+			}
+			;
+			unset ( $Contacts );
+			unset ( $this->Contact->id );
+			
+			// preparazione per ricerca
+			if (isset ( $val ['mail_address'] )) {
+				$membersMails [] = $val ['mail_address'];
+			}
+			;
+			if (isset ( $val ['phone_number'] )) {
+				$membersPhones [] = $val ['phone_number'];
+			}
+			;
+		}
+		
+		/*$this->log ( "------------BOARDS CONTROLLER-----------" );
+		$this->log ( "------------membersMails----------------" );
+		$this->log ( addslashes ( serialize ( $membersMails ) ) );
+		$this->log ( "------------Fine membersMails-----------" );
+		
+		$this->log ( "------------BOARDS CONTROLLER-----------" );
+		$this->log ( "------------membersPhones----------------" );
+		$this->log ( addslashes ( serialize ( $membersPhones ) ) );
+		$this->log ( "------------Fine membersPhones-----------" );
+		*/
+		// $membersMails=array('ciaccia@wimind.itqq','qwe@qweqwe.qwe','peter.krauspe@stradiware.sk','paulavesho@gmail.com','r.tomassetti@gmail.com','nome35@live.it','nome43@live.it');
+		// $membersPhones=array('3338938102','123456','3339997727');
+		
+		/*
+		 * $this->log("------------BOARDS CONTROLLER------------"); $this->log("------------Archivio email---------------"); $this->log(serialize($membersMails)); $this->log("-----------------------------------------"); $this->log("------------Archivio Phones--------------"); $this->log(serialize($membersPhones)); $this->log("-----------------------------------------");
+		 */
+		
+		$data = $this->multipleShortQueries ( $membersMails, $membersPhones, 50 );
+		
+		$this->_apiOk ( $data );
+	}
+	public function multipleShortQueries($membersMails, $membersPhones, $maxPerQuery) {
+		// verifica se nei contatti della rubrica del telefono ci sono membri haamble
+		$this->log ( "------------you are in multipleShortQueries--------" );
+		$maxElem = $maxPerQuery;
+		$smallMembersMails = $membersMails;
+		$totalDataByEmails = array ();
+		$start = 0;
+		$stop = 0;
+		$mv = 0;
+		
+		$smallMembersMails = array_slice ( $membersMails, $start, $maxElem );
+		
+		while ( count ( $smallMembersMails ) > 0 ) {
+			
+			// print_r($smallMembersMails);
+			$params = array (
+					'conditions' => array (
+							array (
+									'Member.email' => $smallMembersMails 
+							) 
+					)
+					,
+					'recursive' => - 1,
+					'fields' => array (
+							'Member.big',
+							'Member.name',
+							'Member.middle_name',
+							'Member.surname',
+							'Member.photo_updated',
+							'Member.sex',
+							'Member.phone',
+							'Member.birth_date',
+							'Member.address_town',
+							'Member.address_country' 
+                /*'fields' => array (
                         'Member.big',
                         'Member.name',
                         'Member.email',
@@ -1048,77 +1072,75 @@ class BoardsController extends AppController {
                         'Member.address_town',
                         'Member.address_country',
                         'Member.lang',
-                        'Member.last_lonlat'
+                        'Member.last_lonlat'*/
                 ) 
-        );
-                
-              $dataByEmails = $this->Member->find ( 'all', $params ); 
-              $totalDataByEmails=$this->mergeArr($dataByEmails,$totalDataByEmails);
-              
-              
-              $mv+=1;
-              $stop=$maxElem;
-              $start=0+$stop*$mv;
-              
-              
-              $smallMembersMails=array_slice($membersMails,$start,$stop); 
-                                          
-            }
-            
-            $dataByEmails=$totalDataByEmails;
-                   
-       
-                $start=0;
-                $stop=0;
-                $mv=0;
-                $smallMembersPhones=$membersPhones;
-                $totalDataByPhones=array();   
-                
-                $smallMembersPhones=array_slice($membersPhones,$start,$maxElem); 
-                
-            while (count($smallMembersPhones)>0){
-                                               
-                 $params = array (
-                'conditions' => array (array('Member.phone' => $smallMembersPhones) 
-                                                
-                ),
-                'recursive' => - 1,
-                'fields' => array (
-                        'Member.big',
-                        'Member.name',
-                        'Member.middle_name',
-                        'Member.surname',
-                        'Member.photo_updated',
-                        'Member.sex',
-                        'Member.phone',
-                        'Member.birth_date',
-                        'Member.address_town',
-                        'Member.address_country' 
-                ) 
-        );
-                
-              $dataByPhones = $this->Member->find ( 'all', $params ); 
-              $totalDataByPhones=$this->mergeArr($dataByPhones,$totalDataByPhones);
-              
-              
-              $mv+=1;
-              $stop=$maxElem;
-              $start=0+$stop*$mv;
-                            
-              $smallMembersPhones=array_slice($membersPhones,$start,$stop); 
-                
-                
-            }
-            
-            $dataByPhones=$totalDataByPhones;
-                            
-        $data=$this->mergeArr($dataByEmails,$dataByPhones);
-            
-    return $data;
-}
-    
-    
-    
+			);
+			
+			$dataByEmails = $this->Member->find ( 'all', $params );
+			$totalDataByEmails = $this->mergeArr ( $dataByEmails, $totalDataByEmails );
+			
+			$mv += 1;
+			$stop = $maxElem;
+			$start = 0 + $stop * $mv;
+			
+			$smallMembersMails = array_slice ( $membersMails, $start, $stop );
+		}
+		
+		$dataByEmails = $totalDataByEmails;
+		
+		$start = 0;
+		$stop = 0;
+		$mv = 0;
+		$smallMembersPhones = $membersPhones;
+		$totalDataByPhones = array ();
+		
+		$smallMembersPhones = array_slice ( $membersPhones, $start, $maxElem );
+		
+		while ( count ( $smallMembersPhones ) > 0 ) {
+			
+			$params = array (
+					'conditions' => array (
+							array (
+									'Member.phone' => $smallMembersPhones 
+							) 
+					)
+					,
+					'recursive' => - 1,
+					'fields' => array (
+							'Member.big',
+							'Member.name',
+							'Member.middle_name',
+							'Member.surname',
+							'Member.photo_updated',
+							'Member.sex',
+							'Member.phone',
+							'Member.birth_date',
+							'Member.address_town',
+							'Member.address_country' 
+					) 
+			);
+			
+			$dataByPhones = $this->Member->find ( 'all', $params );
+			$totalDataByPhones = $this->mergeArr ( $dataByPhones, $totalDataByPhones );
+			
+			$mv += 1;
+			$stop = $maxElem;
+			$start = 0 + $stop * $mv;
+			
+			$smallMembersPhones = array_slice ( $membersPhones, $start, $stop );
+		}
+		
+		$dataByPhones = $totalDataByPhones;
+		
+		$data = $this->mergeArr ( $dataByEmails, $dataByPhones );
+		
+		$this->log ( "------------multipleShortQueries (data)--" );
+		$this->log ( serialize ( $data ) );
+		$this->log ( "-----------------------------------------" );
+		
+		return $data;
+	}
+	
 	/**
 	 * View public member profile
 	 */
@@ -1380,11 +1402,13 @@ class BoardsController extends AppController {
 		$this->set ( 'loggedBig', $this->logged ['Member'] ['big'] );
 	}
 	public function api_BoardContacts() {
+		$this->log ( "------------you are in api_BoardContacts--------" );
 		$MySugFriends = array ();
 		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big'] );
 		$this->_apiOk ( $MySugFriends );
 	}
 	public function BoardContacts($ContactBIG) {
+		$this->log ( "------------you are in BoardContacts--------" );
 		$membersMails = array ();
 		$membersPhones = array ();
 		$ContactBIG = $this->api ['member_big'];
@@ -1396,13 +1420,10 @@ class BoardsController extends AppController {
 				'Contact.member_big' => $ContactBIG 
 		) );
 		
-
-		$this->log("------------BOARDS CONTROLLER4-----------");
-		$this->log("------------Archivio SugContacts---------");
-		$this->log(serialize($SugContacts));
-		$this->log("-----------------------------------------");
-
-
+		/*
+		 * $this->log("------------BOARDS CONTROLLER4-----------"); $this->log("------------Archivio SugContacts---------"); $this->log(serialize($SugContacts)); $this->log("-----------------------------------------");
+		 */
+		
 		foreach ( $SugContacts as $key => $val ) {
 			$Contacts = array ();
 			// preparazione per ricerca
@@ -1424,53 +1445,46 @@ class BoardsController extends AppController {
 		if (count ( $membersPhones ) == 0)
 			$membersPhones [] = 'nophone';
 			
+			/*
+		 * $this->log("------------BOARDS CONTROLLER2------------"); $this->log("BIG ".$ContactBIG); $this->log("------------Archivio email---------------"); $this->log(serialize($membersMails)); $this->log("-----------------------------------------"); $this->log("------------Archivio Phones--------------"); $this->log(serialize($membersPhones)); $this->log("-----------------------------------------");
+		 */
+			
+		// query
+			// $params = array (
+			// 'conditions' => array (
+			// "OR" => array (
+			//
+			// array (
+			// 'Member.email' => $membersMails
+			// ),
+			// array (
+			// 'Member.phone' => $membersPhones
+			// )
+			// )
+			// ),
+			// 'recursive' => - 1,
+			//
+			// 'fields' => array (
+			// 'Member.big',
+			// 'Member.name',
+			// 'Member.middle_name',
+			// 'Member.surname',
+			// 'Member.photo_updated',
+			// 'Member.sex',
+			// 'Member.phone',
+			// 'Member.birth_date',
+			// 'Member.address_town',
+			// 'Member.address_country'
+			// )
+			// );
+			//
+			// $data = $this->Member->find ( 'all', $params );
 		
-		$this->log("------------BOARDS CONTROLLER2------------");
-		$this->log("BIG ".$ContactBIG);
-		$this->log("------------Archivio email---------------");
-		$this->log(serialize($membersMails));
-		$this->log("-----------------------------------------");
-		$this->log("------------Archivio Phones--------------");
-		$this->log(serialize($membersPhones));
-		$this->log("-----------------------------------------");
-        		
-			// query
-		//$params = array (
-//				'conditions' => array (
-//						"OR" => array (
-//								
-//								array (
-//										'Member.email' => $membersMails 
-//								),
-//								array (
-//										'Member.phone' => $membersPhones 
-//								) 
-//						) 
-//				),
-//				'recursive' => - 1,
-//				
-//				'fields' => array (
-//						'Member.big',
-//						'Member.name',
-//						'Member.middle_name',
-//						'Member.surname',
-//						'Member.photo_updated',
-//						'Member.sex',
-//						'Member.phone',
-//						'Member.birth_date',
-//						'Member.address_town',
-//						'Member.address_country' 
-//				) 
-//		);
-//		
-//		$data = $this->Member->find ( 'all', $params );
-	
-
-	    $membersMails=array_unique($membersMails);
-	    $membersPhones=array_unique($membersPhones);	
-        
-        $data=$this->multipleShortQueries($membersMails,$membersPhones,50); 
-        $dbo = $this->Member->getDatasource ();
+		$membersMails = array_unique ( $membersMails );
+		$membersPhones = array_unique ( $membersPhones );
+		
+		$data = $this->multipleShortQueries ( $membersMails, $membersPhones, 50 );
+		$dbo = $this->Member->getDatasource ();
 		$logs = $dbo->getLog ();
 		$lastLog = end ( $logs ['log'] );
 		$AppoMem = array ();
@@ -1493,6 +1507,7 @@ class BoardsController extends AppController {
 					
 					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 				}
+				$mem ['Member']['surname']=substr($mem['Member']['surname'],0,1).'.';
 				$AppoMem [] = $mem;
 			}
 		}
@@ -1500,7 +1515,10 @@ class BoardsController extends AppController {
 		/*
 		 *
 		 */
-		
+		$this->log ( "------------BoardsController--------------" );
+		$this->log ( "------------var AppoMem--------------" );
+		$this->log ( serialize ( $AppoMem ) );
+		$this->log ( "-----------------------------------------" );
 		return $AppoMem;
 	}
 }

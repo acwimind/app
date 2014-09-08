@@ -778,7 +778,7 @@ class CheckinsController extends AppController {
                 
                 $aa=array();
         
-                $val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big']);
+                $val[0]['Checkin']=$this->Checkin->getNearbyCheckinsMember($val[0]['big'],true);
             
                 if (isset ( $val[0]['Checkin'][0]['Place']['DefaultPhoto'] ['big'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
                     if (isset ( $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] ) && $val[0]['Checkin'][0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos

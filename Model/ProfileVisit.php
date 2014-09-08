@@ -46,7 +46,33 @@ class ProfileVisit extends AppModel {
 		}
 		return $res;
 	}
-	public function getVisits($member_big) {
+	
+    public function getVisits($member_big) {
+        $type = 'all';
+        $params = array (
+                'conditions' => array (
+                        
+                        'visited_big' => $member_big 
+                ),
+                'fields' => array (
+                        'ProfileVisit.visitor_big' ,
+                        'MAX(ProfileVisit.created) AS created',
+                        'COUNT(visitor_big) AS number_of_visits'
+                ) ,
+                'group' => array('ProfileVisit.visitor_big'),
+                'order' => array('created' => 'desc'),
+                'recursive' => -1,
+        )
+        ;
+        
+        $result = $this->find ( $type, $params );
+        
+        //print_r($result);
+        
+        return $result;
+    }
+    
+    public function getVisitsOLD($member_big) {
 		$type = 'all';
 		$params = array (
 				'conditions' => array (

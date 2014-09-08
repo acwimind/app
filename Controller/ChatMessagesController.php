@@ -88,6 +88,9 @@ class ChatMessagesController extends AppController {
 			$updated = $this->ChatMessage->markAsRead ( $memBig, $partnerBig );
 			if (! $updated)
 				CakeLog::warning ( 'Messages not marked as read. Membig ' . $memBig . ' Partner big ' . $partnerBig );
+                 $this->log("-------ChatMessages CONTROLLER-api_receive-----");
+                 $this->log("updated = $updated ");
+                 $this->log("--------------close api_receive----------------");
 		}
 		$this->Util->transform_name ( $result );
 		$this->_apiOk ( $result );
@@ -203,7 +206,7 @@ class ChatMessagesController extends AppController {
     
     
     
-	public function api_send() {
+	public function api_send_OLD() {
 		
 		/*
 		 * Needed values: rel_id - based on member_big and partner_big find a member_rel record. If does not exists, create it from_big - the sender of the message,member_big to_big - recipient of the message, partner_big checkin_big - (optional) text - message/text - text of the message from_status - sender status (joined/checkedin) based on current checkin of member field physical to_status - recipient status (joined/checkedin) based on current checkin of member field physical created - now() status - 1 Push notifications will be part of this call. $pollo=$this->api['photo']; Logger::Info($this->api[$pollo]);
@@ -411,6 +414,246 @@ class ChatMessagesController extends AppController {
 			$this->_apiEr ( 'Error occured. Message not sent.' );
 		}
 	}
+    
+    
+    public function api_send() {
+        
+        /*
+         * Needed values: rel_id - based on member_big and partner_big find a member_rel record. If does not exists, create it from_big - the sender of the message,member_big to_big - recipient of the message, partner_big checkin_big - (optional) text - message/text - text of the message from_status - sender status (joined/checkedin) based on current checkin of member field physical to_status - recipient status (joined/checkedin) based on current checkin of member field physical created - now() status - 1 Push notifications will be part of this call. $pollo=$this->api['photo']; Logger::Info($this->api[$pollo]);
+         */
+        $this->_checkVars ( array (
+                'partner_big',
+                'text' 
+        ), array (
+                'rel_id',
+                'newer_than',
+                'photo' 
+        ) );
+        
+              
+        $memBig = $this->logged ['Member'] ['big'];
+        $partnerBig = $this->api ['partner_big'];
+        $text = $this->api ['text'];
+        $relId = null;
+        $checkinBig = null;
+        $xfoto = null;
+        $pollo=$this->api['photo']; 
+        
+        $this->log("api photo = ". $pollo); 
+        // $fromStatus = CHAT_NO_JOIN;
+        // $toStatus = CHAT_NO_JOIN;
+        
+        $newerThan = (isset ( $this->api ['newer_than'] )) ? $this->api ['newer_than'] : null;
+        
+        /*
+         * Check if user is not in partners ignore list Find checkins -> because of status and checkin big Find ,potentially create member_rel If users are not checked in at the same place, they have to have a memberRel record (chat started based on previous conversation) Save to DB
+         */
+        
+        // Check if user is not on partners ignore list
+        $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
+        if ($isIgnored) {
+            $this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
+                    'error_code' => '510' 
+            ) );
+        }
+        
+        // Find valid checkin for member and partner
+        $memCheckin = $this->ChatMessage->Checkin->getCheckedinEventFor ( $memBig, TRUE );
+        
+        //print_r($memCheckin);
+        
+        $partnerCheckin = $this->ChatMessage->Checkin->getCheckedinEventFor ( $partnerBig, TRUE );
+        
+        /*if ($memCheckin ['Checkin'] ['event_big'] == $partnerCheckin ['Checkin'] ['event_big'] && $memCheckin != false) {
+            // If they are on the same event use checkin data
+            // $fromStatus = $memCheckin['Checkin']['physical'];
+            // $toStatus = $partnerCheckin['Checkin']['physical'];
+            $checkinBig = $memCheckin ['Checkin'] ['big'];
+        }*/
+        
+        // Find relationship in member_rels table
+        $memRel = $this->ChatMessage->MemberRel->findRelationships ( $memBig, $partnerBig );
+        
+        //$frieRel = $this->Friend->FriendsRelationship ( $memBig, $partnerBig, 'A' );
+        
+        if (empty ( $memRel )) {
+            // Create a new one
+            $relationship = array (
+                    'member1_big' => $memBig,
+                    'member2_big' => $partnerBig 
+            );
+            $this->ChatMessage->MemberRel->set ( $relationship );
+            try {
+                $memRel = $this->ChatMessage->MemberRel->save ();
+                $relId = $memRel ['MemberRel'] ['id'];
+            } catch ( Exception $e ) {
+                $this->_apiEr ( 'Error occured. Relationship not created.' );
+            }
+        } else {
+            $relId = $memRel ['MemberRel'] ['id'];
+        }
+        
+        // Create chat message record
+        $message = array (
+                'rel_id' => $relId,
+                'from_big' => $memBig,
+                'to_big' => $partnerBig,
+                'checkin_big' => $checkinBig,
+                'text' => $text,
+                'from_status' => 1, // from status = 1 (not deleted)
+                'to_status' => 1, // tp status = 1 (not deleted)
+                'created' => 'NOW()',
+                'status' => 1 
+        // 'photo' => $hasphoto,
+                );
+        
+        // $this->Model->getLastInsertId();
+        
+        $this->ChatMessage->set ( $message );
+        $msgId = null;
+        $chatMsg = null;
+        try {
+            $res = $this->ChatMessage->save ();
+            $result = ($res) ? true : false;
+             $this->log("-------ChatMessages CONTROLLER-api_receive-----");
+             $this->log("id messaggio inserito = ".serialize($res[ChatMessage][id]));
+             $this->log("--------------close api_receive----------------");
+            $msgId = $res ['ChatMessage'] ['id'];
+            $pars = array (
+                    'conditions' => array (
+                            'ChatMessage.id' => $msgId 
+                    ),
+                    'fields' => array (
+                            'ChatMessage.id',
+                            'ChatMessage.rel_id',
+                            'ChatMessage.created' 
+                    ),
+                    'recursive' => - 1 
+            );
+            
+            
+            $chatMsg = $this->ChatMessage->find ( 'first', $pars );
+            // Crack for image save!!
+             
+            if (isset ( $this->api ['photo'] )) {
+               /* $this->log("-------ChatMessages CONTROLLER-api_send-----");
+                 $this->log("api[photo] = $this->api[photo]");
+                 $this->log("--------------close api_send----------------");*/
+                $myphoto = $_FILES [$this->api ['photo']];
+                
+                try {
+                    $exts = array (
+                            'jpg',
+                            'jpeg',
+                            'png' 
+                    );
+                    foreach ( $exts as $ext ) {
+                        $path = CHATS_UPLOAD_PATH . $msgId . '.' . $ext;
+                        if (is_file ( $path )) {
+                                        unlink ( $path );
+                                        break;
+                                        }
+                        }
+                    $extension = pathinfo ( $myphoto ['name'], PATHINFO_EXTENSION );
+                                   
+                    try {
+                        $uploaded = $this->Upload->directUpload ( $_FILES [$this->api ['photo']],  // data from form (temporary filenames, token)
+                        CHATS_UPLOAD_PATH . $msgId . '.' . $extension )                        // path
+                        ;
+                    } catch ( UploadException $e ) {
+                        Logger::Info ( 'QUIERRER!!' . $e->getMessage () );
+                    }
+                    
+                    // filename $this->_upload ( $_FILES [$this->api ['photo']], $this->Member->id, true );
+                    // Logger::Info('photo up'. $uploaded);
+                } catch ( UploadException $e ) {
+                    Logger::Info ( 'photo er' . $e->getMessage () );
+                    throw new UploadException ( __ ( $msg ) . ': ' . $e->getMessage () );
+                }
+                
+                if ($uploaded) {
+                    
+                    //$photolink=$this->FileUrl->chatmsg_picture($msgId);
+                    
+                    //$this->log("link photo : ".$photolink);
+                    
+                    $this->ChatMessage->save ( array (
+                            'ChatMessage' => array (
+                                    'photo_updated' => DboSource::expression ( 'now()' ) 
+                            ) 
+                    ) );
+                } else {
+                    throw new UploadException ( __ ( $msg ) );
+                }
+            }
+        } catch ( Exception $e ) {
+            $this->_apiEr ( 'Error occured. Message not created.' );
+        }
+        //$this->log("link photo = $photolink");
+        $this->ChatCache->write ( $partnerBig . '_last_msg', strtotime ( $chatMsg ['ChatMessage'] ['created'] ) );
+        
+        // Determine number of unread messages
+        $unreadCount = $this->ChatMessage->getUnreadMsgCount ( $partnerBig );
+        // debug($unreadCount);
+        
+        // Send push notifications
+        $Privacyok=$this->PrivacySetting->getPrivacySettings($idMember2);
+        $goonPrivacy=true;
+        if (count($Privacyok)>0)
+        {
+            if ($Privacyok[0]['notifychatmessages']==0)
+            {
+                $goonPrivacy=false;
+            }
+        }
+        if     ($goonPrivacy)
+        {
+        $strLen = 50;
+        $name = $this->logged ['Member'] ['name'] . (! empty ( $this->logged ['Member'] ['middle_name'] ) ? ' ' . $this->logged ['Member'] ['middle_name'] . ' ' : ' ') . $this->logged ['Member'] ['surname'];
+        $msg = (strlen ( $text ) > $strLen + 4) ? substr ( $text, 0, $strLen ) . ($text [$strLen + 1] == ' ' ? ' ...' : '...') : $text;
+        $this->PushToken->sendNotification ( $name, $msg, array (
+                'partner_big' => $memBig,
+                'created' => $chatMsg ['ChatMessage'] ['created'],
+                'rel_id' => $chatMsg ['ChatMessage'] ['rel_id'],
+                'msg_id' => $chatMsg ['ChatMessage'] ['id'],
+                // 'timestamp' => time(),
+                'unread' => $unreadCount 
+        ), array (
+                $partnerBig 
+        ), 'chat', 'new' );
+        
+        }
+        // return chat messages like in the receive call with refresh enabled
+        $newMsgs = $this->ChatMessage->findConversations ( $memBig, $partnerBig, null, $newerThan, 0, true );
+        
+        // Mark mesaages as read
+        if (! empty ( $newMsgs ['chat_messages'] )) {
+            $updated = $this->ChatMessage->markAsRead ( $memBig, $partnerBig );
+            if (! $updated)
+                CakeLog::warning ( 'Messages not marked as read. Membig ' . $memBig . ' Partner big ' . $partnerBig );
+                /* $this->log("-------ChatMessages CONTROLLER-api_send-----");
+                 $this->log("updated = $updated ");
+                 $this->log("WWWROOT =".WWW_ROOT);
+                 $this->log("--------------close api_send----------------");*/
+        }
+        
+        $newMsgs['chat_messages'][count($newMsgs['chat_messages'])-1]['photo']=$this->FileUrl->chatmsg_picture($msgId);
+        //print_r($newMsgs);
+        if ($result !== false) {
+            $this->Util->transform_name ( $chatMsg );
+            $this->Util->transform_name ( $newMsgs );
+            $this->_apiOk ( $chatMsg );
+            $this->_apiOk ( $newMsgs );
+            
+            
+        } else {
+            $this->_apiEr ( 'Error occured. Message not sent.' );
+        }
+    }
+    
+    
+    
+    
 	public function api_badges() {
 		// $this->_checkVars(array('newer_than'));
 		$memBig = $this->logged ['Member'] ['big'];

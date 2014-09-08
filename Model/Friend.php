@@ -12,12 +12,13 @@ class Friend extends AppModel {
 			) 
 	);
 	public function getBoardFriends($MemberID) {
-		$Amici = $this->findFriends ( $MemberID );
+		//$Amici array di amici rilevati dalla tabella Friends
+        $Amici = $this->findFriends ( $MemberID );
 		
 		// create array of friends and populate with checkins places and last chat messages if any
 		$PrivacySettingModel = ClassRegistry::init ( 'PrivacySetting' );
 		
-		$FriendsID = "(";
+		$FriendsID = array();
 		foreach ( $Amici as $ami ) {
 			// add only if privacy ok
 			if ($ami ["Friend1"] ["big"] == $MemberID) {
@@ -27,40 +28,49 @@ class Friend extends AppModel {
 			else {
 				$friendID = $ami ["Friend1"] ["big"] ;
 			}
+            //$friendID = big dell'amico 
 			$Privacyok = $PrivacySettingModel->getPrivacySettings ( $friendID );
+            $Privacyok=$Privacyok[0];
+                        
 			$goonPrivacy = true;
 			if (count ( $Privacyok ) > 0) {
-				if ($Privacyok [0] ['checkinsvisibility'] == 0) {
+				if ($Privacyok ['PrivacySetting']['checkinsvisibility'] == 0) {
+                    
 					$goonPrivacy = false;
 				}
 			}
+            //$this->log("goonprivacy ".$goonPrivacy);
 			if ($goonPrivacy) {
-				$FriendsID .= $friendID . ',';
+                //$this->log("friendID ".$friendID);
+				$FriendsID[] = $friendID; //$FriendsID array big di amici visibili
 			}
 		}
-		
-		if (strlen ( $FriendsID ) > 1) {
-			$FriendsID = substr ( $FriendsID, 0, - 1 ) . ")";
-			
-			$MySql = 'SELECT
-		checkins.member_big,
-		events.place_big,
-	    checkins.created,
-		checkins.big
-		FROM
-		public.checkins,
-		public.events
-		WHERE
-		checkins.event_big = events.big
-		AND
-  checkins.member_big IN ' . $FriendsID . ' ORDER BY
-  checkins.created DESC LIMIT 50';
-			
+		//$this->log("Friends ".serialize($FriendsID));
+		if (count($FriendsID) > 0) {
+			$FriendsID = implode(',',$FriendsID); //$FriendsID viene preparato per query
+			/*$MySql = 'SELECT checkins.member_big,events.place_big,checkins.created,checkins.big '.
+                     'FROM public.checkins,public.events '.
+		             'WHERE checkins.event_big = events.big	AND checkins.member_big IN (' . $FriendsID . ') '.
+                     'ORDER BY checkins.created DESC '.
+                     'LIMIT 50'; */
+                     
+            //la query qui sopra produceva doppioni generando doppioni in $ThePlace (qualche riga più avanti)         
+            $MySql = 'SELECT * '.
+                     'FROM ( '.
+                        'SELECT DISTINCT ON(events.place_big) place_big, checkins.member_big,checkins.created,checkins.big '.
+                        'FROM public.checkins,public.events '.
+                        'WHERE checkins.event_big = events.big AND checkins.member_big IN ('. $FriendsID . ') '.
+                        'ORDER BY place_big '.
+                        ') AS xxx '.
+                     'ORDER BY created DESC '.            
+                     'LIMIT 1';
+         
+			//$this->log("Query ".$MySql);
 			$db = $this->getDataSource ();
 			
 			// try {
 			$result = $db->fetchAll ( $MySql );
-			
+			//$this->log("result ".print_r($result));
 			// die(debug($result));
 			
 			if (empty ( $result ))
@@ -92,14 +102,16 @@ class Friend extends AppModel {
 				// die(debug($r[0]["place_big"]));
 				$r ["Place"] = $ThePlace;
 				
-				unset ( $TheMember );
+                //print_r($ThePlace);
+				//unset ( $TheMember );
 				$TheMember = $MemberModel->find ( 'first', array (
 						'conditions' => array (
 								'Member.big' => $r [0] ["member_big"] ,
 								'Member.status !=' => DELETED
-						) 
+						)
+                         
 				) );
-				
+				//print_r($TheMember);
 				// die(debug($key));
 				// die(debug($r[0]["place_big"]));
 				$r ["Member"] = $TheMember;
@@ -110,7 +122,7 @@ class Friend extends AppModel {
 				$xresponse [] = $r;
 			}
 		} // IF HAS FRIENDS!!
-		
+		//print_r($xresponse);
 		return $xresponse;
 	}
 	
@@ -132,9 +144,11 @@ class Friend extends AppModel {
 				$friendID = $ami ["Friend1"] ["big"] ;
 			}
 			$Privacyok = $PrivacySettingModel->getPrivacySettings ( $friendID );
+            $Privacyok=$Privacyok[0];
+            
 			$goonPrivacy = true;
 			if (count ( $Privacyok ) > 0) {
-				if ($Privacyok [0] ['checkinsvisibility'] == 0) {
+				if ($Privacyok ['PrivacySetting'] ['checkinsvisibility'] == 0) {
 					$goonPrivacy = false;
 				}
 			}
@@ -143,14 +157,15 @@ class Friend extends AppModel {
 			}
 		}
 	
+    
+        $this->log("FriendsID ".$FriendsID);    
 		if (strlen ( $FriendsID ) > 1) {
 			$FriendsID = substr ( $FriendsID, 0, - 1 ) . ")";
 				
-			$MySql = 'SELECT
-	     *
-		FROM
-		public.members
-		WHERE members.big IN ' . $FriendsID . ' LIMIT 50';
+			$MySql = 'SELECT * '.
+		             'FROM public.members '.
+		             'WHERE members.big IN ' . $FriendsID . 
+                     ' LIMIT 50';
 			//todo:	ORDER BY RANK??
   // checkins.created DESC 
 			$db = $this->getDataSource ();
@@ -211,22 +226,22 @@ class Friend extends AppModel {
 								'OR' => array (
 										'Friend.member1_big' => $memberOne,
 										'Friend.member2_big' => $memberOne 
-								),
+								),array(
 								'OR' => array (
 										'Friend.member1_big' => $memberTwo,
 										'Friend.member2_big' => $memberTwo 
-								) 
+								)) 
 						) 
 				) 
 		);
-		
+	//	die(debug($params));
 		$result = $this->find ( $type, $params );
 		return $result;
 	}
 	public function FriendsRelationship($memberOne, $memberTwo, $relation) {
 		$db = $this->getDataSource ();
 		
-		$MySql = 'select * from  friends where (member1_big=' . $memberOne . ' OR member2_big=' . $memberOne . ') AND (member1_big=' . $memberTwo . ' OR member2_big=' . $memberTwo . ') AND status=\'' . $relation . '\'';
+		$MySql = 'select * from  friends where (member1_big=' . $memberOne . ' OR member2_big=' . $memberOne . ') AND (member1_big=' . $memberTwo . ' OR member2_big=' . $memberTwo . ') AND status=\'' . $relation . '\' order by created desc';
 		// try {
 		$result = $db->fetchAll ( $MySql );
 		

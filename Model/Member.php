@@ -233,7 +233,7 @@ class Member extends AppModel {
         for ($j=0; $j<count($ageAttempts); $j++){ //age array iterator index
     
                          
-        $sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,members.sex,
+        $sql2 = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,members.sex,
 	             members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
              
                 FROM public.members
@@ -256,7 +256,7 @@ class Member extends AppModel {
      
      if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and any members sex
          
-         $sql2 = 'SELECT members.big,members.name,members.updated,members.photo_updated,members.sex,
+         $sql2 = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,members.sex,
                   members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
              
                   FROM public.members

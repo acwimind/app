@@ -186,6 +186,7 @@ class Comment extends AppModel {
 						'comment !=' => ''
 				),
 				'fields' => array (
+						'Comment.big',
 						'Comment.member_big' ,
 						'Comment.comment' ,
 						'Comment.created'

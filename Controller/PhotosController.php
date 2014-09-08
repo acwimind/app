@@ -131,19 +131,50 @@ class PhotosController extends AppController {
 		
 	}
 	
+
+	
+	
+	/**
+	 * Upload photo
+	 */
+	public function api_MemberPhotos() {
+	
+		$this->_checkVars ( array (
+				'user_big' 
+		) );
+		
+		$memBig = $this->api ['user_big'];
+		
+		$xPhoto=$this->Photo->getMemberPhotos($memBig);
+		
+		
+		
+//		debug($xPhoto);
+
+		for($i = 0; $i < count ( $xPhoto ); $i ++) {
+		
+		
+		$xPhoto [$i] ["Photo"] ["url"] = $this->FileUrl->event_photo ( $xPhoto [$i] ['Event'] ['big'], $xPhoto [$i] ["Photo"] ['gallery_big'], $xPhoto [$i] ["Photo"] ['big'], $xPhoto [$i] ["Photo"] ['original_ext'] );
+		}
+		
+		$this->_apiOk($xPhoto);
+		
+	
+	}
+	
 	public function admin_view($big)
 	{
-			unbindAllBut($this->Photo, array('Gallery'));
-			$photo = $this->Photo->findByBig($big);
+		unbindAllBut($this->Photo, array('Gallery'));
+		$photo = $this->Photo->findByBig($big);
 			
-			if (empty($photo))
-			{
-				$this->Session->setFlash(__('Photo not found'), 'flash/error');
-				$this->redirect(array('controller' => 'signalations', 'action' => 'index'));
-			}
+		if (empty($photo))
+		{
+			$this->Session->setFlash(__('Photo not found'), 'flash/error');
+			$this->redirect(array('controller' => 'signalations', 'action' => 'index'));
+		}
 			
-			$this->set('photo', $photo);
-		
+		$this->set('photo', $photo);
+	
 	}
 	
 	public function admin_all()
