@@ -67,7 +67,12 @@ class CommentsController extends AppController {
 		// update existing member
 	
 	if ($this->Comment->saveComment($this->api ))	
-	{$this->_apiOk ( "Comment/Like Saved" );
+	{
+        if ($this->api['place_big']!=NULL AND $this->api['place_big']>0 AND $this->api['comment']!=''){
+            
+            $this->Member->rank($this->api['member_big'],1); //rank +1 commento sul place
+                        }
+        $this->_apiOk ( "Comment/Like Saved" );
 	}
 	else 
 	{	

@@ -391,7 +391,8 @@ Headers ("X-NotificationClass", "2")
 		if (!empty($messagesProd)) {
 			// Instantiate a new ApnsPHP_Push object FOR PRODUCTION        
 			$pushProd = new ApnsPHP_Push(
-				ApnsPHP_Abstract::ENVIRONMENT_SANDBOX,
+				ApnsPHP_Abstract::ENVIRONMENT_PRODUCTION,
+					// CAMBIATO ApnsPHP_Abstract::ENVIRONMENT_SANDBOX,
 		// TODO:  QUESTA PUSH CAMBIARE IN PRODUZIONE			ApnsPHP_Abstract::ENVIRONMENT_PRODUCTION,		
 				'files/certificate/HaambleDist.pem'
 			);

@@ -27,7 +27,7 @@ class WalletsController extends AppController {
 
 	   if ( $this->Wallet->addAmount($idMember,$amount,$reason))
 	   {
-		
+		$this->Member->rank($idMember,5); //+5 punti su rank per acquisto credito
        $this->_apiOk($amount );
 	   }
 	else  {

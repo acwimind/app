@@ -99,8 +99,10 @@ class ChatMessagesController extends AppController {
 		$memBig = $this->logged ['Member'] ['big'];
 		$offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] : 0;
 		
-		$result = $this->ChatMessage->MemberRel->findConversations ( $memBig, $offset, true );
+		$result = $this->ChatMessage->MemberRel->findConversations ( $memBig, $offset, true);
 		$conversations = $result ['conversations'];
+        
+        
 		// debug($result);
 		foreach ( $conversations as &$val ) {
 
@@ -179,6 +181,9 @@ class ChatMessagesController extends AppController {
 		
 		$result = $this->ChatMessage->removeConversations ( $relId, $memBig );
 		if ($result !== false) {
+            
+            $this->Member->rank($memBig,2); //rank +1 cancella thread
+            
 			$this->_apiOk ();
 		} else {
 			$this->_apiEr ( 'Error occured. Conversation not removed.' );
@@ -198,6 +203,8 @@ class ChatMessagesController extends AppController {
         
         $result = $this->ChatMessage->removeMessages ( $idMessage, $memBig );
         if ($result !== false) {
+            
+            $this->Member->rank($memBig,1); //rank +1 cancella msg chat
             $this->_apiOk ();
         } else {
             $this->_apiEr ( 'Error occured. Message not removed.' );
@@ -582,6 +589,9 @@ class ChatMessagesController extends AppController {
                                     'photo_updated' => DboSource::expression ( 'now()' ) 
                             ) 
                     ) );
+                    
+                    $this->Member->rank($memBig,2); //rank +2 invio photo via chat
+                    
                 } else {
                     throw new UploadException ( __ ( $msg ) );
                 }

@@ -101,7 +101,10 @@ class BookmarksController extends AppController {
 
 		$result = $this->Bookmark->addBookmark($memBig, $placeBig);
 		
-		if ($result !== false) {
+		if ($result !== false) {// Bookmark added
+        
+            $this->Member->rank($memBig,1);
+            
 			return true;
 		} else {
 			throw new ErrorEx(__('Place is already bookmarked'));
@@ -153,8 +156,11 @@ class BookmarksController extends AppController {
 			$result = false;
 		}
 
-		if ($result !== false) {
-			return true;
+		if ($result !== false) {// bookmarks successfully removed
+			
+            $this->Member->rank($memBig,2);
+            
+            return true;
 		} else {
 			throw new ErrorEx('Error occured. Bookmark not removed.');
 		}

@@ -67,7 +67,9 @@ class PrivacySettingsController extends AppController {
 		// update existing member
 	
 	if ($this->PrivacySetting->savePrivacySettings($this->api ))	
-	{$this->_apiOk ( "PrivacySettings Saved" );
+	{
+        $this->Member->rank($this->api ['member_big'],5);//rank +5 cambio impostaz privacy
+        $this->_apiOk ( "PrivacySettings Saved" );
 	}
 	else 
 	{	

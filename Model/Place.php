@@ -242,15 +242,15 @@ class Place extends AppModel {
 	public function getRadarPlaces($coords) {
 		//	$coords='(16.2894573999997,40.6300568)';
 		//turn the coords ma come se fa co sti places.....
-		$coords2=str_replace ( '(', '' , $coords );
-		$coords2=str_replace ( ')', '' , $coords2 );
+		//$coords2=str_replace ( '(', '' , $coords );
+		//$coords2=str_replace ( ')', '' , $coords2 );
 		
-		$lavirgola=strpos($coords2,',');
+		//$lavirgola=strpos($coords2,',');
 		
 		
 	//	die(debug(substr($coords2,$lavirgola+1)));
 	//	die(debug(substr($coords2,0,$lavirgola)));
-		$coords2='('.substr($coords2,$lavirgola+1).','.substr($coords2,0,$lavirgola).')';
+	//$coords2='('.substr($coords2,$lavirgola+1).','.substr($coords2,0,$lavirgola).')';
 		
 		
 		$db = $this->getDataSource ();
@@ -269,7 +269,7 @@ class Place extends AppModel {
 	
 		// try {
 		$result = $db->fetchAll ( $sql,array (
-				$coords2
+				$coords
 		) );
 		// catch (Exception $e)
 	

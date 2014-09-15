@@ -449,6 +449,27 @@ FROM
 		 $return=$this->find('first', $params);
 		 return $return;
 	}
-		   
+		
+        public function rank($memberBig,$value){
+                
+        if (($memberBig!='') AND ($value>0)){
+        
+        $query='UPDATE members '.
+               'SET rank=rank + '.$value.' '.
+               'WHERE big= '.$memberBig; 
+        
+        $db = $this->getDataSource ();
+        
+        $db->fetchAll($query);
+        
+        $count=$this->getAffectedRows();
+         
+        if ($count>0) return true; else   
+       
+        return false;
+        } else
+            return false;
+    }
+           
 
 }

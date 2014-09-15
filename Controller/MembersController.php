@@ -869,7 +869,7 @@ class MembersController extends AppController {
 					'surname' => 'surname' 
 			);
 			$optional_fields = array ();
-		} else {
+		} else { //edit member
 			
 			$required_fields = array ();
 			$optional_fields = array (
@@ -903,6 +903,8 @@ class MembersController extends AppController {
 					'address_country' => 'address_country',
 					'address_zip' => 'address_zip'
 			);
+            
+            $opt_fields_rank=10;
 			
 		}
 		else 
@@ -923,6 +925,9 @@ class MembersController extends AppController {
 				'address_country' => 'state',
 				'address_zip' => 'zip' 
 		);
+        
+        $opt_fields_rank=0;
+        
 		}
 		$all_fields = array_merge ( $required_fields, $optional_fields );
 		
@@ -948,13 +953,18 @@ class MembersController extends AppController {
 		$this->Member->save ();
 		
 		if (! empty ( $this->Member->validationErrors )) { // we have errors while saving the data
-			$this->_apiEr ( __ ( 'Please fill in all required fields' ), true, false, array (
+			            
+            $this->_apiEr ( __ ( 'Please fill in all required fields' ), true, false, array (
 					'fields' => $this->Member->validationErrors 
 			) );
 		}
 		
 		$member ['big'] = $this->Member->id;
 		
+        //+10 senza opt_fields altrimenti +20 con opt_fields
+        $this->Member->rank($member['big'],10+$opt_fields_rank);
+        
+        
 		return $member;
 	}
 	
@@ -973,10 +983,18 @@ class MembersController extends AppController {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
 		
-		$memb = array (
-				'big' => $this->api ['big'],
-				'last_lonlat' => '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')' 
-		);
+		/* Coordinate invertite
+        $memb = array (
+                'big' => $this->api ['big'],
+                'last_lonlat' => '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')' 
+        );*/
+        
+        //Coordinate come da campo in Member lon,lat
+        $memb = array (
+                'big' => $this->api ['big'],
+                'last_lonlat' => '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')' 
+        );
+        
 		debug ( $memb );
 		$this->Member->set ( $memb );
 		try {
@@ -987,8 +1005,10 @@ class MembersController extends AppController {
 		
 		// AUTO CHECKIN!!!
 		
-		$myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
+		//$myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
 		
+        $myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')',$this->api ['big']);
+        
 		$this->_apiOk ( "Position set" );
 	}
 	
@@ -1072,7 +1092,7 @@ class MembersController extends AppController {
 		$this->ProfileVisit->saveVisit ( $this->logged ['Member'] ['big'], $this->api ['big'] );
 		
 		// TODO : do we want to add push for visits??
-		
+        $this->Member->rank($this->api ['big'],1); //rank +1 visualizza proprio profilo
 		
 		$this->_apiOk ( $data );
 	}
@@ -1124,7 +1144,7 @@ class MembersController extends AppController {
 	/**
 	 * get member extraindfos
 	 */
-	public function api_getExtraInfos() {
+	public function api_getExtraInfos_old() {
 		if (! isset ( $this->api ['big'] )) {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
@@ -1145,7 +1165,36 @@ class MembersController extends AppController {
 		}
 	}
 	
+	public function api_getExtraInfos() {
+		if (! isset ( $this->api ['big'] ) OR $this->api['big']=='') {
+			$this->api ['big'] = $this->logged ['Member'] ['big'];
+		}
 	
+		$params = array (
+				'conditions' => array (
+						'member_big' => $this->api ['big']
+				),
+				'recursive' => - 1
+		);
+	
+		try {
+			$data = $this->ExtraInfos->find ( 'first', $params );
+            
+            if (count($data)>0)
+            
+			$this->_apiOk ( $data ); else {
+                
+                $data['ExtraInfos']=array('country_code'=>null,'city'=>null,'occupation'=>null,'music'=>null,'food'=>null,
+                            'fashion'=>null, 'primary_language'=>null, 'secondary_language'=>null,
+                            'member_big'=>'0','looking_for'=>null,
+                            'emotional_status'=>null);
+                $this->_apiOk ( $data );
+                
+            }
+		} catch ( Exception $e ) {
+			$this->_apiEr ( "Error" );
+		}
+	}
 	
 	
 	/**
@@ -1213,6 +1262,28 @@ class MembersController extends AppController {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 				
 		}
+		
+		
+		// ADDED key for frindship
+		$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged['Member']['big'], $data['Member']['big']);
+		$xisFriend=0;
+		$xstatus='NO';
+		if (count($xfriend)>0)
+		{
+			$xisFriend=1;
+			$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
+			$xstatus=$xfriend[0]['Friend']['status'];
+		}
+			
+		if ( $xstatus!='A')
+		{
+			$data['Member']['surname']=substr($data['Member']['surname'],0,1).'.';
+		}
+			
+		$data['Member']['isFriend']=$xisFriend;
+		
+		
+		
 			
 			$xami [$counter] ['Member'] = $data ['Member'];
 			
@@ -1289,15 +1360,21 @@ class MembersController extends AppController {
 			// insert unique
 			
 			if ($contactCount == 0) {
+                
+                $tox_chars=array('.',',',' ','(',')');
+                
+                $pattern='/[()]+|[a-zA-Z]+|[.]+|[ ]+|[#*]+[0-9]+[#*]+|[\\/]+[0-9]+|[-]+|[#*]$/';
+                
+                
 				
 				$Contacts ['member_big'] = $ContactBIG;
 				if (isset ( $val ['mail_address'] )) {
-					$Contacts ['email'] = $val ['mail_address'];
+					$Contacts ['email'] = (strlen($val ['mail_address'])<50) ? $val['mail_address']: substr($val['mail_address'],0,50);
 				}
 				if (isset ( $val ['phone_number'] )) {
-					$Contacts ['phone'] = $val ['phone_number'];
+					$Contacts ['phone'] = (strlen($val['phone_number'])<32) ? $val['phone_number']: substr($val['phone_number'],0,32);
 				}
-				$Contacts ['name'] = $val ['internal_name'];
+				$Contacts ['name'] = (strlen($val ['internal_name'])<300) ? $val['internal_name']: substr($val['internal_name'],0,300);
 				$this->Contact->set ( $Contacts );
 				$this->Contact->save ();
 			}
@@ -1571,11 +1648,30 @@ class MembersController extends AppController {
 		$photos = $this->_addMemberPhotoUrls ( $photos );
 		$data ['Uploaded'] = $photos;
 		$data ['Member'] ['photos_count'] = $photosCount;
-		debug($data);
-		$this->Util->transform_name ( $data );
-		debug($data);
+
+		
+			// ADDED key for frindship
+			$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged['Member']['big'], $data['Member']['big']);
+			$xisFriend=0;
+			$xstatus='NO';
+			if (count($xfriend)>0)
+			{
+				$xisFriend=1;
+				$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
+				$xstatus=$xfriend[0]['Friend']['status'];
+			}
+			
+			if ( $xstatus!='A')
+			{
+				$data['Member']['surname']=substr($data['Member']['surname'],0,1).'.';
+			}	
+			
+			$data['Member']['isFriend']=$xisFriend;
+//		debug($data);
+//		$this->Util->transform_name ( $data );
+//		debug($data);
 		// SAVES A VISIT TO PROFILE!!
-		debug ( $data );
+	//	debug ( $data );
 		$this->ProfileVisit->saveVisit ( $this->logged ['Member'] ['big'], $this->api ['user_big'] );
 		
 		$this->_apiOk ( $data );

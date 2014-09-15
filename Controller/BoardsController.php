@@ -236,7 +236,7 @@ class BoardsController extends AppController {
 		// $bms[] = array(
 		// 'Bookmark' => $val['Bookmark'],
 		
-		for($i = 0; $i <= 5; $i ++) {
+		for($i = 0; $i <= 25; $i ++) {
 			if ($i < count ( $MyPlaces )) {
 				$MyPlaces [$i] ["BoardType"] = "Place";
 				$MyBoard [] = $MyPlaces [$i];
@@ -287,12 +287,76 @@ class BoardsController extends AppController {
 		
 		$MyBig = $this->api ['big'];
 		
+		// TEST PLACES!!!
+		$MyPlaces = array ();
+		$MyPlaces = $this->Place->getBoardPlaces ( $MyBig);
+		
+		/*
+		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
+		*/
+		
+		foreach ( $MyPlaces as $key => $val ) {
+				
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_id'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_source'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['slug'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['opening_hours'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['news'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['photo_updated'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['status'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['created'] );
+			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['updated'] );
+		}
+		
+		foreach ( $MyPlaces as $key => $val ) {
+				
+			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
+		
+				$DefPic = $this->Photo->find ( 'first', array (
+						'conditions' => array (
+								'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big']
+						),
+						'recursive' => - 1
+				) );
+		
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+		
+				/*
+				 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+				*/
+			} else {
+		
+				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
+			}
+			// check if i liked it
+			$xlike = 0;
+			$xlike = $this->Comment->find ( 'count', array (
+					'conditions' => array (
+							'Comment.member_big' => $MyBig,
+							'Comment.likeit' => 1,
+							// 'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
+							'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig']
+							// 'Comment.place_big'
+					)
+			) );
+				
+			// TODO: ARRIVATO QUI !!!! LIKE COUNT
+			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+				
+			$MyPlaces [$key] ['ILike'] = $xlike;
+		}
+		
+		
+		//
+		
+		
 		$MyCheckins = array ();
 		$Checkins = array ();
 		
 		$allx = true;
 		$MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx );
-		
 		foreach ( $MyCheckins as $key => $val ) {
 			
 			if (isset ( $val [0] ['Checkin'] [0] ['Place'] ['DefaultPhoto'] ['big'] ) && $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
@@ -323,9 +387,7 @@ class BoardsController extends AppController {
 				$Checkins [] = $MyCheckins;
 			}
 		}
-		
 		$MyPhotos = $this->Photo->getMemberPhotos ( $MyBig );
-		debug ( $MyPhotos );
 		$MyFriends = array ();
 		$Amici = $this->Friend->GetDiaryFriends ( $MyBig );
 		
@@ -375,6 +437,11 @@ class BoardsController extends AppController {
 			if ($i < count ( $MyFriends )) {
 				$MyFriends [$i] ["BoardType"] = "Friends";
 				$MyBoard [] = $MyFriends [$i];
+			}
+			
+			if ($i < count ( $MyPlaces )) {
+				$MyPlaces [$i] ["BoardType"] = "Place";
+				$MyBoard [] = $MyPlaces [$i];
 			}
 			if ($i < count ( $Checkins )) {
 				$Checkins [$i] ["BoardType"] = "Places";
@@ -572,6 +639,9 @@ class BoardsController extends AppController {
 			
 			$MyFriends [$key] [0]['surname']=substr($MyFriends [$key] [0]['surname'],0,1).'.';
 			}
+			
+			//QUI   !!!  $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
+		//	if ($isIgnored) {
 			
 		}
 		
