@@ -46,14 +46,23 @@ class FriendsController extends AppController {
 			if ($ami ["Friend1"] ["big"] == $idMember) {
 				$ami ["Friend2"] ["friendstatus"] = $ami ["Friend"] ["status"];
 				$ami ["Friend2"] ["friendtype"] = "Passive";
+				if ($ami ["Friend"] ["status"]!='A')
+				{
+					$ami ["Friend2"] ['surname'] = substr ( $ami ["Friend2"] ['surname'], 0, 1 ) . '.';
+				}
 				$xami [] = $ami ["Friend2"];
 			} 
 
 			else {
 				$ami ["Friend1"] ["friendstatus"] = $ami ["Friend"] ["status"];
 				$ami ["Friend1"] ["friendtype"] = "Active";
+				if ($ami ["Friend"] ["status"]!='A')
+				{
+					$ami ["Friend1"] ['surname'] = substr ( $ami ["Friend1"] ['surname'], 0, 1 ) . '.';
+				}
 				$xami [] = $ami ["Friend1"];
 			}
+			
 			
 			// debug($xami[0]);
 			
@@ -268,7 +277,7 @@ class FriendsController extends AppController {
 					$Privacyok = $this->PrivacySetting->getPrivacySettings ( $idMember1 );
 					$goonPrivacy = true;
 					if (count ( $Privacyok ) > 0) {
-						if ($Privacyok [0] ['notifyfriendshiprequests'] == 0) {
+						if ($Privacyok [0]['PrivacySetting'] ['notifyfriendshiprequests'] == 0) {
 							$goonPrivacy = false;
 						}
 					}

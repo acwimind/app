@@ -36,7 +36,7 @@ class RegistrationCodesController extends AppController {
 			if (count ( $savedMember ) == 0) {
 				// se non presente...
 				if (count ( $savedCodes ) == 0) {
-					$myNum = rand ( 1, 1000 ) * 1000 + rand ( 1, 1000 );
+					$myNum = rand ( 10, 99 ) * 1000 + rand ( 100, 999 );
 					$myText = ( string ) $myNum;
 					$this->RegistrationCode->set ( array (
 							'phone' => $this->api ['phone'],

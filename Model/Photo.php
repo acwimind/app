@@ -14,7 +14,7 @@ class Photo extends AppModel {
 	 * @param unknown_type $memBig
 	 * @return unknown
 	 */
-	public function getMemberPhotos($memBig)
+	public function getMemberPhotos($memBig, $offset=0)
 	{
 		/*
 		$params = array(
@@ -60,15 +60,19 @@ class Photo extends AppModel {
 		*/
 		
 		$db = $this->getDataSource();
-		$query = 'SELECT photos.big AS "Photo__big", photos.original_ext AS "Photo__original_ext", photos.gallery_big AS "Photo__gallery_big", photos.member_big AS "Photo__member_big", 
-				events.big AS "Event__big", events.name AS "Event__name", (events.type=2 AND events.status=0) as "Event__hidden", events.slug AS "Event__slug",
-				places.big AS "Place__big", places.name AS "Place__name", places.slug AS "Place__slug"
-			FROM photos 
-			LEFT JOIN galleries ON (photos.gallery_big = galleries.big)
-			LEFT JOIN places ON (galleries.place_big = places.big)
-			LEFT JOIN events ON (galleries.event_big = events.big)
-			WHERE photos.member_big = ? AND photos.status < 255';
-		$photos = $db->fetchAll($query, array($memBig));
+		$query = "SELECT photos.big AS \"Photo__big\", photos.original_ext AS \"Photo__original_ext\",".
+                 "photos.gallery_big AS \"Photo__gallery_big\", photos.member_big AS \"Photo__member_big\",".
+                 "events.big AS \"Event__big\", events.name AS \"Event__name\",".
+                 "(events.type=2 AND events.status=0) as \"Event__hidden\", events.slug AS \"Event__slug\",".
+                 "places.big AS \"Place__big\", places.name AS \"Place__name\", places.slug AS \"Place__slug\" ".
+                 "FROM photos ".
+                 "LEFT JOIN galleries ON (photos.gallery_big = galleries.big) ".
+                 "LEFT JOIN places ON (galleries.place_big = places.big) ".
+                 "LEFT JOIN events ON (galleries.event_big = events.big) ".
+                 "WHERE photos.member_big = ? AND photos.status < 255 ".
+                 "LIMIT ".LIMIT_QUERY_CONTENT." OFFSET ".$offset;
+		
+        $photos = $db->fetchAll($query, array($memBig));
 		
 		return $photos;
 		

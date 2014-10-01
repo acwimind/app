@@ -512,43 +512,30 @@ class Checkin extends AppModel {
     
     
     
-	public function getNearbyCheckinsMember($Idmem,$all) {
+	public function getNearbyCheckinsMember($Idmem,$all,$offset=0) {
 		$db = $this->getDataSource ();
-		$sql2 = 'SELECT
-  Places.big as "Place__big",
-  Places.name as "Place__name",
-  Places.category_id as "Place__category_id",
-	Places.lonlat as "Place__coordinates",
-	photos.big as "DefaultPhoto__big", 
-	photos.original_ext as "DefaultPhoto__original_ext",
-				photos.status as "DefaultPhoto__status"  ,
-				photos.big as "DefaultPhoto__big", 
-					photos.original_ext as "DefaultPhoto__original_ext", 
-					galleries.big as "Gallery__big", 
-					galleries.place_big as "Gallery__place_big", 
-					galleries.name as "Gallery__name", 
-					galleries.type as "Gallery__type", 
-					galleries.status as "Gallery__status", 
-					galleries.created as "Gallery__created", 
-					galleries.updated as "Gallery__updated" 
-FROM
-  public.checkins,
-  public.events,
-  public.places as Places
-LEFT JOIN photos ON (places.default_photo_big = photos.big) AND photos.status != 255  
-	LEFT JOIN galleries ON (places.big = galleries.place_big) AND galleries.status != 255  AND galleries.event_big is null  
-							
-WHERE
-checkins.member_big = ' . $Idmem . ' AND';
+		$sql2 = "SELECT Places.big as \"Place__big\",Places.name as \"Place__name\",".
+                "Places.category_id as \"Place__category_id\",Places.lonlat as \"Place__coordinates\",".
+	            "photos.big as \"DefaultPhoto__big\",photos.original_ext as \"DefaultPhoto__original_ext\",".
+                "photos.status as \"DefaultPhoto__status\",photos.big as \"DefaultPhoto__big\",".
+                "photos.original_ext as \"DefaultPhoto__original_ext\",galleries.big as \"Gallery__big\",".
+                "galleries.place_big as \"Gallery__place_big\",galleries.name as \"Gallery__name\",".
+                "galleries.type as \"Gallery__type\",galleries.status as \"Gallery__status\",".
+                "galleries.created as \"Gallery__created\",galleries.updated as \"Gallery__updated\" ".
+                "FROM public.checkins,public.events,public.places as Places ".
+                "LEFT JOIN photos ON (places.default_photo_big = photos.big) AND photos.status != 255 ".
+                "LEFT JOIN galleries ON (places.big = galleries.place_big) AND galleries.status != 255 ".
+                "AND galleries.event_big IS NULL ".
+                "WHERE checkins.member_big = " . $Idmem . " AND ";
 
-	if (!$all ){	
-$sql2 .= ' checkins.checkout ISNULL AND ';
-	}
+	            if (!$all ){	
+                            $sql2 .= "checkins.checkout ISNULL AND ";
+	                        }
 		
- $sql2 .= ' 
-  checkins.event_big = events.big AND
-  events.place_big = Places.big  order by checkins.created  desc ';
+        $sql2 .= "checkins.event_big = events.big AND events.place_big = Places.big ORDER BY checkins.created DESC ";
 		
+        $sql2 .= "LIMIT ".LIMIT_QUERY_CONTENT." OFFSET ".$offset;
+        
 		// try {
 		$result = $db->fetchAll ( $sql2 );
 		// }
@@ -613,8 +600,11 @@ $sql2 .= ' checkins.checkout ISNULL AND ';
     public function getNearbyPeopleNew($coords, $optParams,$membig,$offset) {
         $myc = $this->AutoCheckout ();
         
+        $name=strtolower($optParams['name']);
         
-        if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]'";
+        if ($optParams['name']!=null) $filter[]="LOWER(members.name) LIKE '%$name%' OR LOWER(members.surname) LIKE '%$name%' "; 
+        
+        if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]' ";
         
         if ($optParams['age']!=null) {
             
@@ -707,7 +697,7 @@ $sql2 .= ' checkins.checkout ISNULL AND ';
         $modelAnimal = ClassRegistry::init ( 'Animal' );  
         $result=$modelAnimal->AddQuery($sql2);
         */
-                      
+         //print ($sql2);             
         return $result;
     }
     

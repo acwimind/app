@@ -541,18 +541,72 @@ class CheckinsController extends AppController {
 	}
 	public function api_nearby() {
 		$this->_checkVars ( array (
-				'lon',
-				'lat' 
-		), array (
+				
+		), array ('lon',
+				'lat' ,
 				'sex',
 				'age',
 				'distance',
 				'category' 
 		) );
 		$memBig = $this->logged ['Member'] ['big'];
-		$lon = $this->api ['lon'];
-		$lat = $this->api ['lat'];
-		$coords = '(' . $lon . ',' . $lat . ')';
+	
+		
+
+		$coords = '(40.6300568,16.2894573999997)';
+		$lon = '16.2894573999999';
+		$lat='40.6300568';
+		
+		
+		/*$coords = '(16.2894573999997,40.6300568)';
+		 $lon = '40.6300568';
+		$lat='16.2894573999999';
+		*/
+		
+		if  (isset($this->api['lon']))
+		{
+			$lon = isset($this->api['lon']) ? $this->api['lon'] : null;
+			$lat = isset($this->api['lat']) ? $this->api['lat'] : null;
+			$coords = '(' . $lon . ',' . $lat . ')';
+		}
+		else
+		{  // try
+		$params = array (
+				'conditions' => array (
+						'Member.big' => $this->logged['Member']['big']
+				),
+				'fields' => array (
+						'big',
+						'last_lonlat',
+						'updated'
+				),
+				'recursive' => - 1
+		);
+			
+		try {
+			$datapos = $this->Member->find ( 'first', $params );
+		
+		
+		} catch ( Exception $e ) {
+			$this->_apiEr ( "Error" );
+		}
+			
+		if (count($datapos)>0)
+		{
+			//	debug($datapos['Member']['last_lonlat']);
+			if ($datapos['Member']['last_lonlat']!=null)
+			{
+				$coords = $datapos['Member']['last_lonlat'];
+				$xcoords  = str_replace("(", "", $coords);
+				$xcoords  = str_replace(")", "", $xcoords);
+				$lecoords=split(',',$xcoords);
+				$lon=$lecoords[0];
+				$lat=$lecoords[1];
+				//	debug('a');
+			}
+		}
+			
+		}
 		
 		$sex = isset ( $this->api ['sex'] ) ? $this->api ['sex'] : null; // values are m or f
 		$age = isset ( $this->api ['age'] ) ? $this->api ['age'] : null; // values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55
@@ -727,32 +781,88 @@ class CheckinsController extends AppController {
 		$this->_apiOk ( $xresponse );
 	}
 	public function api_nearbyPeople() {
-		$this->_checkVars ( array (
-				'lon',
-				'lat' 
-		), array (
+		$this->_checkVars ( array (	
+		), array ('lon',
+				'lat',
 				'sex',
 				'age',
 				'distance',
 				'category',
-				'offset' 
+				'offset',
+                'name' 
 		) );
 		
 		$memBig = $this->logged ['Member'] ['big'];
-		$lon = $this->api ['lon'];
-		$lat = $this->api ['lat'];
-		$coords = '(' . $lon . ',' . $lat . ')';
+	//	$lon = $this->api ['lon'];
+	//	$lat = $this->api ['lat'];
+//		$coords = '(' . $lon . ',' . $lat . ')';
 		$offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] * API_MAP_LIMIT : 0;
+		
+		
+		$coords = '(40.6300568,16.2894573999997)'; 
+		$lon = '16.2894573999999';
+		$lat='40.6300568';
+		
+		
+		
+		if  (isset($this->api['lon']))
+		{
+			$lon = isset($this->api['lon']) ? $this->api['lon'] : null;
+			$lat = isset($this->api['lat']) ? $this->api['lat'] : null;
+			$coords = '(' . $lon . ',' . $lat . ')';
+		}
+		else
+		{  // try
+		$params = array (
+				'conditions' => array (
+						'Member.big' => $this->logged['Member']['big']
+				),
+				'fields' => array (
+						'big',
+						'last_lonlat',
+						'updated'
+				),
+				'recursive' => - 1
+		);
+		 
+		try {
+			$datapos = $this->Member->find ( 'first', $params );
+			 
+		
+		} catch ( Exception $e ) {
+			$this->_apiEr ( "Error" );
+		}
+		 
+		if (count($datapos)>0)
+		{
+			//	debug($datapos['Member']['last_lonlat']);
+			if ($datapos['Member']['last_lonlat']!=null)
+			{
+				$coords = $datapos['Member']['last_lonlat'];
+				$xcoords  = str_replace("(", "", $coords);
+				$xcoords  = str_replace(")", "", $xcoords);
+				$lecoords=split(',',$xcoords);
+				$lon=$lecoords[1];
+				$lat=$lecoords[0];
+				//	debug('a');
+			}
+		}
+		 
+		}
+		
+		
 		
 		$sex = isset ( $this->api ['sex'] ) ? $this->api ['sex'] : null; // values are m or f
 		$age = isset ( $this->api ['age'] ) ? $this->api ['age'] : null; // values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55
 		$distance = isset ( $this->api ['distance'] ) ? $this->api ['distance'] : null; // values are number=km or over for >100km
 		$category = isset ( $this->api ['category'] ) ? $this->api ['category'] : null; // values are id in categories table
-		
+		$name = isset ( $this->api ['name'] ) ? strtolower($this->api ['name']) : null;
+        
 		$optParams ['sex'] = $sex;
 		$optParams ['age'] = $age;
 		$optParams ['distance'] = $distance;
 		$optParams ['category'] = $category;
+        $optParams ['name'] = $name;
 		
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
@@ -827,13 +937,25 @@ class CheckinsController extends AppController {
 						$val [0] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
 						$xstatus = $xfriend [0] ['Friend'] ['status'];
 					}
-						
-					if ($xstatus != 'A') {
-						$val [0]  ['surname'] = substr ( $val [0]  ['surname'], 0, 1 ) . '.';
-					}
-						
+                    
+					$removeMember=false;	
+					
+                    if ($xstatus != 'A') {
+                                              
+                        $surname=strtolower($val[0]['surname']);
+                        
+                        if ($name!=null AND strpos($surname,$name)!==false){
+                                        $removeMember=true;
+                                        
+                                        }
+                        $val [0]  ['surname'] = substr ( $val [0]  ['surname'], 0, 1 ) . '.'; 
+                        } 
+									
+                    //$val [0]  ['surname'] = substr ( $val [0]  ['surname'], 0, 1 ) . '.';
+                    
 				$val [0]  ['isFriend'] = $xisFriend;
 					
+                                        
 					/*
 					 * if (isset ( $val[0]['Place'] ['DefaultPhotobig'] ) && $val[0]['Place'] ['DefaultPhotobig'] > 0) { // add URLs to default photos if (isset ( $val[0]['Place'] ['DefaultPhotostatus'] ) && $val ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $data [$key] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['big'], $val ['Gallery'] [0] ['big'], $val ['DefaultPhoto'] ['big'], $val ['DefaultPhoto'] ['original_ext'] ); } else { $data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] ); } } else { $data [$key] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['category_id'] ); }
 					 */
@@ -842,7 +964,8 @@ class CheckinsController extends AppController {
 					// array_unshift($xresponse,$val[0]);
 					// }
 					// else
-					$xresponse [] = $val [0];
+					if (!$removeMember)
+                    $xresponse [] = $val [0];
 				}
 			}
 		}
@@ -851,6 +974,8 @@ class CheckinsController extends AppController {
 		
 		$this->_apiOk ( $xresponse );
 	}
+    
+    
 	public static function multiFieldSortArray($x, $y) { // sort an array by position_bonus DESC and distance ASC
 		if ($x ['position_bonus'] == $y ['position_bonus']) {
 			

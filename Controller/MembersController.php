@@ -1,4 +1,5 @@
 <?php
+App::uses ( 'Logger', 'Lib' );
 class MembersController extends AppController {
 	public $uses = array (
 			'Member',
@@ -12,9 +13,11 @@ class MembersController extends AppController {
 			'Place',
 			'Category',
 			'ExtraInfos',
-			'Wallet'
-			
+			'Wallet' 
 	);
+    
+    var $components = array('MailchimpApi');
+    
 	public function beforeFilter() {
 		parent::beforeFilter ();
 		
@@ -696,6 +699,38 @@ class MembersController extends AppController {
 				'action' => 'index' 
 		) );
 	}
+	public function checkAppUpdate($platformId, $usedVersion) {
+		/*
+		 * $platformId = 1 Android; 2 iOS; 3 WindowsPhone $usedVersion = versione usata dall'utente x.y (1.0,1.4,1.5,....2.1,2.4,...) return true se la versione che si sta usando è vecchia return false se la versione che si sta usando è l'ultima
+		 */
+		$status = false;
+		
+		switch ($platformId) {
+			
+			case 1 : // Android
+				if ($usedVersion < ANDROID_APP_VERSION) {
+					
+					$status = true;
+				}
+				
+				break;
+			case 2 : // iOS
+				if ($usedVersion < IOS_APP_VERSION) {
+					
+					$status = true;
+				}
+				
+				break;
+			
+			case 3 : // Windows Phone
+				if ($usedVersion < WPHONE_APP_VERSION) {
+					
+					$status = true;
+				}
+		}
+		
+		return $status;
+	}
 	
 	/**
 	 * authenticate member in API
@@ -704,6 +739,13 @@ class MembersController extends AppController {
 		CakeLog::info ( 'Login called' );
 		
 		$member = $this->_apiLogin ();
+		
+		if (isset ( $this->api ['version'] ) and $this->api ['version'] != null) {
+			
+			if ($this->checkAppUpdate ( $this->api ['platform_id'], $this->api ['version'] )) {
+				$this->_apiEr ( __ ( 'Your version of Haamble is out of date. Please upgrade your App' ), true );
+			}
+		}
 		
 		CakeLog::info ( 'Result: Api token = ' . $member ['ApiToken'] ['token'] . ' Member big = ' . $member ['Member'] ['big'] );
 		
@@ -765,6 +807,8 @@ class MembersController extends AppController {
 		
 		// save new member
 		$member = $this->_save ();
+        //Registra l'utente in list sull'account mailchimp di haamble
+       $this->MailchimpApi->addMembers(MAILCHIMP_HAAMBLE_LIST_ID,$this->api['email'],$this->api['name'],$this->api['surname']);
 		
 		$response = $this->_apiLogin ();
 		
@@ -786,10 +830,9 @@ class MembersController extends AppController {
 		}
 		
 		// INSERISCE I PRIVACY SETTINGS tutti a 1!!
-		$this->PrivacySetting->CreateSettings($member ['big']);
+		$this->PrivacySetting->CreateSettings ( $member ['big'] );
 		// give some credit
-		$this->Wallet->addAmount($member ['big'],'50','Welcome to Haamble');
-		
+		$this->Wallet->addAmount ( $member ['big'], '50', 'Welcome to Haamble' );
 		
 		$this->_apiOk ( $response );
 	}
@@ -798,7 +841,6 @@ class MembersController extends AppController {
 	 * update existing member profile
 	 */
 	public function api_edit() {
-		
 		
 		// update existing member
 		$member = $this->_save ( $this->logged ['Member'] ['big'] );
@@ -813,19 +855,15 @@ class MembersController extends AppController {
 		
 		try {
 			$this->_api_photo_upload ( $member ['big'] );
-			$amount=30;
-			$reason="Uploaded picture";
-			$this->Wallet->addAmount($member ['big'],$amount,$reason);
-				} catch ( UploadException $e ) {
+			$amount = 30;
+			$reason = "Uploaded picture";
+			$this->Wallet->addAmount ( $member ['big'], $amount, $reason );
+		} catch ( UploadException $e ) {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
 		
 		$this->_apiOk ( $response );
 	}
-	
-	
-	
-	
 	
 	// TODO: move this function to model, makes more sense there? or not, if we need to call component
 	private function _api_photo_upload() {
@@ -869,7 +907,7 @@ class MembersController extends AppController {
 					'surname' => 'surname' 
 			);
 			$optional_fields = array ();
-		} else { //edit member
+		} else { // edit member
 			
 			$required_fields = array ();
 			$optional_fields = array (
@@ -879,14 +917,8 @@ class MembersController extends AppController {
 			);
 		}
 		
-	//	debug($this->request['data']['address_town']);
-		if (isset($this->request['data']['address_street']) or 
-			isset($this->request['data']['address_town']) or
-			isset($this->request['data']['address_country']) or
-			isset($this->request['data']['lang']) or
-			isset($this->request['data']['address_zip'])
-			)
-		{
+		// debug($this->request['data']['address_town']);
+		if (isset ( $this->request ['data'] ['address_street'] ) or isset ( $this->request ['data'] ['address_town'] ) or isset ( $this->request ['data'] ['address_country'] ) or isset ( $this->request ['data'] ['lang'] ) or isset ( $this->request ['data'] ['address_zip'] )) {
 			$optional_fields += array (
 					'photo' => 'photo',
 					'middle_name' => 'middle_name',
@@ -901,33 +933,29 @@ class MembersController extends AppController {
 					'address_province' => 'address_province',
 					'address_region' => 'address_region',
 					'address_country' => 'address_country',
-					'address_zip' => 'address_zip'
+					'address_zip' => 'address_zip' 
 			);
-            
-            $opt_fields_rank=10;
 			
-		}
-		else 
-		{
-		$optional_fields += array (
-				'photo' => 'photo',
-				'middle_name' => 'middle_name',
-				'lang' => 'language',
-				'birth_date' => 'birth_date',
-				'sex' => 'sex',
-				'phone' => 'phone',
-				'birth_place' => 'birth_place',
-				'address_street' => 'street',
-				'address_street_no' => 'street_no',
-				'address_town' => 'city',
-				'address_province' => 'province',
-				'address_region' => 'region',
-				'address_country' => 'state',
-				'address_zip' => 'zip' 
-		);
-        
-        $opt_fields_rank=0;
-        
+			$opt_fields_rank = 10;
+		} else {
+			$optional_fields += array (
+					'photo' => 'photo',
+					'middle_name' => 'middle_name',
+					'lang' => 'language',
+					'birth_date' => 'birth_date',
+					'sex' => 'sex',
+					'phone' => 'phone',
+					'birth_place' => 'birth_place',
+					'address_street' => 'street',
+					'address_street_no' => 'street_no',
+					'address_town' => 'city',
+					'address_province' => 'province',
+					'address_region' => 'region',
+					'address_country' => 'state',
+					'address_zip' => 'zip' 
+			);
+			
+			$opt_fields_rank = 0;
 		}
 		$all_fields = array_merge ( $required_fields, $optional_fields );
 		
@@ -953,18 +981,17 @@ class MembersController extends AppController {
 		$this->Member->save ();
 		
 		if (! empty ( $this->Member->validationErrors )) { // we have errors while saving the data
-			            
-            $this->_apiEr ( __ ( 'Please fill in all required fields' ), true, false, array (
+			
+			$this->_apiEr ( __ ( 'Please fill in all required fields' ), true, false, array (
 					'fields' => $this->Member->validationErrors 
 			) );
 		}
 		
 		$member ['big'] = $this->Member->id;
 		
-        //+10 senza opt_fields altrimenti +20 con opt_fields
-        $this->Member->rank($member['big'],10+$opt_fields_rank);
-        
-        
+		// +10 senza opt_fields altrimenti +20 con opt_fields
+		$this->Member->rank ( $member ['big'], 10 + $opt_fields_rank );
+		
 		return $member;
 	}
 	
@@ -983,18 +1010,16 @@ class MembersController extends AppController {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
 		
-		/* Coordinate invertite
-        $memb = array (
-                'big' => $this->api ['big'],
-                'last_lonlat' => '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')' 
-        );*/
-        
-        //Coordinate come da campo in Member lon,lat
-        $memb = array (
-                'big' => $this->api ['big'],
-                'last_lonlat' => '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')' 
-        );
-        
+		/*
+		 * Coordinate invertite $memb = array ( 'big' => $this->api ['big'], 'last_lonlat' => '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')' );
+		 */
+		
+		// Coordinate come da campo in Member lon,lat
+		$memb = array (
+				'big' => $this->api ['big'],
+				'last_lonlat' => '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')' 
+		);
+		
 		debug ( $memb );
 		$this->Member->set ( $memb );
 		try {
@@ -1005,10 +1030,10 @@ class MembersController extends AppController {
 		
 		// AUTO CHECKIN!!!
 		
-		//$myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
+		// $myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
 		
-        $myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')',$this->api ['big']);
-        
+		$myC = $this->Checkin->AutoCheckin ( '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')', $this->api ['big'] );
+		
 		$this->_apiOk ( "Position set" );
 	}
 	
@@ -1074,25 +1099,21 @@ class MembersController extends AppController {
 		
 		if ($data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
-		}
-		else
-		{
+		} else {
 			// standard image
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-				
+			
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				
 		}
 		
 		// save profil visit
 		$this->ProfileVisit->saveVisit ( $this->logged ['Member'] ['big'], $this->api ['big'] );
 		
 		// TODO : do we want to add push for visits??
-        $this->Member->rank($this->api ['big'],1); //rank +1 visualizza proprio profilo
+		$this->Member->rank ( $this->api ['big'], 1 ); // rank +1 visualizza proprio profilo
 		
 		$this->_apiOk ( $data );
 	}
@@ -1125,21 +1146,17 @@ class MembersController extends AppController {
 		
 		if ($data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
-		}else
-		{
+		} else {
 			// standard image
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-				
+			
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				
 		}
 		$this->_apiOk ( $data );
 	}
-
 	
 	/**
 	 * get member extraindfos
@@ -1148,54 +1165,61 @@ class MembersController extends AppController {
 		if (! isset ( $this->api ['big'] )) {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
-	
+		
 		$params = array (
 				'conditions' => array (
-						'member_big' => $this->api ['big']
+						'member_big' => $this->api ['big'] 
 				),
-				'recursive' => - 1
+				'recursive' => - 1 
 		);
-	
+		
 		try {
 			$data = $this->ExtraInfos->find ( 'first', $params );
-	
+			
 			$this->_apiOk ( $data );
 		} catch ( Exception $e ) {
 			$this->_apiEr ( "Error" );
 		}
 	}
-	
 	public function api_getExtraInfos() {
-		if (! isset ( $this->api ['big'] ) OR $this->api['big']=='') {
+		if (! isset ( $this->api ['big'] ) or $this->api ['big'] == '') {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
-	
+		
 		$params = array (
 				'conditions' => array (
-						'member_big' => $this->api ['big']
+						'member_big' => $this->api ['big'] 
 				),
-				'recursive' => - 1
+				'recursive' => - 1 
 		);
-	
+		
 		try {
 			$data = $this->ExtraInfos->find ( 'first', $params );
-            
-            if (count($data)>0)
-            
-			$this->_apiOk ( $data ); else {
-                
-                $data['ExtraInfos']=array('country_code'=>null,'city'=>null,'occupation'=>null,'music'=>null,'food'=>null,
-                            'fashion'=>null, 'primary_language'=>null, 'secondary_language'=>null,
-                            'member_big'=>'0','looking_for'=>null,
-                            'emotional_status'=>null);
-                $this->_apiOk ( $data );
-                
-            }
+			
+			if (count ( $data ) > 0)
+				
+				$this->_apiOk ( $data );
+			else {
+				
+				$data ['ExtraInfos'] = array (
+						'country_code' => null,
+						'city' => null,
+						'occupation' => null,
+						'music' => null,
+						'food' => null,
+						'fashion' => null,
+						'primary_language' => null,
+						'secondary_language' => null,
+						'member_big' => $this->logged ['Member'] ['big'],
+						'looking_for' => null,
+						'emotional_status' => null 
+				);
+				$this->_apiOk ( $data );
+			}
 		} catch ( Exception $e ) {
 			$this->_apiEr ( "Error" );
 		}
 	}
-	
 	
 	/**
 	 * view member profile visits
@@ -1213,18 +1237,18 @@ class MembersController extends AppController {
 		$all_nearby = $this->ProfileVisit->getVisits ( $this->api ['big'] );
 		$xresponse = array ();
 		$xami = array ();
-        $counter=0;
-		  
-        //print_r($all_nearby);
+		$counter = 0;
+		
+		// print_r($all_nearby);
 		foreach ( $all_nearby as $ami ) {
 			
-            $ami['ProfileVisit']['last_visit']=$ami[0]['created'];
-            $ami['ProfileVisit']['number_of_visits']=$ami[0]['number_of_visits'];
-            unset($ami[0]);
-            
+			$ami ['ProfileVisit'] ['last_visit'] = $ami [0] ['created'];
+			$ami ['ProfileVisit'] ['number_of_visits'] = $ami [0] ['number_of_visits'];
+			unset ( $ami [0] );
+			
 			$xami [] = $ami;
-			//print_r($ami);
-            //print_r($xami);
+			// print_r($ami);
+			// print_r($xami);
 			$params = array (
 					'conditions' => array (
 							'Member.big' => strval ( $ami ['ProfileVisit'] ['visitor_big'] ) 
@@ -1245,45 +1269,36 @@ class MembersController extends AppController {
 			
 			$data = $this->Member->find ( 'first', $params );
 			
-            //print_r($data);
-			//debug ( $data ['Member'] );
+			// print_r($data);
+			// debug ( $data ['Member'] );
 			
 			if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
 				$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
-			} else
-		{
-			// standard image
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			} else {
+				// standard image
+				$sexpic = 2;
+				if ($data ['Member'] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+				
+				$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			}
-				
-			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				
-		}
-		
-		
-		// ADDED key for frindship
-		$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged['Member']['big'], $data['Member']['big']);
-		$xisFriend=0;
-		$xstatus='NO';
-		if (count($xfriend)>0)
-		{
-			$xisFriend=1;
-			$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
-			$xstatus=$xfriend[0]['Friend']['status'];
-		}
 			
-		if ( $xstatus!='A')
-		{
-			$data['Member']['surname']=substr($data['Member']['surname'],0,1).'.';
-		}
+			// ADDED key for frindship
+			$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged ['Member'] ['big'], $data ['Member'] ['big'] );
+			$xisFriend = 0;
+			$xstatus = 'NO';
+			if (count ( $xfriend ) > 0) {
+				$xisFriend = 1;
+				$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
+				$xstatus = $xfriend [0] ['Friend'] ['status'];
+			}
 			
-		$data['Member']['isFriend']=$xisFriend;
-		
-		
-		
+			if ($xstatus != 'A') {
+				$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+			}
+			
+			$data ['Member'] ['isFriend'] = $xisFriend;
 			
 			$xami [$counter] ['Member'] = $data ['Member'];
 			
@@ -1291,14 +1306,13 @@ class MembersController extends AppController {
 			/*
 			 * debug($xresponse);
 			 */
-             
-             $counter+=1;
+			
+			$counter += 1;
 		}
 		
 		// reset visits read count
 		
-		$this->ProfileVisit->markAsRead($this->api ['big']);
-		
+		$this->ProfileVisit->markAsRead ( $this->api ['big'] );
 		
 		$this->_apiOk ( $xresponse );
 		
@@ -1310,173 +1324,197 @@ class MembersController extends AppController {
 	 */
 	public function api_CheckContactsprofile() {
 		$InputData = $this->api;
+		$AppoMem = array ();
 		
 		$membersMails = array ();
 		$membersPhones = array ();
 		$ContactBIG = $this->api ['member_big'];
 		$PhoneContacts = array ();
 		
-		$numChunks = $this->api ['chunksCount'];
-		for($i = 1; $i <= $numChunks; $i ++) {
-			
-			$xPhoneContacts = $this->api ['contacts' . $i];
-			$XCo2 = json_decode ( $xPhoneContacts, true );
-			$PhoneContacts = array_merge ( $PhoneContacts, $XCo2 );
+		$chunk = '1'; // default
+		
+		if (isset ( $this->api ['chunk'] )) {
+			$chunk = $this->api ['chunk'];
+		}
+		$numChunks = 1;
+		if (isset ( $this->api ['chunksCount'] )) {
+			$numChunks = $this->api ['chunksCount'];
 		}
 		
-		// array_merge
-		// delete all existing contacts
-		$this->Contact->deleteAll ( array (
-				'Contact.member_big' => $ContactBIG 
-		), false );
-		
-		foreach ( $PhoneContacts as $val ) {
-			$Contacts = array ();
-			// parte inserimento nel db...
-			// se non esiste
-			$paramsCont = array (
-					'conditions' => array (
-							'Contact.name' => $val ['internal_name'],
-							'Contact.member_big' => $ContactBIG 
-					// 'Contact.phone' => $val ['phone_number'],
-					// 'Contact.email' => $val ['mail_address']
-										) 
-			);
-			if (isset ( $val ['phone_number'] )) {
-				$paramsCont ["conditions"] [] = array (
-						'Contact.phone' => $val ['phone_number'] 
-				);
+		$Privacyok = $this->PrivacySetting->getPrivacySettings ( $this->api ['member_big'] );
+		$goonPrivacy = true;
+		if (count ( $Privacyok ) > 0) {
+			if ($Privacyok [0] ['PrivacySetting'] ['sharecontacts'] == 0) {
+				$goonPrivacy = false;
 			}
-			;
-			if (isset ( $val ['mail_address'] )) {
-				$paramsCont ["conditions"] [] = array (
-						'Contact.email' => $val ['mail_address'] 
-				);
-			}
-			;
-			
-			$contactCount = $this->Contact->find ( 'count', $paramsCont );
-			
-			// insert unique
-			
-			if ($contactCount == 0) {
-                
-                $tox_chars=array('.',',',' ','(',')');
-                
-                $pattern='/[()]+|[a-zA-Z]+|[.]+|[ ]+|[#*]+[0-9]+[#*]+|[\\/]+[0-9]+|[-]+|[#*]$/';
-                
-                
-				
-				$Contacts ['member_big'] = $ContactBIG;
-				if (isset ( $val ['mail_address'] )) {
-					$Contacts ['email'] = (strlen($val ['mail_address'])<50) ? $val['mail_address']: substr($val['mail_address'],0,50);
-				}
-				if (isset ( $val ['phone_number'] )) {
-					$Contacts ['phone'] = (strlen($val['phone_number'])<32) ? $val['phone_number']: substr($val['phone_number'],0,32);
-				}
-				$Contacts ['name'] = (strlen($val ['internal_name'])<300) ? $val['internal_name']: substr($val['internal_name'],0,300);
-				$this->Contact->set ( $Contacts );
-				$this->Contact->save ();
-			}
-			;
-			unset ( $Contacts );
-			unset ( $this->Contact->id );
-			
-			// preparazione per ricerca
-			if (isset ( $val ['mail_address'] )) {
-				$membersMails [] = $val ['mail_address'];
-			}
-			;
-			if (isset ( $val ['phone_number'] )) {
-				$membersPhones [] = $val ['phone_number'];
-			}
-			;
 		}
-		
-		// TODO: find a better way
-		// fast fix for empties
-		
-		// chunck for many position!!!
-		// $allMail= array_chunk($membersMails , 200));
-		// for count($allMail)...
-		
-		if (count ( $membersMails ) == 0)
-			$membersMails [] = 'nomail';
-		
-		if (count ( $membersPhones ) == 0)
-			$membersPhones [] = 'nophone';
-
-		$AppoMem = array ();
-		
-		
-		
-			// query
-		$params = array (
-				'conditions' => array (
-						'Member.status' => 1,
-						"OR" => array (
-								
-								array (
-										'Member.email' => $membersMails 
-								),
-								array (
-										'Member.phone' => $membersPhones 
-								) 
-						),
-				),
-				'recursive' => - 1,
+		if ($goonPrivacy) {
+			for($i = 1; $i <= $numChunks; $i ++) {
 				
-				'fields' => array (
-						'Member.big',
-						'Member.name',
-						'Member.middle_name',
-						'Member.surname',
-						'Member.photo_updated',
-						'Member.sex',
-						'Member.phone',
-						'Member.birth_date',
-						'Member.address_town',
-						'Member.address_country' 
-				) 
-		);
-		
-		$data = $this->Member->find ( 'all', $params );
-		
-	
-		
-		foreach ( $data as $key => &$mem ) {
+				$xPhoneContacts = $this->api ['contacts' . $chunk];
+				$XCo2 = json_decode ( $xPhoneContacts, true );
+				$PhoneContacts = array_merge ( $PhoneContacts, $XCo2 );
+			}
 			
-			// check if any friendship exists yet
-			$AlreadyFr = $this->Friend->FriendsAllRelationship ( $ContactBIG, $mem ['Member'] ['big'] );
-			
-			if (count ( $AlreadyFr ) == 0) {
-			
-				if ($mem ['Member'] ['photo_updated'] > 0) {
-					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $mem ['Member'] ['big'], $mem ['Member'] ['photo_updated'] );
+			// array_merge
+			// delete all existing contacts
+			if ($chunk == '0') 			// only for chunk=0
+			{
+				$this->Contact->deleteAll ( array (
+						'Contact.member_big' => $ContactBIG 
+				), false );
+			}
+			// delete to mantain android compatibility
+			if (!isset( $this->api['chunk'] )) {
+				$this->Contact->deleteAll ( array (
+						'Contact.member_big' => $ContactBIG 
+				), false );
+			}
+			                    
+            $phonePattern = '/[()]+|[a-zA-Z]+|[.]+|[ ]+|[#*]+[0-9]+[#*]+|[\\/]+[0-9]+|[-]+|[#*]$/';
+            $tox_chars = array ('.',',',' ','(',')');
+            
+			foreach ( $PhoneContacts as $val ) {
+				$Contacts = array ();
+				// parte inserimento nel db...
+				// se non esiste
+                
+                $val['internal_name']=(strlen($val['internal_name']) < 300) ? $val['internal_name'] : substr ($val['internal_name'], 0, 300 );
+                
+				$paramsCont = array (
+						'conditions' => array (
+                                'Contact.name' => $val ['internal_name'],
+								'Contact.member_big' => $ContactBIG) 
+						// 'Contact.phone' => $val ['phone_number'],
+						// 'Contact.email' => $val ['mail_address']
+					);
+				if (isset($val['phone_number'])) {
+                    //pulisce il numero di telefono da tutto cio che non sono cifre
+                    $phoneNumber = preg_replace($phonePattern,'',str_replace($tox_chars,'',$val['phone_number']));
+                    
+					$val['phone_number'] = (strlen($phoneNumber) < 32) ? $phoneNumber : substr($phoneNumber, 0, 32 );
+					
+					$paramsCont["conditions"]['Contact.phone'] = $val['phone_number'];
 				}
-				else 
-				{
-					// standard image
-					$sexpic=2;
-					if($mem ['Member']['sex']=='f' )
-					{
-						$sexpic=3;
+				
+				if (isset($val['mail_address'])) {
+					$val['mail_address'] = (strlen($val['mail_address']) < 50) ? $val['mail_address'] : substr($val['mail_address'], 0, 50 );
+					
+					$paramsCont["conditions"]['Contact.email'] = $val['mail_address'];
+				}
+				               
+				//restituisce 0 se il contatto si trova in Contacts altrimenti >0
+                $contactCount = $this->Contact->find('count', $paramsCont );
+				
+				// insert unique
+				
+				if ($contactCount == 0) {//significa che il contatto non è presente nella tabella Contacts
+									     //pertanto lo inserisce
+					$Contacts['member_big'] = $ContactBIG;
+					$Contacts['email'] = $val['mail_address'];
+					$Contacts['phone'] = $val['phone_number'];
+					$Contacts['name'] = $val['internal_name'];
+                    
+					$this->Contact->set($Contacts);
+					$this->Contact->save();
+				} 
+				
+				/*	else {
+				
+					 * $dbo = $this->Contact->getDatasource(); $logs = $dbo->getLog(); $lastLog = end($logs['log']);
+					
+					// return $lastLog['query'];
+					if (isset ( $val ['mail_address'] )) {
+						$this->log ( 'Scarto ' . $val ['mail_address'] );
 					}
-					
-					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-					
+					$this->log ( 'Scarto ' . $val ['internal_name'] );
+					if (isset ( $val ['phone_number'] )) {
+						$this->log ( 'Scarto ' . $val ['phone_number'] );
+					}
 				}
-				$AppoMem [] = $mem;
+				 */
+				
+				unset ( $Contacts );
+				unset ( $this->Contact->id );
+				
+				// preparazione per ricerca
+				if (isset($val['mail_address'])) {
+					$membersMails[] = $val['mail_address'];
+				}
+				;
+				if (isset($val['phone_number'])) {
+					$membersPhones[] = $val['phone_number'];
+				}
+				
 			}
 			
-		
+			// TODO: find a better way
+			// fast fix for empties
+			
+			// chunck for many position!!!
+			// $allMail= array_chunk($membersMails , 200));
+			// for count($allMail)...
+			
+			if (count ( $membersMails ) == 0)
+				$membersMails [] = 'nomail';
+			
+			if (count ( $membersPhones ) == 0)
+				$membersPhones [] = 'nophone';
+				
+				// Qui controlla se tra i membri c'è qualcuno dei nostri contatti
+			$params = array (
+					'conditions' => array (
+							'Member.status' => 1,
+							'OR' => array (
+											'Member.email' => $membersMails, 
+									        'Member.phone' => $membersPhones 
+									) 
+							),
+					'recursive' => - 1,
+					
+					'fields' => array (
+							'Member.big',
+							'Member.name',
+							'Member.middle_name',
+							'Member.surname',
+							'Member.photo_updated',
+							'Member.sex',
+							'Member.phone',
+							'Member.birth_date',
+							'Member.address_town',
+							'Member.address_country' 
+					) 
+			);
+			
+			$data = $this->Member->find ( 'all', $params );
+			// $AppoMem = array ();
+			
+			foreach ( $data as $key => &$mem ) {
+				
+				// check if any friendship exists yet
+				$AlreadyFr = $this->Friend->FriendsAllRelationship ( $ContactBIG, $mem ['Member'] ['big'] );
+				
+				if (count ( $AlreadyFr ) == 0) {
+					
+					if ($mem ['Member'] ['photo_updated'] > 0) {
+						$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $mem ['Member'] ['big'], $mem ['Member'] ['photo_updated'] );
+					} else {
+						// standard image
+						$sexpic = 2;
+						if ($mem ['Member'] ['sex'] == 'f') {
+							$sexpic = 3;
+						}
+						
+						$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+					}
+					$AppoMem [] = $mem;
+				}
+			}
 		}
+		/*
+		 * $dbo = $this->Member->getDatasource (); $logs = $dbo->getLog (); $lastLog = end ( $logs ['log'] ); debug ( $lastLog ['query'] );
+		 */
 		
-/*		$dbo = $this->Member->getDatasource ();
-		$logs = $dbo->getLog ();
-		$lastLog = end ( $logs ['log'] );
-		debug ( $lastLog ['query'] );
-*/		
 		$this->_apiOk ( $AppoMem );
 	}
 	
@@ -1509,23 +1547,23 @@ class MembersController extends AppController {
 				) 
 		);
 		
+		$privacySettings = $this->PrivacySetting->getPrivacySettings ( $memBig );
+		$photosVisibility = $privacySettings [0] ['PrivacySetting'] ['photosvisibility'];
 		
 		$data = $this->Member->find ( 'first', $params );
-		$xisFriend=0;
-		$xfriend= $this->Friend->FriendsAllRelationship($this->api ['user_big'] ,$this->api ['member_big']);
-		if (count($xfriend)>0)
-		{
-			$xisFriend=1;
-			  	$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
+		$xisFriend = 0;
+		$xfriend = $this->Friend->FriendsAllRelationship ( $this->api ['user_big'], $this->api ['member_big'] );
+		if (count ( $xfriend ) > 0) {
+			$xisFriend = 1;
+			$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
 		}
-		$data['Member']['isFriend']=$xisFriend;
+		$data ['Member'] ['isFriend'] = $xisFriend;
 		
-	//	debug($data);
+		// debug($data);
 		// Get checkin or join
 		$checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
-	//	debug($checkin);
+		// debug($checkin);
 		if (! empty ( $checkin ) && $checkin ['Event'] ['type'] == 2 && $checkin ['Event'] ['status'] == 0) {
-						
 			
 			$params = array (
 					'conditions' => array (
@@ -1534,42 +1572,33 @@ class MembersController extends AppController {
 					'recursive' => - 1 
 			);
 			$place = $this->Member->Checkin->Event->Place->find ( 'first', $params );
-
-			/* from condition...			'fields' => array (
-							'Place.name',
-							'Place.default_photo_big',
-							'Place.category_id' 
-					),
-		*/
 			
-			$place = $this->_addPlacePhotoUrls($place);
+			/*
+			 * from condition...			'fields' => array ( 'Place.name', 'Place.default_photo_big', 'Place.category_id' ),
+			 */
 			
-			if (empty($place))
-			{
-				$this->_apiEr('Nonexistent place.');
+			$place = $this->_addPlacePhotoUrls ( $place );
+			
+			if (empty ( $place )) {
+				$this->_apiEr ( 'Nonexistent place.' );
 			}
 			
-			$category = $this->Place->Category->getOne( $place['Place']['category_id'] );
+			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
 			
-			$place['CatLang'] = $category['CatLang'];
-			$place['CatLang']['photo'] = $this->FileUrl->category_picture($place['Place']['category_id'], $category['Category']['updated']);
-				
+			$place ['CatLang'] = $category ['CatLang'];
+			$place ['CatLang'] ['photo'] = $this->FileUrl->category_picture ( $place ['Place'] ['category_id'], $category ['Category'] ['updated'] );
 			
 			$data ['Member'] ['place_big'] = $checkin ['Event'] ['place_big'];
 			$data ['Member'] ['event_name'] = $place ['Place'] ['name'];
 			$data ['Member'] ['physical'] = $checkin ['Checkin'] ['physical'];
 			$data ['Member'] ['place_category_id'] = $place ['Place'] ['category_id'];
-/*			$data ['Member'] ['place_address_street'] = $place ['Place'] ['address_street'];
-			$data ['Member'] ['place_address_street_no'] = $place ['Place'] ['address_street_no'];
-			$data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg'];
-			$data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg'];
-			$data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg'];
-*/
-
-			$data ['Member'] ['Place']= $place ['Place'] ;
-				
+			/*
+			 * $data ['Member'] ['place_address_street'] = $place ['Place'] ['address_street']; $data ['Member'] ['place_address_street_no'] = $place ['Place'] ['address_street_no']; $data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg']; $data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg']; $data ['Member'] ['place_rating'] = $place ['Place'] ['rating_avg'];
+			 */
+			
+			$data ['Member'] ['Place'] = $place ['Place'];
 		} elseif (! empty ( $checkin )) {
-	
+			
 			$params = array (
 					'conditions' => array (
 							'Place.big' => $checkin ['Event'] ['place_big'] 
@@ -1579,47 +1608,43 @@ class MembersController extends AppController {
 			);
 			$place = $this->Member->Checkin->Event->Place->find ( 'first', $params );
 			
-			$place = $this->_addPlacePhotoUrls($place);
+			$place = $this->_addPlacePhotoUrls ( $place );
 			
-			if (empty($place))
-			{
-				$this->_apiEr('Nonexistent place.');
+			if (empty ( $place )) {
+				$this->_apiEr ( 'Nonexistent place.' );
 			}
 			
-			$category = $this->Place->Category->getOne( $place['Place']['category_id'] );
+			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
 			
-			$place['CatLang'] = $category['CatLang'];
-			$place['CatLang']['photo'] = $this->FileUrl->category_picture($place['Place']['category_id'], $category['Category']['updated']);
-				
+			$place ['CatLang'] = $category ['CatLang'];
+			$place ['CatLang'] ['photo'] = $this->FileUrl->category_picture ( $place ['Place'] ['category_id'], $category ['Category'] ['updated'] );
 			
 			$data ['Member'] ['event_big'] = $checkin ['Event'] ['big'];
 			$data ['Member'] ['event_name'] = $checkin ['Event'] ['name'];
 			$data ['Member'] ['physical'] = $checkin ['Checkin'] ['physical'];
 			$data ['Member'] ['place_category_id'] = $place ['Place'] ['category_id'];
-			$data ['Member'] ['Place']= $place ['Place'] ;
-			}
+			$data ['Member'] ['Place'] = $place ['Place'];
+		}
 		
 		// Get checkins count
 		$checkinsCount = $this->Member->Checkin->getCheckinsCountForMember ( $memBig );
 		$data ['Member'] ['checkins_count'] = intval ( $checkinsCount );
 		
-
 		// Photos processing
-		if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
+		if (isset ( $data ['Member'] ['photo_updated'] ) and $data ['Member'] ['photo_updated'] > 0 and $photosVisibility > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
 		} else {
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-				
-			$data ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			
+			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 		}
 		unset ( $data ['Member'] ['photo_updated'] );
 		
-		// Get uploaded photos
+		// Get uploaded photos if photosVisibility=1
+		
 		$params = array (
 				'conditions' => array (
 						'Photo.member_big' => $memBig 
@@ -1642,36 +1667,39 @@ class MembersController extends AppController {
 				'recursive' => - 1 
 		);
 		
-		$photos = $this->Member->Photo->find ( 'all', $params );
-		$photosCount = $this->Member->Photo->find ( 'count', $params );
-		
-		$photos = $this->_addMemberPhotoUrls ( $photos );
+		if ($photosVisibility > 0) {
+			
+			$photos = $this->Member->Photo->find ( 'all', $params );
+			$photosCount = $this->Member->Photo->find ( 'count', $params );
+			
+			$photos = $this->_addMemberPhotoUrls ( $photos );
+		} else {
+			$photos = array ();
+			$photosCount = $this->Member->Photo->find ( 'count', $params );
+		}
 		$data ['Uploaded'] = $photos;
 		$data ['Member'] ['photos_count'] = $photosCount;
-
 		
-			// ADDED key for frindship
-			$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged['Member']['big'], $data['Member']['big']);
-			$xisFriend=0;
-			$xstatus='NO';
-			if (count($xfriend)>0)
-			{
-				$xisFriend=1;
-				$data['Member']['friendstatus']=$xfriend[0]['Friend']['status'];
-				$xstatus=$xfriend[0]['Friend']['status'];
-			}
-			
-			if ( $xstatus!='A')
-			{
-				$data['Member']['surname']=substr($data['Member']['surname'],0,1).'.';
-			}	
-			
-			$data['Member']['isFriend']=$xisFriend;
-//		debug($data);
-//		$this->Util->transform_name ( $data );
-//		debug($data);
+		// ADDED key for frindship
+		$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged ['Member'] ['big'], $data ['Member'] ['big'] );
+		$xisFriend = 0;
+		$xstatus = 'NO';
+		if (count ( $xfriend ) > 0) {
+			$xisFriend = 1;
+			$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
+			$xstatus = $xfriend [0] ['Friend'] ['status'];
+		}
+		
+		if ($xstatus != 'A') {
+			$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+		}
+		
+		$data ['Member'] ['isFriend'] = $xisFriend;
+		// debug($data);
+		// $this->Util->transform_name ( $data );
+		// debug($data);
 		// SAVES A VISIT TO PROFILE!!
-	//	debug ( $data );
+		// debug ( $data );
 		$this->ProfileVisit->saveVisit ( $this->logged ['Member'] ['big'], $this->api ['user_big'] );
 		
 		$this->_apiOk ( $data );
@@ -1816,72 +1844,63 @@ class MembersController extends AppController {
 		
 		$this->set ( 'loggedBig', $this->logged ['Member'] ['big'] );
 	}
-    
-    
-    public function api_getAffinityMembers() {
-        
-          $this->_checkVars ( array (
-                'member_big'
-                 
-        ), array ('big'));
-        
-        (empty($this->api ['big'])) ? $memBig=$this->api ['member_big'] : $memBig=$this->api ['big'];
-        
-        
-        $MySugAffinityAll=array();
-        $MySugAffinity=array();
-        $MySugAffinityAll=$this->Member->getAffinityMembers( $memBig );
-        
-      //  debug($MySugAffinityAll);
-        
-        // REMOVE FRIENDS!!
-        foreach ( $MySugAffinityAll as $key => &$val ) {
-        	
-        	// check if any friendship exists yet
-     //   	debug($val[0] ['big']);
-        	$AlreadyFr = $this->Friend->FriendsAllRelationship ($val[0] ['big'], $memBig);
-        	$dbo = $this->Friend->getDatasource();
-        	$logs = $dbo->getLog();
-        	$lastLog = end($logs['log']);
-        	if (count ( $AlreadyFr ) == 0) {       	
-        	$MySugAffinity[]=$MySugAffinityAll[$key] ;
-        	}
-        }
-        
-        
-        foreach ( $MySugAffinity as $key => &$val ) {
-        
-            // ADD MEMBER PHOTO
-            // debug( $val ['Member']['Member'] ['photo_updated'] );
-            if ($MySugAffinity [$key] [0] ['photo_updated'] > 0) {
-                $MySugAffinity [$key][0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val[0] ['big'], $val[0] ['photo_updated'] );
-            } else {
-                $sexpic = 2;
-                if ($MySugAffinity [$key] [0] ['sex'] == 'f') {
-                    $sexpic = 3;
-                }
-        
-                $MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-            }
-        }
-                  
-          //usort($MySugAffinity,array('MembersController','multiFieldSortArray'));
-          usort($MySugAffinity,'MembersController::multiFieldSortArray');
-          
-          $this->_apiOK($MySugAffinity); 
-                   
-    }
-    
-    public static function multiFieldSortArray( $x, $y ) 
-{ //sort an array by position_bonus DESC and distance ASC
-    
-    if ( $x[0][ 'position_bonus' ] == $y[0][ 'position_bonus' ] ) {
-    
-                                     return ( $x[0][ 'distance' ] < $y[0][ 'distance' ] ) ? -1 : +1; 
-                            }  else
-
-    return ( $x[0][ 'position_bonus' ] > $y[0][ 'position_bonus' ] ) ? -1 : +1; 
-
-}
-    
+	public function api_getAffinityMembers() {
+		$this->_checkVars ( array (
+				'member_big' 
+		), array (
+				'big' 
+		) );
+		
+		(empty ( $this->api ['big'] )) ? $memBig = $this->api ['member_big'] : $memBig = $this->api ['big'];
+		
+		$MySugAffinityAll = array ();
+		$MySugAffinity = array ();
+		$MySugAffinityAll = $this->Member->getAffinityMembers ( $memBig );
+		
+		// debug($MySugAffinityAll);
+		
+		// REMOVE FRIENDS!!
+		foreach ( $MySugAffinityAll as $key => &$val ) {
+			
+			// check if any friendship exists yet
+			// debug($val[0] ['big']);
+			$AlreadyFr = $this->Friend->FriendsAllRelationship ( $val [0] ['big'], $memBig );
+			$dbo = $this->Friend->getDatasource ();
+			$logs = $dbo->getLog ();
+			$lastLog = end ( $logs ['log'] );
+			if (count ( $AlreadyFr ) == 0) {
+				$MySugAffinityAll [$key] [0] ['surname'] = substr ( $MySugAffinityAll [$key] [0] ['surname'], 0, 1 ) . '.';
+				$MySugAffinity [] = $MySugAffinityAll [$key];
+			}
+		}
+		
+		foreach ( $MySugAffinity as $key => &$val ) {
+			
+			// ADD MEMBER PHOTO
+			// debug( $val ['Member']['Member'] ['photo_updated'] );
+			if ($MySugAffinity [$key] [0] ['photo_updated'] > 0) {
+				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
+			} else {
+				$sexpic = 2;
+				if ($MySugAffinity [$key] [0] ['sex'] == 'f') {
+					$sexpic = 3;
+				}
+				
+				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+			}
+		}
+		
+		// usort($MySugAffinity,array('MembersController','multiFieldSortArray'));
+		usort ( $MySugAffinity, 'MembersController::multiFieldSortArray' );
+		
+		$this->_apiOK ( $MySugAffinity );
+	}
+	public static function multiFieldSortArray($x, $y) { // sort an array by position_bonus DESC and distance ASC
+		if ($x [0] ['position_bonus'] == $y [0] ['position_bonus']) {
+			
+			return ($x [0] ['distance'] < $y [0] ['distance']) ? - 1 : + 1;
+		} else
+			
+			return ($x [0] ['position_bonus'] > $y [0] ['position_bonus']) ? - 1 : + 1;
+	}
 }

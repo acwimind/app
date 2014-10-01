@@ -120,7 +120,10 @@ class ChatMessagesController extends AppController {
 			
 			
 			// Sender
-			if ($val ['Sender'] ['photo_updated'] > 0) {
+            $SenderPrivacySettings = $this->PrivacySetting->getPrivacySettings( $val['Sender']['big'] );
+            $SenderPhotosVisibility = $SenderPrivacySettings[0]['PrivacySetting']['photosvisibility'];
+			$SenderIsActive=$this->Member->isActive($val['Sender']['big']);
+            if ($val ['Sender'] ['photo_updated'] > 0 AND $SenderPhotosVisibility > 0 AND $SenderIsActive) {
 				$val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Sender'] ['big'], $val ['Sender'] ['photo_updated'] );
 			} else {
 				$sexpic = 2;
@@ -132,7 +135,11 @@ class ChatMessagesController extends AppController {
 			}
 			unset ( $val ['Sender'] ['photo_updated'] );
 			// Recipient
-			if ($val ['Recipient'] ['photo_updated'] > 0) {
+            $RecipientPrivacySettings = $this->PrivacySetting->getPrivacySettings( $val['Recipient']['big'] );
+            $RecipientPhotosVisibility = $RecipientPrivacySettings[0]['PrivacySetting']['photosvisibility'];
+            $RecipientIsActive=$this->Member->isActive($val['Recipient']['big']);
+			
+            if ($val ['Recipient'] ['photo_updated'] > 0 AND $RecipientPhotosVisibility > 0 AND $RecipientIsActive) {
 				$val ['Recipient'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Recipient'] ['big'], $val ['Recipient'] ['photo_updated'] );
 			} else {
 				$sexpic = 2;
@@ -457,7 +464,7 @@ class ChatMessagesController extends AppController {
          */
         
         // Check if user is not on partners ignore list
-        $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
+        $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreListDual ( $partnerBig, $memBig );
         if ($isIgnored) {
             $this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
                     'error_code' => '510' 

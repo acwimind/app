@@ -160,58 +160,83 @@ class MemberRel extends AppModel {
 //			$result['conversations_count'] = intval($count);
 //		}
 
-		$db = $this->getDataSource();
-		$query = 'SELECT "Sender"."big" AS "Sender__big", "Sender"."name" AS "Sender__name", "Sender"."middle_name" AS "Sender__middle_name", 
-			"Sender"."surname" AS "Sender__surname", "Sender"."photo_updated" AS "Sender__photo_updated", 
-			"Recipient"."big" AS "Recipient__big", "Recipient"."name" AS "Recipient__name", "Recipient"."middle_name" AS "Recipient__middle_name", 
-			"Recipient"."surname" AS "Recipient__surname", "Recipient"."photo_updated" AS "Recipient__photo_updated", "MemberRel"."id" AS "MemberRel__id", 
-			"ChatMessage"."created" AS "ChatMessage__created","ChatMessage"."text" AS "ChatMessage__text", ("ChatMessage"."from_big" = ' . $memberBig . ') AS "ChatMessage__self",
- 			"Sender"."chat_status" AS "Sender__chat_status", "Recipient"."chat_status" AS "Recipient__chat_status",
-			"Sender"."sex" AS "Sender__sex", "Recipient"."sex" AS "Recipient__sex"
-					FROM "member_rels" AS "MemberRel" 
-			INNER JOIN "chat_messages" AS "ChatMessage" ON ("ChatMessage"."rel_id" = "MemberRel"."id" 
-				AND "ChatMessage"."created" = (SELECT MAX(created) FROM chat_messages WHERE rel_id = "MemberRel"."id")) 
-			LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname, members.photo_updated, 
-				(CASE WHEN checkins.physical = 1 THEN 2
-	      			WHEN checkins.physical = 0 THEN 1
-	      			WHEN members.last_web_activity > NOW() - interval \'' . ONLINE_TIMEOUT . ' hour\' OR members.last_mobile_activity > NOW() - interval \'' . ONLINE_TIMEOUT . ' hour\' THEN 1
-	      			ELSE 0 END) AS chat_status
-				FROM members
-				LEFT JOIN checkins ON (members.big = checkins.member_big) 
-				AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big)
-				AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS "Sender" ON ("MemberRel"."member1_big" = "Sender"."big") 
-			LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname, members.photo_updated, 
-				(CASE WHEN checkins.physical = 1 THEN 2
-	      			WHEN checkins.physical = 0 THEN 1
-	      			WHEN members.last_web_activity > NOW() - interval \'' . ONLINE_TIMEOUT . ' hour\' OR members.last_mobile_activity > NOW() - interval \'' . ONLINE_TIMEOUT . ' hour\' THEN 1
-	      			ELSE 0 END) AS chat_status
-				FROM members
-				LEFT JOIN checkins ON (members.big = checkins.member_big) 
-				AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big)
-				AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS "Recipient" ON ("MemberRel"."member2_big" = "Recipient"."big")  
-			WHERE "ChatMessage"."status" != 255 ' . 
-			(!empty($ign) ? ' AND NOT ("MemberRel"."member1_big" IN (' . $ign . ') OR "MemberRel"."member2_big" IN (' . $ign . ')) ' : '' ) . 
-			' AND (("ChatMessage"."from_big" = ' . $memberBig . '  AND  "ChatMessage"."from_status" != 255) OR 
-			("ChatMessage"."to_big" = ' . $memberBig . '  AND  "ChatMessage"."to_status" != 255))  
-			ORDER BY "ChatMessage"."created" DESC ';
 
-		$countQuery = 'SELECT COUNT(*)
-			FROM "member_rels" AS "MemberRel" 
-			INNER JOIN "chat_messages" AS "ChatMessage" ON ("ChatMessage"."rel_id" = "MemberRel"."id" AND "ChatMessage"."created" = (SELECT MAX(created) FROM chat_messages WHERE rel_id = "MemberRel"."id")) 
-			WHERE "ChatMessage"."status" != 255 ' . 
-			(!empty($ign) ? ' AND NOT ("MemberRel"."member1_big" IN (' . $ign . ') OR "MemberRel"."member2_big" IN (' . $ign . ')) ' : '' ) . 
-			' AND (("ChatMessage"."from_big" = ' . $memberBig . '  AND  "ChatMessage"."from_status" != 255) OR 
-			("ChatMessage"."to_big" = ' . $memberBig . '  AND  "ChatMessage"."to_status" != 255))';
-						
-		$countQueryNotRead = 'SELECT COUNT(*)
-			FROM "member_rels" AS "MemberRel"
-			INNER JOIN "chat_messages" AS "ChatMessage" ON ("ChatMessage"."rel_id" = "MemberRel"."id" AND "ChatMessage"."created" = (SELECT MAX(created) FROM chat_messages WHERE rel_id = "MemberRel"."id"))
-			WHERE "ChatMessage"."status" != 255 ' .
-					(!empty($ign) ? ' AND NOT ("MemberRel"."member1_big" IN (' . $ign . ') OR "MemberRel"."member2_big" IN (' . $ign . ')) ' : '' ) .
-					' AND (("ChatMessage"."read" = 0 AND "ChatMessage"."from_big" = ' . $memberBig . '  AND  "ChatMessage"."from_status" != 255) OR
-			("ChatMessage"."to_big" = ' . $memberBig . '  AND  "ChatMessage"."to_status" != 255))';
+
+
+
+		$db = $this->getDataSource();
+		$query = "SELECT \"Sender\".\"big\" AS \"Sender__big\", \"Sender\".\"name\" AS \"Sender__name\",".
+                 "\"Sender\".\"middle_name\" AS \"Sender__middle_name\",\"Sender\".\"surname\" AS \"Sender__surname\",".
+                 "\"Sender\".\"photo_updated\" AS \"Sender__photo_updated\",\"Recipient\".\"big\" AS \"Recipient__big\",".
+                 "\"Recipient\".\"name\" AS \"Recipient__name\", \"Recipient\".\"middle_name\" AS \"Recipient__middle_name\",".
+                 "\"Recipient\".\"surname\" AS \"Recipient__surname\",".
+                 "\"Recipient\".\"photo_updated\" AS \"Recipient__photo_updated\",\"MemberRel\".\"id\" AS \"MemberRel__id\",".
+                 "\"ChatMessage\".\"created\" AS \"ChatMessage__created\",\"ChatMessage\".\"text\" AS \"ChatMessage__text\",".
+                 "(\"ChatMessage\".\"from_big\" = ". $memberBig .") AS \"ChatMessage__self\",".
+                 "\"Sender\".\"chat_status\" AS \"Sender__chat_status\",".
+                 "\"Recipient\".\"chat_status\" AS \"Recipient__chat_status\",\"Sender\".\"sex\" AS \"Sender__sex\",".
+                 "\"Recipient\".\"sex\" AS \"Recipient__sex\",".
+                 "\"Sender\".\"status\" AS \"Sender__status\", \"Recipient\".\"status\" AS \"Recipient__status\" ".
+                 "FROM \"member_rels\" AS \"MemberRel\" ". 
+			     "INNER JOIN \"chat_messages\" AS \"ChatMessage\" ON (\"ChatMessage\".\"rel_id\" = \"MemberRel\".\"id\" ". 
+				 "AND \"ChatMessage\".\"created\" = (SELECT MAX(created) FROM chat_messages ".
+                 "WHERE rel_id = \"MemberRel\".\"id\")) ". 
+			     "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
+                 "members.status,".
+                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2	WHEN checkins.physical = 0 THEN 1 ".
+                 "WHEN members.last_web_activity > NOW() - interval '". ONLINE_TIMEOUT . " hour' ".
+                 "OR members.last_mobile_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' THEN 1 ELSE 0 END) ".
+                 "AS chat_status ".
+				 "FROM members ".
+				 "LEFT JOIN checkins ON (members.big = checkins.member_big) ". 
+				 "AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big) ".
+				 "AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS \"Sender\" ON ".
+                 "(\"MemberRel\".\"member1_big\" = \"Sender\".\"big\") ". 
+			     "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
+                 "members.status,".
+                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2	WHEN checkins.physical = 0 THEN 1 ".
+                 "WHEN members.last_web_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' OR ".
+                 "members.last_mobile_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' THEN 1 ".
+                 "ELSE 0 END) AS chat_status ".
+				 "FROM members ".
+                 "LEFT JOIN checkins ON (members.big = checkins.member_big) ".
+                 "AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big) ".
+                 "AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS \"Recipient\" ON ".
+                 "(\"MemberRel\".\"member2_big\" = \"Recipient\".\"big\") ". 
+			     "WHERE \"Sender\".\"status\"<255 AND \"Recipient\".\"status\"<255 AND \"ChatMessage\".\"status\" != 255 " . 
+			     (!empty($ign) ? " AND NOT (\"MemberRel\".\"member1_big\" IN (" . $ign . ") OR ".
+                 "\"MemberRel\".\"member2_big\" IN (" . $ign . ")) " : "" ) .
+                 " AND ((\"ChatMessage\".\"from_big\" = " . $memberBig . "  AND  \"ChatMessage\".\"from_status\" != 255) ".
+                 "OR (\"ChatMessage\".\"to_big\" = ". $memberBig . "  AND  \"ChatMessage\".\"to_status\" != 255)) ".
+                 "ORDER BY \"ChatMessage\".\"created\" DESC ";
+                 
+                    
+		/* Sostituito con una count al risultato
+        $countQuery = "SELECT COUNT(*) ".
+                      "FROM \"member_rels\" AS \"MemberRel\" ".
+                      "INNER JOIN \"chat_messages\" AS \"ChatMessage\" ON (\"ChatMessage\".\"rel_id\" = \"MemberRel\".\"id\" ".
+                      "AND \"ChatMessage\".\"created\" = (SELECT MAX(created) FROM chat_messages ".
+                      "WHERE rel_id = \"MemberRel\".\"id\")) ".
+                      "WHERE \"ChatMessage\".\"status\" != 255 " . 
+			          (!empty($ign) ? " AND NOT (\"MemberRel\".\"member1_big\" IN (" . $ign . ") OR ".
+                      "\"MemberRel\".\"member2_big\" IN (" . $ign . ")) " : "" ) .
+                      " AND ((\"ChatMessage\".\"from_big\" = ". $memberBig . "  AND  \"ChatMessage\".\"from_status\" != 255) ".
+                      "OR (\"ChatMessage\".\"to_big\" = ". $memberBig . "  AND \"ChatMessage\".\"to_status\" != 255))";
+			*/			
+		$countQueryNotRead = "SELECT COUNT(*) ".
+			                 "FROM \"member_rels\" AS \"MemberRel\" ".
+                             "INNER JOIN \"chat_messages\" AS \"ChatMessage\" ON ".
+                             "(\"ChatMessage\".\"rel_id\" = \"MemberRel\".\"id\" AND \"ChatMessage\".\"created\" = ".
+                             "(SELECT MAX(created) FROM chat_messages WHERE rel_id = \"MemberRel\".\"id\")) ".
+                             "WHERE \"ChatMessage\".\"status\" != 255 ".
+					         (!empty($ign) ? " AND NOT (\"MemberRel\".\"member1_big\" IN (" . $ign . ") OR ".
+                             "\"MemberRel\".\"member2_big\" IN (" . $ign . ")) " : "" ) .
+                             " AND ((\"ChatMessage\".\"read\" = 0 AND \"ChatMessage\".\"from_big\" = " .
+                              $memberBig . "  AND  \"ChatMessage\".\"from_status\" != 255) OR ".
+                              "(\"ChatMessage\".\"to_big\" = " . $memberBig . "  AND \"ChatMessage\".\"to_status\" != 255))";
 		
-		
+		//print($query);
+                
 		if ($fromChat)
 		{
 			$query .= 'LIMIT ' . API_PER_PAGE . ' ';
@@ -225,7 +250,8 @@ class MemberRel extends AppModel {
 		$result = array('conversations' => null);
 		try {
 			$res = $db->fetchAll($query);
-			$result['conversations'] = $res;
+            $conversationCount=count($res);
+            $result['conversations'] = $res;
 		}
 		catch (Exception $e)
 		{
@@ -246,8 +272,8 @@ class MemberRel extends AppModel {
 				CakeLog::error($e);
 			}
 			
-			$result['conversations_count'] = intval($count[0][0]['count']);
-			
+			$result['conversations_count'] = $conversationCount; //intval($count[0][0]['count']);
+            			
 			// Added not read
 			try
 			{

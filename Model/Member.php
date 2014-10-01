@@ -51,7 +51,11 @@ class Member extends AppModel {
 	public $hasOne = array(
 		'Operator',
 		'MemberPerm',
-		'ExtraInfos'
+		'ExtraInfos',
+        'PrivacySetting' => array('foreignKey' => 'member_big',
+                                  'fields' => array(
+                                            'member_big',
+                                            'photosvisibility'))
 	);
 
 	public $validate = array(
@@ -210,7 +214,7 @@ class Member extends AppModel {
 	}
 
 		
-	public function getAffinityMembers($memberBig)
+	public function getAffinityMembers($memberBig,$offset=0)
 	{//debug($check);
 	
 	$IPmember=($this->getMemberByBig($memberBig));
@@ -239,10 +243,10 @@ class Member extends AppModel {
                 FROM public.members
              
                 WHERE	 (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[$j].' AND '.$ageAttempts[$j].' ) AND sex != \''.$Imember['sex'].'\'
-			        AND	(members.big <> '.$memberBig	.')
+			        AND	(members.big <> '.$memberBig	.') AND 	(members.status <> 255)  
 	                AND	( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[$i].')
 					ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT;
+                    ASC LIMIT ' . API_MAP_LIMIT . 'OFFSET '.$offset;
 	
          
         $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));
@@ -262,10 +266,10 @@ class Member extends AppModel {
                   FROM public.members
              
                   WHERE     (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[count($ageAttempts)-1].' AND '.$ageAttempts[count($ageAttempts)-1].' )
-                    AND    (members.big <> '.$memberBig    .')
+                    AND    (members.big <> '.$memberBig    .') AND 	(members.status <> 255)  
                     AND    ( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[count($distanceAttempts)-1].')
                     ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT; 
+                    ASC LIMIT ' . API_MAP_LIMIT. 'OFFSET '.$offset; 
          
           $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords    ) );
      }
@@ -324,7 +328,7 @@ class Member extends AppModel {
 		
 FROM
   public.members
-				where members.big<>'.$memberBig.'    
+				where members.big<>'.$memberBig.'   AND members.status < 255  
 						order by  ( members.last_lonlat <@> ?)::numeric(10,1) asc LIMIT ' . API_MAP_LIMIT;
 		
 		
@@ -350,7 +354,76 @@ FROM
 
 	}
 
-	
+	public function getRadarPrivacyMembers($memberBig, $serviceList=array(), $bonusOrder=false)
+    {/*
+        Se si passa solo il $memberBig allora restituisce solo i dati del member e della sua privacy
+        ordinando l'output in base alla distanza crescente.
+        
+        Se si passa l'array $serviceList con l'id dei servizi allora per ogni membro vede se ha attivo
+        uno o più servizi specificati e in output aggiunge il campo [position_bonus] = n dove n è il numero
+        dei servizi attivi tra quelli specificati.
+        
+        Se si passa anche il $bonusOrder allora ordina l'output mettendo per primi i membri che hanno
+        attivi i servizi specificati nell'array. In output aggiunge il campo [position_bonus] = n dove n è           il numero dei servizi attivi tra quelli specificati.
+    
+    */
+        
+        $IPmember=($this->getMemberByBig($memberBig));
+        $Imember=$IPmember['Member'];
+        $coords =$Imember['last_lonlat'];
+        
+        $db = $this->getDataSource ();
+        $sql = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,'.
+                        'members.sex,members.last_lonlat AS "coordinates",'.
+                        '((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance", '.
+                        'visibletousers,fbintegration,disconnectplace,profilestatus,showvisitedplaces,'.                             'sharecontacts,notifyprofileviews,notifyfriendshiprequests,notifychatmessages,'.
+                        'boardsponsor,checkinsvisibility,photosvisibility '.
+                 'FROM members '.
+                 'JOIN privacy_settings ON members.big=privacy_settings.member_big '.
+                 'WHERE members.big <>'.$memberBig.' AND members.status<>255 '.    
+                 'ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ASC LIMIT ' . API_MAP_LIMIT;
+        
+        $this->log("query ".$sql);
+        $result = $db->fetchAll ( $sql, array ($coords,  $coords ) );
+       
+        if (count($serviceList)>0){
+            //attacca il position_bonus al result e poi ordina per position_bonus e distanza.
+         $modelWallet = ClassRegistry::init ( 'Wallet' );
+         
+         $foundMembers=$result;
+            
+            foreach($foundMembers as $key=>$val){
+                
+                $val=$val[0];
+                $foundMembers[$key][0]['position_bonus']=$modelWallet->hasActiveService($serviceList,$val['big']);
+                
+            }
+            
+           if ($bonusOrder){
+               //ordina per position_bonus
+               
+               usort ( $foundMembers, 'Member::multiFieldSortArray' );
+               
+           }  
+                   
+          $result=$foundMembers;  
+        }       
+       
+        
+        return $result;
+
+    }
+    
+    public static function multiFieldSortArray($x, $y) { // sort an array by position_bonus DESC and distance ASC
+        if ($x [0] ['position_bonus'] == $y [0] ['position_bonus']) {
+            
+            return ($x [0] ['distance'] < $y [0] ['distance']) ? - 1 : + 1;
+        } else
+            
+            return ($x [0] ['position_bonus'] > $y [0] ['position_bonus']) ? - 1 : + 1;
+    }
+    
+    
 	public function isActive($bigmem)
 	{
 		

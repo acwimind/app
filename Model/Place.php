@@ -305,7 +305,7 @@ class Place extends AppModel {
 	
 	
 	
-	public function getBoardPlaces($MemberID) {
+	public function getBoardPlaces($MemberID, $offset=0) {
 		$db = $this->getDataSource ();
 		
 		$MySql = 'select px.pbig as Place_big,px.ccheckinbig as checkinbig,px.elbig as ebig from (SELECT
@@ -325,7 +325,7 @@ class Place extends AppModel {
 		ORDER BY
 		p.big
 		) as px
-		ORDER BY px.in_created DESC LIMIT 10;';
+		ORDER BY px.in_created DESC LIMIT '.LIMIT_QUERY_CONTENT.' OFFSET '.$offset.';';
 		
 		// try {
 		$result = $db->fetchAll ( $MySql );

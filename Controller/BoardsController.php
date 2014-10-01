@@ -18,9 +18,13 @@ class BoardsController extends AppController {
 	 * get board content for logged user
 	 */
 	public function api_GetBoardContent() {
-		$this->log ( "------------you are in api_GetBoardContent--------" );
-		$MyPlaces = array ();
-		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'] );
+		//$this->log ( "------------you are in api_GetBoardContent--------" );
+		$this->_checkVars(array(),array('offset'));
+        
+        $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
+        
+        $MyPlaces = array ();
+		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
 		
 		/*
 		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
@@ -82,8 +86,9 @@ class BoardsController extends AppController {
 		// recovery friends order by checkins
 		
 		$MyFriends = array ();
-		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'] );
+		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'], $offset );
 		
+        //$this->log("Myfriends ".serialize($MyFriends));
 		/*
 		 * $this->log("------------MyFriends------------"); $this->log($MyFriends); $this->log("------------Fine MyFriends-------");
 		 */
@@ -93,7 +98,7 @@ class BoardsController extends AppController {
 				
 				// ADD MEMBER PHOTO
 				// debug( $val ['Member']['Member'] ['photo_updated'] );
-				if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0) {
+				if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0 AND $MyFriends [$key]['Member']['PrivacySetting']['photosvisibility'] > 0) {
 					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
 				} else {
 					$sexpic = 2;
@@ -103,7 +108,7 @@ class BoardsController extends AppController {
 					
 					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 				}
-				
+				//print_r($MyFriends);
 				// debug( $val ['Place']['Place'] ['big']);
 				// ADD PLACE PHOTO
 				$params = array (
@@ -145,8 +150,8 @@ class BoardsController extends AppController {
 		// recovery suggested friends order by ?
 		
 		$MySugFriends = array ();
-		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big'] );
-		
+		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
+		//print_r($MySugFriends);
 		/*
 		 * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
 		 */
@@ -155,7 +160,10 @@ class BoardsController extends AppController {
 			
 			// ADD MEMBER PHOTO
 			// debug( $val ['Member']['Member'] ['photo_updated'] );
-			if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0) {
+            $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
+			$photosVisibility=$privacySetting['photosvisibility'];
+            
+            if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility > 0) {
 				$MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val ['Member'] ['photo_updated'] );
 			} else {
 				$sexpic = 2;
@@ -170,17 +178,19 @@ class BoardsController extends AppController {
 		// die(debug($MySugFriends));
 		
 		$MySugAffinity = array ();
-		$MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'] );
-		
+		$MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'],$offset );
+		//print_r($MySugAffinity);
 		/*
 		 * $this->log("------------MySugAffinity------------"); $this->log($MySugAffinity); $this->log("------------Fine MySugAffinity-------");
 		 */
 		
 		foreach ( $MySugAffinity as $key => &$val ) {
-			
+            
+			$privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
+            $photosVisibility=$privacySetting['photosvisibility'];
 			// ADD MEMBER PHOTO
 			// debug($MySugAffinity [$key] [0]['sex']);
-			if ($MySugAffinity [$key] [0] ['photo_updated'] > 0) {
+			if ($MySugAffinity [$key] [0] ['photo_updated'] > 0 AND $photosVisibility > 0) {
 				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
 			} else {
 				$sexpic = 2;
@@ -199,7 +209,8 @@ class BoardsController extends AppController {
 		
 		$MyAds = array ();
 		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
-		
+		//print_r($MyAds);
+        
 		foreach ( $MyAds as $key => $val ) {
 			
 			unset ( $MyAds [$key] ['Advert'] ['photo_ext'] );
@@ -250,7 +261,7 @@ class BoardsController extends AppController {
 				$MyBoard [] = $MyAds [$i];
 			}
 			
-			if ($i < count ( $MySugFriends ) and $i < 3) {
+			if ($i < count ( $MySugFriends ) and $i < 10) {
 				$MySugFriends [$i] ["BoardType"] = "SuggestedMember";
 				$MyBoard [] = $MySugFriends [$i];
 			}
@@ -277,19 +288,19 @@ class BoardsController extends AppController {
 	public function api_GetDiaryContent() {
 		
 		// TORNARE FOTO,POSTI, AMICIZIE
-		$this->_checkVars ( array (), array (
-				'big' 
-		) );
+		$this->_checkVars ( array (), array ('big','offset') );
 		
 		if (! isset ( $this->api ['big'] )) {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
+        
+		$offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
 		
-		$MyBig = $this->api ['big'];
+        $MyBig = $this->api ['big'];
 		
 		// TEST PLACES!!!
 		$MyPlaces = array ();
-		$MyPlaces = $this->Place->getBoardPlaces ( $MyBig);
+		$MyPlaces = $this->Place->getBoardPlaces ( $MyBig, $offset);
 		
 		/*
 		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
@@ -356,7 +367,7 @@ class BoardsController extends AppController {
 		$Checkins = array ();
 		
 		$allx = true;
-		$MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx );
+		$MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx, $offset );
 		foreach ( $MyCheckins as $key => $val ) {
 			
 			if (isset ( $val [0] ['Checkin'] [0] ['Place'] ['DefaultPhoto'] ['big'] ) && $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
@@ -387,9 +398,9 @@ class BoardsController extends AppController {
 				$Checkins [] = $MyCheckins;
 			}
 		}
-		$MyPhotos = $this->Photo->getMemberPhotos ( $MyBig );
+		$MyPhotos = $this->Photo->getMemberPhotos ( $MyBig, $offset );
 		$MyFriends = array ();
-		$Amici = $this->Friend->GetDiaryFriends ( $MyBig );
+		$Amici = $this->Friend->GetDiaryFriends ( $MyBig, $offset );
 		
 		if (is_array ( $Amici )) { // previene il warning Invalid argument supplied for foreach()
 			foreach ( $Amici as $ami ) {
@@ -444,7 +455,7 @@ class BoardsController extends AppController {
 				$MyBoard [] = $MyPlaces [$i];
 			}
 			if ($i < count ( $Checkins )) {
-				$Checkins [$i] ["BoardType"] = "Places";
+				$Checkins [$i] ["BoardType"] = "Checkins";
 				$MyBoard [] = $Checkins [$i];
 			}
 		/*	if (count ( $Checkins ) > 0 || count ( $MyPhotos ) > 0 || count ( $MyFriends ) > 0) {
@@ -575,12 +586,14 @@ class BoardsController extends AppController {
 	 */
 	public function api_GetRadarContent() {
 		$MyPlaces = array ();
-		
-		$IPmember = ($this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] ));
-		$Imember = $IPmember ['Member'];
-		$coords = $Imember ['last_lonlat'];
-		
-		$MyPlaces = $this->Place->getRadarPlaces ( $coords );
+        //prende i dati del member loggato dalla tabella Members
+        $IPmember = ($this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] ));
+        //Riduce profondità array. Imember contiene tutti i dati del member
+        $Imember = $IPmember ['Member'];
+        //Memorizza in $coords l'ultima posizione in tabella 
+        $coords = $Imember ['last_lonlat'];
+        //Prende i Places ordinati per distanza crescente da coords
+        $MyPlaces = $this->Place->getRadarPlaces ( $coords );
 		
 		foreach ( $MyPlaces as $key => $val ) {
 			// debug($val[0] );
@@ -615,13 +628,19 @@ class BoardsController extends AppController {
 		// recovery friends order by checkins
 		
 		$MyFriends = array ();
-		$MyFriends = $this->Member->getRadarMembers ( $this->logged ['Member'] ['big'] );
-		
+		$MyFriendsClean = array ();
+		//$MyFriends = $this->Member->getRadarMembers ( $this->logged ['Member'] ['big'] );
+		$serviceList=explode(',',ID_RADAR_VISIBILITY_PRODUCTS);
+        
+        $MyFriends = $this->Member->getRadarPrivacyMembers ( $this->logged ['Member'] ['big'],$serviceList,true);
+        
 		foreach ( $MyFriends as $key => $val ) {
 			
 			// ADD MEMBER PHOTO
-			
-			if (isset ( $MyFriends [$key] [0] ['photo_updated'] ) and $MyFriends [$key] [0] ['photo_updated'] > 0) {
+            //flag privacy photovisibility
+			$photoVisibility=$val[0]['photosvisibility'];
+            
+			if (isset ( $MyFriends [$key] [0] ['photo_updated'] ) AND $MyFriends [$key] [0] ['photo_updated'] > 0 AND $photoVisibility > 0) {
 				$MyFriends [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
 			} else {
 				$sexpic = 2;
@@ -643,8 +662,18 @@ class BoardsController extends AppController {
 			//QUI   !!!  $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
 		//	if ($isIgnored) {
 			
+			$Privacyok = $this->PrivacySetting->getPrivacySettings ( $MyFriends [$key] [0]['big'] );
+			$goonPrivacy = true;
+			if (count ( $Privacyok ) > 0) {
+				if ($Privacyok [0]['PrivacySetting'] ['visibletousers'] == 0) {
+					$goonPrivacy = false;
+				}
+			}
+			if ($goonPrivacy) {
+			$MyFriendsClean[] = $MyFriends [$key];
+			}
 		}
-		
+		$MyFriends=$MyFriendsClean;
 		// die(debug($MySugFriends));
 		
 		$MyBoard = array ();
@@ -967,7 +996,7 @@ class BoardsController extends AppController {
 		
 		return $data;
 	}
-	public function api_CheckContactsprofile() {
+	public function api_CheckContactsprofileDATOGLIERE() {
 		$this->log ( "------------you are in api_CheckContactsprofile--------" );
 		$InputData = $this->api; // request->input ( 'json_decode', true );
 		                         
@@ -989,7 +1018,8 @@ class BoardsController extends AppController {
 		$this->log ( "-----------------------------------------" );
 		$this->log ( serialize ( $PhoneContacts ) );
 		$this->log ( "-----------------------------------------" );
-		
+		      
+        
 		// $XCo2 = json_decode($this->api ['contacts'],true);
 		foreach ( $PhoneContacts as $val ) {
 			$Contacts = array ();
@@ -1114,6 +1144,8 @@ class BoardsController extends AppController {
 					'recursive' => - 1,
 					'fields' => array (
 							'Member.big',
+                            //'Privacy.member_big',
+                            //'Privacy.photosvisibility',
 							'Member.name',
 							'Member.middle_name',
 							'Member.surname',
@@ -1143,7 +1175,12 @@ class BoardsController extends AppController {
                         'Member.address_country',
                         'Member.lang',
                         'Member.last_lonlat'*/
-                ) 
+                ),
+                   'joins' => array(array('table' => 'privacy_settings',
+                                          'alias' => 'Privacy',
+                                          'type' => 'left',
+                                          'conditions' => array('Member.big=Privacy.member_big')
+                                            ))  
 			);
 			
 			$dataByEmails = $this->Member->find ( 'all', $params );
@@ -1178,6 +1215,8 @@ class BoardsController extends AppController {
 					'recursive' => - 1,
 					'fields' => array (
 							'Member.big',
+                            //'Privacy.member_big',
+                            //'Privacy.photosvisibility',
 							'Member.name',
 							'Member.middle_name',
 							'Member.surname',
@@ -1187,7 +1226,12 @@ class BoardsController extends AppController {
 							'Member.birth_date',
 							'Member.address_town',
 							'Member.address_country' 
-					) 
+					),
+                    'joins' => array(array('table' => 'privacy_settings',
+                                          'alias' => 'Privacy',
+                                          'type' => 'left',
+                                          'conditions' => array('Member.big=Privacy.member_big')
+                                            ))   
 			);
 			
 			$dataByPhones = $this->Member->find ( 'all', $params );
@@ -1204,9 +1248,9 @@ class BoardsController extends AppController {
 		
 		$data = $this->mergeArr ( $dataByEmails, $dataByPhones );
 		
-		$this->log ( "------------multipleShortQueries (data)--" );
-		$this->log ( serialize ( $data ) );
-		$this->log ( "-----------------------------------------" );
+		//$this->log ( "------------multipleShortQueries (data)--" );
+		//$this->log ( serialize ( $data ) );
+		//$this->log ( "-----------------------------------------" );
 		
 		return $data;
 	}
@@ -1472,23 +1516,32 @@ class BoardsController extends AppController {
 		$this->set ( 'loggedBig', $this->logged ['Member'] ['big'] );
 	}
 	public function api_BoardContacts() {
-		$this->log ( "------------you are in api_BoardContacts--------" );
+		
+        //$this->_checkVars ( array (), array ('offset'));
 		$MySugFriends = array ();
-		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big'] );
+		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
 		$this->_apiOk ( $MySugFriends );
 	}
 	public function BoardContacts($ContactBIG) {
-		$this->log ( "------------you are in BoardContacts--------" );
+		//$this->log ( "------------you are in BoardContacts--------" );
 		$membersMails = array ();
 		$membersPhones = array ();
-		$ContactBIG = $this->api ['member_big'];
+//		$ContactBIG = $this->api ['member_big'];
 		$PhoneContacts = array ();
 		
 		// array_merge
 		// delete all existing contacts
-		$SugContacts = $this->Contact->find ( 'all', array (
-				'Contact.member_big' => $ContactBIG 
-		) );
+		           
+        $SugContacts = $this->Contact->find ( 'all', array (
+                'conditions' =>array('Contact.member_big' => $ContactBIG),
+                'order'=>array('Contact.name ASC')
+                 ) 
+               );       
+               
+        //print_r($SugContacts);
+        //$SugContacts = $this->Contact->find ( 'all', array (
+		//		'Contact.member_big' => $ContactBIG 
+		//) );
 		
 		/*
 		 * $this->log("------------BOARDS CONTROLLER4-----------"); $this->log("------------Archivio SugContacts---------"); $this->log(serialize($SugContacts)); $this->log("-----------------------------------------");
@@ -1550,7 +1603,7 @@ class BoardsController extends AppController {
 			//
 			// $data = $this->Member->find ( 'all', $params );
 		
-		$membersMails = array_unique ( $membersMails );
+        $membersMails = array_unique ( $membersMails );
 		$membersPhones = array_unique ( $membersPhones );
 		
 		$data = $this->multipleShortQueries ( $membersMails, $membersPhones, 50 );
@@ -1559,6 +1612,7 @@ class BoardsController extends AppController {
 		$lastLog = end ( $logs ['log'] );
 		$AppoMem = array ();
 		
+        //print_r($data);
 		foreach ( $data as $key => &$mem ) {
 			
 			// check if any friendship exists yet
@@ -1585,10 +1639,10 @@ class BoardsController extends AppController {
 		/*
 		 *
 		 */
-		$this->log ( "------------BoardsController--------------" );
-		$this->log ( "------------var AppoMem--------------" );
-		$this->log ( serialize ( $AppoMem ) );
-		$this->log ( "-----------------------------------------" );
+		//$this->log ( "------------BoardsController--------------" );
+		//$this->log ( "------------var AppoMem--------------" );
+		//$this->log ( serialize ( $AppoMem ) );
+		//$this->log ( "-----------------------------------------" );
 		return $AppoMem;
 	}
 }

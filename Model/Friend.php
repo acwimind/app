@@ -11,12 +11,13 @@ class Friend extends AppModel {
 					'foreignKey' => 'member2_big' 
 			) 
 	);
-	public function getBoardFriends($MemberID) {
+	public function getBoardFriends($MemberID, $offset=0) {
 		//$Amici array di amici rilevati dalla tabella Friends
-        $Amici = $this->findFriends ( $MemberID );
+        $Amici = $this->findFriends ( $MemberID, $offset );
 		
 		// create array of friends and populate with checkins places and last chat messages if any
 		$PrivacySettingModel = ClassRegistry::init ( 'PrivacySetting' );
+		$MemberSettingModel = ClassRegistry::init('MemberSetting');
 		
 		$FriendsID = array();
 		foreach ( $Amici as $ami ) {
@@ -32,19 +33,24 @@ class Friend extends AppModel {
 			$Privacyok = $PrivacySettingModel->getPrivacySettings ( $friendID );
             $Privacyok=$Privacyok[0];
                         
-			$goonPrivacy = true;
+			$goonPrivacy = true;//membro visibile per default
 			if (count ( $Privacyok ) > 0) {
 				if ($Privacyok ['PrivacySetting']['checkinsvisibility'] == 0) {
                     
-					$goonPrivacy = false;
+					$goonPrivacy = false;//membro non visibile
 				}
 			}
-            //$this->log("goonprivacy ".$goonPrivacy);
-			if ($goonPrivacy) {
-                //$this->log("friendID ".$friendID);
-				$FriendsID[] = $friendID; //$FriendsID array big di amici visibili
-			}
+        
+        if ($goonPrivacy){
+            
+		$memBlocked=$MemberSettingModel->isOnIgnoreListDual($ami['Friend1']['big'],$ami['Friend2']['big']);
+    
+            if (!$memBlocked) {
+                
+                			$FriendsID[] = $friendID; //$FriendsID array big di amici visibili
+                }	
 		}
+    } 
 		//$this->log("Friends ".serialize($FriendsID));
 		if (count($FriendsID) > 0) {
 			$FriendsID = implode(',',$FriendsID); //$FriendsID viene preparato per query
@@ -115,11 +121,16 @@ class Friend extends AppModel {
 				// die(debug($key));
 				// die(debug($r[0]["place_big"]));
 				$r ["Member"] = $TheMember;
-				unset ( $TheMember );
+				
 				
 				$r ["Checkinbig"] = $r [0] ["big"];
-				
+
+				if (count($TheMember)>0)
+				{
 				$xresponse [] = $r;
+				}
+				
+				unset ( $TheMember );
 			}
 		} // IF HAS FRIENDS!!
 		//print_r($xresponse);
@@ -127,13 +138,15 @@ class Friend extends AppModel {
 	}
 	
 	
-	public function getDiaryFriends($MemberID) {
-		$Amici = $this->findFriends ( $MemberID );
+	public function getDiaryFriends($MemberID,$offset=0) {
+		$Amici = $this->findFriends ( $MemberID, $offset );
 	
 		// create array of friends and populate with checkins places and last chat messages if any
 		$PrivacySettingModel = ClassRegistry::init ( 'PrivacySetting' );
-	
-		$FriendsID = "(";
+	    $MemberSettingModel = ClassRegistry::init('MemberSetting');
+		
+        $FriendsID = array();
+        
 		foreach ( $Amici as $ami ) {
 			// add only if privacy ok
 			if ($ami ["Friend1"] ["big"] == $MemberID) {
@@ -146,26 +159,36 @@ class Friend extends AppModel {
 			$Privacyok = $PrivacySettingModel->getPrivacySettings ( $friendID );
             $Privacyok=$Privacyok[0];
             
-			$goonPrivacy = true;
+            //$this->log($ami['Friend1']['big']."---".$ami['Friend2']['big']);
+            
+			$goonPrivacy = true;//visibile per default
 			if (count ( $Privacyok ) > 0) {
 				if ($Privacyok ['PrivacySetting'] ['checkinsvisibility'] == 0) {
-					$goonPrivacy = false;
+					$goonPrivacy = false;//non visibile
 				}
 			}
-			if ($goonPrivacy) {
-				$FriendsID .= $friendID . ',';
-			}
-		}
-	
+          
+          if ($goonPrivacy){
+            
+          $memBlocked=$MemberSettingModel->isOnIgnoreListDual($ami['Friend1']['big'],$ami['Friend2']['big']);
+			
+            if (!$memBlocked) {
+                
+                         $FriendsID[] = $friendID; //$FriendsID array big di amici visibili
+       
+			    }
+		    }
+       }
     
-        $this->log("FriendsID ".$FriendsID);    
-		if (strlen ( $FriendsID ) > 1) {
-			$FriendsID = substr ( $FriendsID, 0, - 1 ) . ")";
+        //$this->log("FriendsID ".$FriendsID);    
+		
+        if (count( $FriendsID ) > 0) {
+			$FriendsID = implode(',',$FriendsID);
 				
 			$MySql = 'SELECT * '.
 		             'FROM public.members '.
-		             'WHERE members.big IN ' . $FriendsID . 
-                     ' LIMIT 50';
+		             'WHERE members.big IN (' . $FriendsID . ') '. 
+                     'LIMIT 50';
 			//todo:	ORDER BY RANK??
   // checkins.created DESC 
 			$db = $this->getDataSource ();
@@ -219,35 +242,62 @@ class Friend extends AppModel {
 	 * public $hasMany = array( 'ChatMessage' => array( 'className' => 'ChatMessage', 'foreignKey' => 'rel_id', //			'order' => 'ChatMessage.created DESC', //			'fields' => 'ChatMessage.created', ), );
 	 */
 	public function FriendsAllRelationship($memberOne, $memberTwo) {
-		$type = 'all';
-		$params = array (
-				'conditions' => array (
-						'AND' => array (
-								'OR' => array (
-										'Friend.member1_big' => $memberOne,
-										'Friend.member2_big' => $memberOne 
-								),array(
-								'OR' => array (
-										'Friend.member1_big' => $memberTwo,
-										'Friend.member2_big' => $memberTwo 
-								)) 
-						) 
-				) 
-		);
-	//	die(debug($params));
-		$result = $this->find ( $type, $params );
-		return $result;
-	}
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
+        $MemberModel = ClassRegistry::init('Member');
+        
+        $type = 'all';
+        $params = array (
+                'conditions' => array (
+                        'AND' => array (
+                                'OR' => array (
+                                        'Friend.member1_big' => $memberOne,
+                                        'Friend.member2_big' => $memberOne 
+                                ),array(
+                                'OR' => array (
+                                        'Friend.member1_big' => $memberTwo,
+                                        'Friend.member2_big' => $memberTwo 
+                                )) 
+                        ) 
+                ) 
+        );
+    //    die(debug($params));
+        $result = $this->find ( $type, $params );
+        
+        foreach($result as $key=>$val){
+            
+       $memBlocked=$MemberSettingModel->isOnIgnoreListDual($val['Friend']['member1_big'],$val['Friend']['member2_big']);
+       //non considera i membri cancellati. Quindi se uno dei due membri risulta cancellato non viene presa la relazione
+       $mem1_Active=$MemberModel->isActive($val['Friend']['member1_big']);
+       $mem2_Active=$MemberModel->isActive($val['Friend']['member2_big']);
+       
+       if (!$memBlocked AND $mem1_Active AND $mem2_Active){//se non bloccato metti in output
+            $cleanResult[]=$result[$key];
+            }
+        }        
+           
+        return $cleanResult;
+    }
 	public function FriendsRelationship($memberOne, $memberTwo, $relation) {
+        
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
 		$db = $this->getDataSource ();
 		
 		$MySql = 'select * from  friends where (member1_big=' . $memberOne . ' OR member2_big=' . $memberOne . ') AND (member1_big=' . $memberTwo . ' OR member2_big=' . $memberTwo . ') AND status=\'' . $relation . '\' order by created desc';
 		// try {
 		$result = $db->fetchAll ( $MySql );
-		
-		return $result;
+        
+      foreach($result as $key=>$val){
+              
+       $memBlocked=$MemberSettingModel->isOnIgnoreListDual($val[0]['member1_big'],$val[0]['member2_big']);
+            if (!$memBlocked){//se non bloccato metti in output
+            $cleanResult[]=$result[$key];
+            }
+        }        
+		        
+		return $cleanResult;
 	}
 	public function FriendsRelationshipGeneric($memberOne, $memberTwo) {
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
 		$relation = 'R';
 		$type = 'all';
 		$params = array (
@@ -280,11 +330,20 @@ class Friend extends AppModel {
 		$result = $db->fetchAll ( $MySql );
 		
 		// $result = $this->find ( $type, $params );
-		
-		return $result;
+		foreach($result as $key=>$val){
+              
+       $memBlocked=$MemberSettingModel->isOnIgnoreListDual($val[0]['member1_big'],$val[0]['member2_big']);
+            if (!$memBlocked){//se non bloccato metti in output
+            $cleanResult[]=$result[$key];
+            }
+        }        
+		return $cleanResult;
 	}
 	public function FriendsRelated($memberOne, $relation) {
-		$type = 'all';
+		
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
+        
+        
 		$params = array (
 				'conditions' => array (
 						'AND' => array (
@@ -325,8 +384,17 @@ class Friend extends AppModel {
 				 
 		);
 		
-		$result = $this->find ( $type, $params );
-		return $result;
+		$result = $this->find ( 'all', $params );
+        
+        foreach($result as $key=>$val){
+              
+       $memBlocked=$MemberSettingModel->isOnIgnoreListDual($val['Friend']['member1_big'],$val['Friend']['member2_big']);
+            if (!$memBlocked){//se non bloccato metti in output
+            $cleanResult[]=$result[$key];
+            }
+        }
+        
+		return $cleanResult;
 	}
 	public function findAllFriends($memberBig) {
 		$type = 'all';
@@ -373,7 +441,7 @@ class Friend extends AppModel {
 	}
 	
 	// return accepted friens
-	public function findFriends($memberBig) {
+	public function findFriends($memberBig,$offset=0) {
 		$type = 'all';
 		$params = array (
 				'conditions' => array (
@@ -386,7 +454,10 @@ class Friend extends AppModel {
 										'Friend.status' => 'A' 
 								) 
 						) 
-				) 
+				),
+                'limit' => 10,
+                'offset' => $offset,
+                'order' => array('Friend.big ASC') 
 		);
 		
 		$result = $this->find ( $type, $params );

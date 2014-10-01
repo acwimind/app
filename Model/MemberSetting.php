@@ -75,6 +75,41 @@ class MemberSetting extends AppModel{
 		return true;
 	}
 	
+    
+    public function isOnIgnoreListDual($memberBig, $ignoredBig)
+    {
+                     
+        $params = array(
+            'conditions' => array(
+                
+                'AND' => array(
+                
+                'AND' => array (
+                    'OR' => array (
+                    
+                                'MemberSetting.from_big' => $memberBig,
+                                'MemberSetting.to_big' =>   $memberBig
+                    ),array(
+                    'OR' => array(
+                                'MemberSetting.from_big' => $ignoredBig,
+                                'MemberSetting.to_big' =>   $ignoredBig
+                                ))),
+                                
+                    'MemberSetting.chat_ignore' => 1
+                    ),
+             ),
+        );
+        
+        $ign = $this->find('all', $params);
+               
+        
+        if (empty($ign))
+            return false;
+            
+        return true;
+    }
+    
+    
 	public function removeFromIgnoreList($memberBig, $ignoredBig)
 	{
 		$params = array(
