@@ -740,6 +740,18 @@ class MembersController extends AppController {
 		
 		$member = $this->_apiLogin ();
 		
+        if (isset($member['Member']['last_mobile_activity']) AND $member['Member']['last_mobile_activity']!=null){
+        //codice per i crediti e rank
+        $lastLogin=date("d",strtotime($member['Member']['last_mobile_activity']));
+        $nowLogin=date("d",time());
+        
+        if (lastLogin!=$nowLogin){
+                      //crediti e rank per il primo login giornaliero  
+                      $this->Wallet->addAmount($member['Member']['big'], '5', 'Primo login del giorno' );
+                      $this->Member->rank($member['Member']['big'],5);   
+                
+                }
+        }
 		if (isset ( $this->api ['version'] ) and $this->api ['version'] != null) {
 			
 			if ($this->checkAppUpdate ( $this->api ['platform_id'], $this->api ['version'] )) {
@@ -935,8 +947,18 @@ class MembersController extends AppController {
 					'address_country' => 'address_country',
 					'address_zip' => 'address_zip' 
 			);
-			
-			$opt_fields_rank = 10;
+			if ($big==0){//nuovo utente
+			                $opt_fields_rank = 10;
+                            $opt_fields_credit = 0;
+                            } else {//edit utente
+                            
+                             $opt_fields_rank = 5;
+                             $opt_fields_credit= 5;
+                                
+                                
+                            }
+            
+            
 		} else {
 			$optional_fields += array (
 					'photo' => 'photo',
@@ -954,8 +976,17 @@ class MembersController extends AppController {
 					'address_country' => 'state',
 					'address_zip' => 'zip' 
 			);
+			if ($big==0) {//nuovo utente
+                            $opt_fields_rank = 0;
+                            $opt_fields_credit = 0;
+                            } else {//edit utente
+                            
+                             $opt_fields_rank = 5;
+                             $opt_fields_credit= 5;
+                                
+                                
+                            }
 			
-			$opt_fields_rank = 0;
 		}
 		$all_fields = array_merge ( $required_fields, $optional_fields );
 		
@@ -989,8 +1020,9 @@ class MembersController extends AppController {
 		
 		$member ['big'] = $this->Member->id;
 		
-		// +10 senza opt_fields altrimenti +20 con opt_fields
-		$this->Member->rank ( $member ['big'], 10 + $opt_fields_rank );
+		// crediti e rank per nuova registrazione o edit profilo
+		$this->Member->rank ($member['big'], 10 + $opt_fields_rank );
+        $this->Wallet->addAmount($member['big'], $opt_fields_credit, 'Edit profilo' );
 		
 		return $member;
 	}
@@ -1360,7 +1392,16 @@ class MembersController extends AppController {
 			// delete all existing contacts
 			if ($chunk == '0') 			// only for chunk=0
 			{
-				$this->Contact->deleteAll ( array (
+                $FirstIns=$this->Contact->find('count', array('conditions' => array('Contact.member_big' => $ContactBIG)));
+				
+                if ($FirstIns<1){
+                    //crediti e rank per condivisione rubrica la prima volta
+                    $this->Wallet->addAmount($ContactBIG, '100', 'Condividi Rubrica' );
+                    $this->Member->rank($ContactBIG,100);
+                    
+                } 
+                
+                $this->Contact->deleteAll ( array (
 						'Contact.member_big' => $ContactBIG 
 				), false );
 			}
@@ -1507,6 +1548,8 @@ class MembersController extends AppController {
 						
 						$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 					}
+					$mem ['Member'] ['surname'] = substr ( $mem ['Member'] ['surname'], 0, 1 ) . '.';
+						
 					$AppoMem [] = $mem;
 				}
 			}

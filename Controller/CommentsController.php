@@ -1,6 +1,6 @@
 <?php
 class CommentsController extends AppController {
-	public $uses = array( 'Comment','Member');//load these models
+	public $uses = array( 'Comment','Member','Wallet');//load these models
 	
 	
 	
@@ -70,7 +70,9 @@ class CommentsController extends AppController {
 	{
         if ($this->api['place_big']!=NULL AND $this->api['place_big']>0 AND $this->api['comment']!=''){
             
-            $this->Member->rank($this->api['member_big'],1); //rank +1 commento sul place
+            //crediti e rank per inserimento commento
+            $this->Wallet->addAmount($this->api['member_big'], '4', 'Inserimento Commento' );
+            $this->Member->rank($this->api['member_big'],4); 
                         }
         $this->_apiOk ( "Comment/Like Saved" );
 	}

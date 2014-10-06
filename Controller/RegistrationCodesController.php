@@ -38,6 +38,7 @@ class RegistrationCodesController extends AppController {
 				if (count ( $savedCodes ) == 0) {
 					$myNum = rand ( 10, 99 ) * 1000 + rand ( 100, 999 );
 					$myText = ( string ) $myNum;
+					$myText = substr($myText ,0,5);
 					$this->RegistrationCode->set ( array (
 							'phone' => $this->api ['phone'],
 							'code' => $myText 

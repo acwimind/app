@@ -7,7 +7,8 @@ class ChatMessagesController extends AppController {
 			'Member',
 			'Friend' ,
 			'PrivacySetting',
-			'MemberSetting'
+			'MemberSetting',
+            'Wallet'
 	);
 	public function index() {
 	}
@@ -500,6 +501,10 @@ class ChatMessagesController extends AppController {
             try {
                 $memRel = $this->ChatMessage->MemberRel->save ();
                 $relId = $memRel ['MemberRel'] ['id'];
+                //crediti e rank per nuova conversazione
+                $this->Wallet->addAmount($this->logged['Member']['big'], '5', 'Nuova Conversazione' );
+                $this->Member->rank($this->logged['Member']['big'],5);
+                
             } catch ( Exception $e ) {
                 $this->_apiEr ( 'Error occured. Relationship not created.' );
             }

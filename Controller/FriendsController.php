@@ -184,7 +184,8 @@ class FriendsController extends AppController {
 		/*
 		 * $okMember1 = isset($this->api['$idMember1']) && !empty($this->api['$idMember1']); $okMember2 = isset($this->api['$idMember2']) && !empty($this->api['$idMember2']); if (!$okMember1 || !$okMember2 ) { }
 		 */
-		
+		$WalletModel = ClassRegistry::init('Wallet');
+        
 		// Check if user is not on partners ignore list
 		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $idMember1, $idMember2 );
 		if ($isIgnored) {
@@ -249,6 +250,10 @@ class FriendsController extends AppController {
 							}
 						}
 					}
+                    //crediti e rank per amicizia richiesta
+                    $WalletModel->addAmount($this->logged['Member']['big'], '2', 'Amicizia richiesta' );
+                    $this->Member->rank($this->logged['Member']['big'],2);
+                    
 				} else {
 					$this->_apiEr ( "Record already found" );
 				}
@@ -292,9 +297,18 @@ class FriendsController extends AppController {
 								$idMember1 
 						), 'Friends', 'new' );
 						
-						Logger::Info ( 'afetr sendNotification' );
+						Logger::Info ( 'after sendNotification' );
+                        
+                        //crediti e rank per amicizia accettata
+                        $WalletModel->addAmount($this->logged['Member']['big'], '5', 'Amicizia accettata' );
+                        $this->Member->rank($this->logged['Member']['big'],5);
 					}
-				}
+				} else
+                {
+                    //crediti e rank per amicizia cancellata o negata 
+                    $WalletModel->addAmount ($this->logged['Member']['big'], '2', 'Amicizia cancellata/negata' );
+                    $this->Member->rank($this->logged['Member']['big'],2);                    
+                }
 				
 				break;
 			

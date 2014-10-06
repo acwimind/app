@@ -721,41 +721,37 @@ class Checkin extends AppModel {
 	 */
 	public function AutoCheckin($coords, $membig) {
 		$db = $this->getDataSource ();
-		$sql2 = 'SELECT 
-				 checkins.big, 
-  checkins.member_big, 
-  checkins.physical, 
-  checkins.checkout, 
-  ((places.lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-				
-FROM 
-  public.places, 
-  public.checkins, 
-  public.events
-WHERE 
-  checkins.event_big = events.big AND events.place_big = places.big AND  checkins.checkout IS NULL  AND  checkins.member_big = ' . $membig;
+		$sql2 = "SELECT checkins.big,checkins.member_big,checkins.physical,checkins.checkout,".
+                "((places.lonlat <@> ? )::numeric(10,1) * 1.6) AS \"distance\" ".
+                "FROM public.places, public.checkins, public.events ".
+                "WHERE checkins.event_big = events.big AND events.place_big = places.big ".
+                "AND checkins.checkout IS NULL AND checkins.member_big = " . $membig;
 		
-		$result = $db->fetchAll ( $sql2, array (
-				$coords
-		) );
-		
-		
-		
+		$result = $db->fetchAll($sql2, array($coords));
+					
 		//	die(debug($sql2));
 		
 		if (count ( $result ) > 0) {
 			// AUTOMATIC PHISICAL CHECKIN
 			if ($result [0][0] ['distance'] > 1 and $result [0][0] ['physical'] == true) {
 			//	die("i".debug($result [0][0] ['distance']));
-					$sql3 = 'update checkins set 	physical =0 where big=' . $result [0][0] ['big'];
+					$sql3 = "UPDATE checkins SET physical=0 WHERE big=" . $result [0][0] ['big'];
 				$this->query ( $sql3 );
-				
+                
+                
+                
 			}
 			// AUTOMATIC non PHISICAL join
 			if ($result [0] [0]['distance'] < 1 and $result [0][0] ['physical'] == false) {
 			//	die("o".debug($result[0] [0] ['distance']));
-				$sql3 = 'update checkins set 	physical =1 where big=' . $result[0] [0] ['big'];
+				$sql3 = "UPDATE checkins SET physical=1 WHERE big=" . $result[0] [0] ['big'];
 				$this->query ( $sql3 );
+                
+                //Crediti + Rank per join fisico
+                $WalletModel = ClassRegistry::init('Wallet');
+                $MemberModel = ClassRegistry::init('Member');
+                $this->$WalletModel->addAmount ( $membig, '5', 'Join fisico' );
+                $this->$MemberModel->rank($membig,5);
 			}
 		}
 		return $result;

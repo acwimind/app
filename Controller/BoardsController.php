@@ -17,271 +17,567 @@ class BoardsController extends AppController {
 	/**
 	 * get board content for logged user
 	 */
-	public function api_GetBoardContent() {
-		//$this->log ( "------------you are in api_GetBoardContent--------" );
-		$this->_checkVars(array(),array('offset'));
+	public function api_GetBoardContent2() {
+        //$this->log ( "------------you are in api_GetBoardContent--------" );
+        $this->_checkVars(array(),array('offset'));
         
         $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
         
         $MyPlaces = array ();
-		$MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
-		
-		/*
-		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
-		 */
-		
-		foreach ( $MyPlaces as $key => $val ) {
-			
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_id'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_source'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['slug'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['opening_hours'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['news'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['photo_updated'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['status'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['created'] );
-			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['updated'] );
-		}
-		
-		foreach ( $MyPlaces as $key => $val ) {
-			
-			if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
-				
-				$DefPic = $this->Photo->find ( 'first', array (
-						'conditions' => array (
-								'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
-						),
-						'recursive' => - 1 
-				) );
-				
-				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
-				
-				/*
-				 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
-				 */
-			} else {
-				
-				$MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
-			}
-			// check if i liked it
-			$xlike = 0;
-			$xlike = $this->Comment->find ( 'count', array (
-					'conditions' => array (
-							'Comment.member_big' => $this->logged ['Member'] ['big'],
-							'Comment.likeit' => 1,
-							// 'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
-							'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig'] 
-					// 'Comment.place_big'
-										) 
-			) );
-			
-			// TODO: ARRIVATO QUI !!!! LIKE COUNT
-			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
-			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
-			
-			$MyPlaces [$key] ['ILike'] = $xlike;
-		}
-		
-		// recovery friends order by checkins
-		
-		$MyFriends = array ();
-		$MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'], $offset );
-		
+        $MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
+        
+        /*
+         * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
+         */
+        
+        foreach ( $MyPlaces as $key => $val ) {
+            
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_id'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_source'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['slug'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['opening_hours'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['news'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['photo_updated'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['status'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['created'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['updated'] );
+        }
+        
+        foreach ( $MyPlaces as $key => $val ) {
+            
+            if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
+                
+                $DefPic = $this->Photo->find ( 'first', array (
+                        'conditions' => array (
+                                'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
+                        ),
+                        'recursive' => - 1 
+                ) );
+                
+                $MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+                
+                /*
+                 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+                 */
+            } else {
+                
+                $MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
+            }
+            // check if i liked it
+            $xlike = 0;
+            $xlike = $this->Comment->find ( 'count', array (
+                    'conditions' => array (
+                            'Comment.member_big' => $this->logged ['Member'] ['big'],
+                            'Comment.likeit' => 1,
+                            // 'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
+                            'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig'] 
+                    // 'Comment.place_big'
+                                        ) 
+            ) );
+            
+            // TODO: ARRIVATO QUI !!!! LIKE COUNT
+            $MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+            $MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+            
+            $MyPlaces [$key] ['ILike'] = $xlike;
+        }
+        
+        // recovery friends order by checkins
+        
+        $MyFriends = array ();
+        $MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'], $offset );
+        
         //$this->log("Myfriends ".serialize($MyFriends));
-		/*
-		 * $this->log("------------MyFriends------------"); $this->log($MyFriends); $this->log("------------Fine MyFriends-------");
-		 */
-		if (is_array ( $MyFriends )) {
-			
-			foreach ( $MyFriends as $key => $val ) {
-				
-				// ADD MEMBER PHOTO
-				// debug( $val ['Member']['Member'] ['photo_updated'] );
-				if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0 AND $MyFriends [$key]['Member']['PrivacySetting']['photosvisibility'] > 0) {
-					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
-				} else {
-					$sexpic = 2;
-					if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['sex'] ) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
-						$sexpic = 3;
-					}
-					
-					$MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-				}
-				//print_r($MyFriends);
-				// debug( $val ['Place']['Place'] ['big']);
-				// ADD PLACE PHOTO
-				$params = array (
-						'conditions' => array (
-								'Place.big' => $val ['Place'] ['Place'] ['big'] 
-						) 
-				// recursive => 0
-								);
-				
-				$places = $this->Place->find ( 'first', $params );
-				
-				$places = $this->_addPlacePhotoUrls ( $places );
-				
-				// debug($places);
-				
-				$MyFriends [$key] ['Place'] ['Place'] ['photo'] = $places ['Place'] ['photo'];
-				
-				/*
-				 * $DefPic = $this->Photo->find ( 'first', array ( 'conditions' => array ( 'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] ), 'recursive' => - 1 ) ); // die(debug( $DefPic) ); $appho = ""; if (count ( $DefPic ) > 0) { $appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] ); } $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $appho;
-				 */
-				
-				// check if i liked it
-				$xlike = 0;
-				$xlike = $this->Comment->find ( 'count', array (
-						'conditions' => array (
-								'Comment.member_big' => $this->logged ['Member'] ['big'],
-								'Comment.likeit' => 1,
-								'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
-						) 
-				) );
-				
-				$MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'], 0 );
-				
-				$MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'], 0 );
-				
-				$MyFriends [$key] ['ILike'] = $xlike;
-			}
-		}
-		// recovery suggested friends order by ?
-		
-		$MySugFriends = array ();
-		$MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
-		//print_r($MySugFriends);
-		/*
-		 * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
-		 */
-		
-		foreach ( $MySugFriends as $key => &$val ) {
-			
-			// ADD MEMBER PHOTO
-			// debug( $val ['Member']['Member'] ['photo_updated'] );
+        /*
+         * $this->log("------------MyFriends------------"); $this->log($MyFriends); $this->log("------------Fine MyFriends-------");
+         */
+        if (is_array ( $MyFriends )) {
+            
+            foreach ( $MyFriends as $key => $val ) {
+                
+                // ADD MEMBER PHOTO
+                // debug( $val ['Member']['Member'] ['photo_updated'] );
+                if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0 AND $MyFriends [$key]['Member']['PrivacySetting']['photosvisibility'] > 0) {
+                    $MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
+                } else {
+                    $sexpic = 2;
+                    if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['sex'] ) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
+                        $sexpic = 3;
+                    }
+                    
+                    $MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+                }
+                //print_r($MyFriends);
+                // debug( $val ['Place']['Place'] ['big']);
+                // ADD PLACE PHOTO
+                $params = array (
+                        'conditions' => array (
+                                'Place.big' => $val ['Place'] ['Place'] ['big'] 
+                        ) 
+                // recursive => 0
+                                );
+                
+                $places = $this->Place->find ( 'first', $params );
+                
+                $places = $this->_addPlacePhotoUrls ( $places );
+                
+                // debug($places);
+                
+                $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $places ['Place'] ['photo'];
+                
+                /*
+                 * $DefPic = $this->Photo->find ( 'first', array ( 'conditions' => array ( 'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] ), 'recursive' => - 1 ) ); // die(debug( $DefPic) ); $appho = ""; if (count ( $DefPic ) > 0) { $appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] ); } $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $appho;
+                 */
+                
+                // check if i liked it
+                $xlike = 0;
+                $xlike = $this->Comment->find ( 'count', array (
+                        'conditions' => array (
+                                'Comment.member_big' => $this->logged ['Member'] ['big'],
+                                'Comment.likeit' => 1,
+                                'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
+                        ) 
+                ) );
+                
+                $MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+                
+                $MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+                
+                $MyFriends [$key] ['ILike'] = $xlike;
+            }
+        }
+        // recovery suggested friends order by ?
+        
+        $MySugFriends = array ();
+        $MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
+        //print_r($MySugFriends);
+        /*
+         * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
+         */
+        
+        foreach ( $MySugFriends as $key => &$val ) {
+            
+            // ADD MEMBER PHOTO
+            // debug( $val ['Member']['Member'] ['photo_updated'] );
             $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
-			$photosVisibility=$privacySetting['photosvisibility'];
+            $photosVisibility=$privacySetting['photosvisibility'];
             
             if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility > 0) {
-				$MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val ['Member'] ['photo_updated'] );
-			} else {
-				$sexpic = 2;
-				if ($MySugFriends [$key] ['Member'] ['sex'] == 'f') {
-					$sexpic = 3;
-				}
-				
-				$MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-			}
-		}
-		
-		// die(debug($MySugFriends));
-		
-		$MySugAffinity = array ();
-		$MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'],$offset );
-		//print_r($MySugAffinity);
-		/*
-		 * $this->log("------------MySugAffinity------------"); $this->log($MySugAffinity); $this->log("------------Fine MySugAffinity-------");
-		 */
-		
-		foreach ( $MySugAffinity as $key => &$val ) {
-            
-			$privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
-            $photosVisibility=$privacySetting['photosvisibility'];
-			// ADD MEMBER PHOTO
-			// debug($MySugAffinity [$key] [0]['sex']);
-			if ($MySugAffinity [$key] [0] ['photo_updated'] > 0 AND $photosVisibility > 0) {
-				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
-			} else {
-				$sexpic = 2;
-				if ($MySugAffinity [$key] [0] ['sex'] == 'f') {
-					$sexpic = 3;
-				}
-				
-				$MySugAffinity [$key] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-			}
-			$MySugAffinity [$key] [0] ['surname']=substr($MySugAffinity [$key] [0] ['surname'],0,1).'.';
-		}
-		
-		// debug($MySugAffinity);
-		
-		// recovery members members order by checkins
-		
-		$MyAds = array ();
-		$MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
-		//print_r($MyAds);
+                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val ['Member'] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($MySugFriends [$key] ['Member'] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+        }
         
-		foreach ( $MyAds as $key => $val ) {
-			
-			unset ( $MyAds [$key] ['Advert'] ['photo_ext'] );
-			unset ( $MyAds [$key] ['Advert'] ['status'] );
-			unset ( $MyAds [$key] ['Advert'] ['photo_updated'] );
-		}
-		
-		// recovery ads
-		
-		// compose a board
-		
-		$MyBoard = array ();
-		$MyBoardAff = array ();
-		
-		$nume = 0;
-		
-		/*
-		 * $this->log("------------MyAds------------"); $this->log($MyAds); $this->log("------------Fine MyAds-------");
-		 */
-		
-		foreach ( $MySugAffinity as $key => $val ) {
-			
-			if ($nume < count ( $MySugAffinity )) {
-				// $MySugAffinity[$i]["BoardType"]= "AffinityMember";
-				
-				// RIMETTER $MyBoardAff[]['Member'] = $val[0]; //[0];
-			}
-		}
-		
-		$MyBoardAff [] = array (
-				$MySugAffinity 
-		);
-		
-		// $bms[] = array(
-		// 'Bookmark' => $val['Bookmark'],
-		
-		for($i = 0; $i <= 25; $i ++) {
-			if ($i < count ( $MyPlaces )) {
-				$MyPlaces [$i] ["BoardType"] = "Place";
-				$MyBoard [] = $MyPlaces [$i];
-			}
-			if ($i < count ( $MyFriends )) {
-				$MyFriends [$i] ["BoardType"] = "Friend";
-				$MyBoard [] = $MyFriends [$i];
-			}
-			if ($i < count ( $MyAds )) {
-				$MyAds [$i] ["BoardType"] = "Ad";
-				$MyBoard [] = $MyAds [$i];
-			}
-			
-			if ($i < count ( $MySugFriends ) and $i < 10) {
-				$MySugFriends [$i] ["BoardType"] = "SuggestedMember";
-				$MyBoard [] = $MySugFriends [$i];
-			}
-			
-			/*
-			 * if ($i < count ( $MySugAffinity ) ) { $MySugAffinity [$i] ["BoardType"] = "AffinityMember"; $MyBoard [] = $MySugAffinity [$i]; }
-			 */
-		}
-		
-		$MyBoardAff ["BoardType"] = "AffinityMembers";
-		$MyBoard [] = $MyBoardAff;
-		// $MyBoardAff;
-		// array(
-		// 'AffinityMembers' => $MyBoardAff
-		// );
-		// $MyBoard ["AffinityMembers"] = $MyBoardAff[0];
-		
-		$this->_apiOk ( $MyBoard );
-	}
+        // die(debug($MySugFriends));
+        
+        $MySugAffinity = array ();
+        $MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'],$offset );
+
+            foreach ( $MySugAffinity as $key2 => &$val2 ) {
+        /*   */ 
+        $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugAffinity[$key2]['Member']['big']);
+            $photosVisibility=$privacySetting['photosvisibility'];
+            // ADD MEMBER PHOTO
+            // debug($MySugAffinity [$key] [0]['sex']);
+            if ($MySugAffinity [$key2] [0] ['photo_updated'] > 0 AND $photosVisibility > 0) {
+                $MySugAffinity [$key2] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($MySugAffinity [$key2] [0] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $MySugAffinity [$key2] [0] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+            
+            
+            $MySugAffinity [$key2] [0] ['surname']=substr($MySugAffinity [$key2] [0] ['surname'],0,1).'.';
+        
+        }
+        
+        // debug($MySugAffinity);
+        
+        // recovery members members order by checkins
+        
+        $MyAds = array ();
+        $MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
+        //print_r($MyAds);
+        
+        foreach ( $MyAds as $key => $val ) {
+            
+            unset ( $MyAds [$key] ['Advert'] ['photo_ext'] );
+            unset ( $MyAds [$key] ['Advert'] ['status'] );
+            unset ( $MyAds [$key] ['Advert'] ['photo_updated'] );
+        }
+        
+        // recovery ads
+        
+        // compose a board
+        
+        $MyBoard = array ();
+        $MyBoardAff = array ();
+        
+        $nume = 0;
+        
+        /*
+         * $this->log("------------MyAds------------"); $this->log($MyAds); $this->log("------------Fine MyAds-------");
+        
+        
+        foreach ( $MySugAffinity as $key => $val ) {
+            
+            if ($nume < count ( $MySugAffinity )) {
+                // $MySugAffinity[$i]["BoardType"]= "AffinityMember";
+                
+                // RIMETTER $MyBoardAff[]['Member'] = $val[0]; //[0];
+            }
+        }
+        
+        $MyBoardAff [] = array (
+                $MySugAffinity 
+        );
+         */
+        // $bms[] = array(
+        // 'Bookmark' => $val['Bookmark'],
+        
+        for($i = 0; $i <= 25; $i ++) {
+            if ($i < count ( $MyPlaces )) {
+                $MyPlaces [$i] ["BoardType"] = "Place";
+                $MyBoard [] = $MyPlaces [$i];
+            }
+            if ($i < count ( $MyFriends )) {
+                $MyFriends [$i] ["BoardType"] = "Friend";
+                $MyBoard [] = $MyFriends [$i];
+            }
+            if ($i < count ( $MyAds )) {
+                $MyAds [$i] ["BoardType"] = "Ad";
+                $MyBoard [] = $MyAds [$i];
+            }
+            
+            if ($i < count ( $MySugFriends ) and $i < 10) {
+                $MySugFriends [$i] ["BoardType"] = "SuggestedMember";
+                $MyBoard [] = $MySugFriends [$i];
+            }
+            
+            /*
+             * if ($i < count ( $MySugAffinity ) ) { $MySugAffinity [$i] ["BoardType"] = "AffinityMember"; $MyBoard [] = $MySugAffinity [$i]; }
+             */
+        }
+        
+        $MyBoardAff= $MySugAffinity;
+        //$MyBoardAff 
+        $MySugAffinity["BoardType"] = "AffinityMembers";
+        
+        // TOLTO PER CRASH    
+        $MyBoard [] = $MySugAffinity;
+        
+        
+        // $MyBoardAff;
+        // array(
+        // 'AffinityMembers' => $MyBoardAff
+        // );
+        // $MyBoard ["AffinityMembers"] = $MyBoardAff[0];
+        
+        $this->_apiOk ( $MyBoard );
+    }
+
 	
+    public function api_GetBoardContent() {
+        //$this->log ( "------------you are in api_GetBoardContent--------" );
+        $this->_checkVars(array(),array('offset'));
+        
+        $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
+        
+        $MyPlaces = array ();
+        $MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
+        
+        /*
+         * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
+         */
+        
+        foreach ( $MyPlaces as $key => $val ) {
+            
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_id'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['external_source'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['slug'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['opening_hours'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['news'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['photo_updated'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['status'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['created'] );
+            unset ( $MyPlaces [$key] ['Place'] ['Place'] ['updated'] );
+        }
+        
+        foreach ( $MyPlaces as $key => $val ) {
+            
+            if (isset ( $val ['Place'] ['Place'] ['default_photo_big'] ) && $val ['Place'] ['Place'] ['default_photo_big'] > 0) { // add URLs to default photos
+                
+                $DefPic = $this->Photo->find ( 'first', array (
+                        'conditions' => array (
+                                'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] 
+                        ),
+                        'recursive' => - 1 
+                ) );
+                
+                $MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] );
+                
+                /*
+                 * TODO: put again conditrions for updated if (isset ( $val ['Place']['Place']['DefaultPhoto'] ['status'] ) && $val ['Place']['Place']['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos $MyPlaces [$key] ['Place']['Place'] ['photo'] = $this->FileUrl->place_photo ( $val ['Place']['Place'] ['big'], $val ['Place']['Place']['Gallery'] [0] ['big'], $val['Place'] ['Place']['DefaultPhoto'] ['big'],$val['Place'] ['Place'] ['DefaultPhoto'] ['original_ext'] ); } else { $MyPlaces [$key]['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place']['Place'] ['category_id'] ); }
+                 */
+            } else {
+                
+                $MyPlaces [$key] ['Place'] ['Place'] ['photo'] = $this->FileUrl->default_place_photo ( $val ['Place'] ['Place'] ['category_id'] );
+            }
+            // check if i liked it
+            $xlike = 0;
+            $xlike = $this->Comment->find ( 'count', array (
+                    'conditions' => array (
+                            'Comment.member_big' => $this->logged ['Member'] ['big'],
+                            'Comment.likeit' => 1,
+                            // 'Comment.place_big' => $MyPlaces [$key] [0]['checkinbig']
+                            'Comment.checkin_big' => $MyPlaces [$key] [0] ['checkinbig'] 
+                    // 'Comment.place_big'
+                                        ) 
+            ) );
+            
+            // TODO: ARRIVATO QUI !!!! LIKE COUNT
+            $MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+            $MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+            
+            $MyPlaces [$key] ['ILike'] = $xlike;
+        }
+        
+        // recovery friends order by checkins
+        
+        $MyFriends = array ();
+        $MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'], $offset );
+        
+        //$this->log("Myfriends ".serialize($MyFriends));
+        /*
+         * $this->log("------------MyFriends------------"); $this->log($MyFriends); $this->log("------------Fine MyFriends-------");
+         */
+        if (is_array ( $MyFriends )) {
+            
+            foreach ( $MyFriends as $key => $val ) {
+                
+                // ADD MEMBER PHOTO
+                // debug( $val ['Member']['Member'] ['photo_updated'] );
+                if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0 AND $MyFriends [$key]['Member']['PrivacySetting']['photosvisibility'] > 0) {
+                    $MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['Member'] ['big'], $val ['Member'] ['Member'] ['photo_updated'] );
+                } else {
+                    $sexpic = 2;
+                    if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['sex'] ) and $MyFriends [$key] ['Member'] ['Member'] ['sex'] == 'f') {
+                        $sexpic = 3;
+                    }
+                    
+                    $MyFriends [$key] ['Member'] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+                }
+                //print_r($MyFriends);
+                // debug( $val ['Place']['Place'] ['big']);
+                // ADD PLACE PHOTO
+                $params = array (
+                        'conditions' => array (
+                                'Place.big' => $val ['Place'] ['Place'] ['big'] 
+                        ) 
+                // recursive => 0
+                                );
+                
+                $places = $this->Place->find ( 'first', $params );
+                
+                $places = $this->_addPlacePhotoUrls ( $places );
+                
+                // debug($places);
+                
+                $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $places ['Place'] ['photo'];
+                
+                /*
+                 * $DefPic = $this->Photo->find ( 'first', array ( 'conditions' => array ( 'Photo.big' => $val ['Place'] ['Place'] ['default_photo_big'] ), 'recursive' => - 1 ) ); // die(debug( $DefPic) ); $appho = ""; if (count ( $DefPic ) > 0) { $appho = $this->FileUrl->place_photo ( $val ['Place'] ['Place'] ['big'], $DefPic ['Photo'] ['gallery_big'], $DefPic ['Photo'] ['big'], $DefPic ['Photo'] ['original_ext'] ); } $MyFriends [$key] ['Place'] ['Place'] ['photo'] = $appho;
+                 */
+                
+                // check if i liked it
+                $xlike = 0;
+                $xlike = $this->Comment->find ( 'count', array (
+                        'conditions' => array (
+                                'Comment.member_big' => $this->logged ['Member'] ['big'],
+                                'Comment.likeit' => 1,
+                                'Comment.checkin_big' => $MyFriends [$key] ['Checkinbig'] 
+                        ) 
+                ) );
+                
+                $MyFriends [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+                
+                $MyFriends [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyFriends [$key] ['Checkinbig'], 0 );
+                
+                $MyFriends [$key] ['ILike'] = $xlike;
+            }
+        }
+        // recovery suggested friends order by ?
+        
+        $MySugFriends = array ();
+        $MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
+        //print_r($MySugFriends);
+        /*
+         * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
+         */
+        
+        foreach ( $MySugFriends as $key => &$val ) {
+            
+            // ADD MEMBER PHOTO
+            // debug( $val ['Member']['Member'] ['photo_updated'] );
+            $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
+            $photosVisibility=$privacySetting['photosvisibility'];
+            
+            if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility > 0) {
+                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val ['Member'] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($MySugFriends [$key] ['Member'] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+        }
+        
+        // die(debug($MySugFriends));
+        
+        $MySugAffinity = array ();
+        $MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'],$offset );
+        
+        foreach($MySugAffinity as $key=>$val){
+            
+            
+            $MySugAffinity2[]=$MySugAffinity[$key][0];
+            
+            
+        }
+        
+        //print_r($MySugAffinity2);
+        
+            foreach ( $MySugAffinity2 as $key2 => &$val2 ) {
+        /*   */ 
+        $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugAffinity[$key2]['Member']['big']);
+            $photosVisibility=$privacySetting['photosvisibility'];
+            // ADD MEMBER PHOTO
+            // debug($MySugAffinity [$key] [0]['sex']);
+            if ($MySugAffinity2 [$key2]  ['photo_updated'] > 0 AND $photosVisibility > 0) {
+                $MySugAffinity2 [$key2]  ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($MySugAffinity2 [$key2] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $MySugAffinity2 [$key2] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+            
+            
+            $MySugAffinity2 [$key2] ['surname']=substr($MySugAffinity2 [$key2] ['surname'],0,1).'.';
+        
+            $MySAff[0][]=$MySugAffinity2[$key2];
+        }
+        
+        // debug($MySugAffinity);
+        
+        // recovery members members order by checkins
+        
+        $MyAds = array ();
+        $MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
+        //print_r($MyAds);
+        
+        foreach ( $MyAds as $key => $val ) {
+            
+            unset ( $MyAds [$key] ['Advert'] ['photo_ext'] );
+            unset ( $MyAds [$key] ['Advert'] ['status'] );
+            unset ( $MyAds [$key] ['Advert'] ['photo_updated'] );
+        }
+        
+        // recovery ads
+        
+        // compose a board
+        
+        $MyBoard = array ();
+        $MyBoardAff = array ();
+        
+        $nume = 0;
+        
+        /*
+         * $this->log("------------MyAds------------"); $this->log($MyAds); $this->log("------------Fine MyAds-------");
+        
+        
+        foreach ( $MySugAffinity as $key => $val ) {
+            
+            if ($nume < count ( $MySugAffinity )) {
+                // $MySugAffinity[$i]["BoardType"]= "AffinityMember";
+                
+                // RIMETTER $MyBoardAff[]['Member'] = $val[0]; //[0];
+            }
+        }
+        
+        $MyBoardAff [] = array (
+                $MySugAffinity 
+        );
+         */
+        // $bms[] = array(
+        // 'Bookmark' => $val['Bookmark'],
+        
+        for($i = 0; $i <= 25; $i ++) {
+            if ($i < count ( $MyPlaces )) {
+                $MyPlaces [$i] ["BoardType"] = "Place";
+                $MyBoard [] = $MyPlaces [$i];
+            }
+            if ($i < count ( $MyFriends )) {
+                $MyFriends [$i] ["BoardType"] = "Friend";
+                $MyBoard [] = $MyFriends [$i];
+            }
+            if ($i < count ( $MyAds )) {
+                $MyAds [$i] ["BoardType"] = "Ad";
+                $MyBoard [] = $MyAds [$i];
+            }
+            
+            if ($i < count ( $MySugFriends ) and $i < 10) {
+                $MySugFriends [$i] ["BoardType"] = "SuggestedMember";
+                $MyBoard [] = $MySugFriends [$i];
+            }
+            
+            /*
+             * if ($i < count ( $MySugAffinity ) ) { $MySugAffinity [$i] ["BoardType"] = "AffinityMember"; $MyBoard [] = $MySugAffinity [$i]; }
+             */
+        }
+        
+        $MyBoardAff= $MySugAffinity;
+        //$MyBoardAff 
+        $MySugAffinity["BoardType"] = "AffinityMembers";
+        
+        $MySAff["BoardType"]="AffinityMembers";
+        
+        //print_r($MySAff);
+        //da togliere per crash
+        //$MyBoard [] = $MySugAffinity;
+        
+        $MyBoard[]=$MySAff;
+        
+        //print_r($MyBoard);       
+        
+        // $MyBoardAff;
+        // array(
+        // 'AffinityMembers' => $MyBoardAff
+        // );
+        // $MyBoard ["AffinityMembers"] = $MyBoardAff[0];
+        
+        $this->_apiOk ( $MyBoard );
+    }
+    
+    
+    
+    
 	/**
 	 * get board content for logged user
 	 */
