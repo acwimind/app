@@ -132,21 +132,21 @@ class SignalationsController extends AppController {
 		}
 		else
 		{
-			$this->_apiEr('Bad reason value');
+			$this->_apiEr(__('Bad reason value'));
 		}
 
 		// Check if type of signalation is valid
 		if (!array_key_exists($type, Defines::$signalations))
 		{//TODO in bootstrap aggiungere anche Comment in signalations
 			
-            $this->_apiEr('Bad signalation type');
+            $this->_apiEr(__('Bad signalation type'));
 		}
         
         //Search member_big of bad member
         $BadMemBig=$this->Signalation->findBadMemBig($type,$idObj);
         if ($BadMemBig==null OR $BadMemBig=='')
         {
-            $this->_apiEr('Missing author identificator');
+            $this->_apiEr(__('Missing author identificator'));
         }
         
         
@@ -154,7 +154,7 @@ class SignalationsController extends AppController {
 		$canSignal = $this->Signalation->canSignal($memBig, $BadMemBig, $type, $idObj);
 		if (!$canSignal)
 		{
-			$this->_apiEr('Cannot signal. A signalation with this parameters is already active or was added not long ago.');
+		$this->_apiEr(__('Cannot signal. A signalation with this parameters is already active or was added not long ago.'));
 		}
      
         
@@ -162,13 +162,13 @@ class SignalationsController extends AppController {
 		if ($type == 1)
 		{
 			// Check if member exists? Not needed, the method has a try catch block so there won't be any dirty messages errored out
-			$isOnList  = $this->MemberSetting->isOnIgnoreList($memBig, $BadMemBig);
+			$isOnList  = $this->MemberSetting->isOnIgnoreListDual($memBig, $BadMemBig);
 			if (!$isOnList)
 			{
 				$res = $this->MemberSetting->addToIgnoreList($memBig, $BadMemBig);
 				if ($res === FALSE)
 				{
-					$this->_apiEr('Error occured. Member not added to ignore list.');
+					$this->_apiEr(__('Error occured. Member not added to ignore list.'));
 				}
 			}
 			// If this is a chat, send last M chat messages with up to N characters
@@ -250,7 +250,7 @@ class SignalationsController extends AppController {
 		}
 		else
 		{
-			$this->_apiEr('Error occured. Signalation not added.');
+			$this->_apiEr(__('Error occured. Signalation not added.'));
 		}
 
 	}
@@ -306,7 +306,7 @@ class SignalationsController extends AppController {
 		{
 			// Check if member exists? Not needed, the method has a try catch block so there won't be any dirty messages errored out
 			$memberSettings = $this->MemberSetting;/* @var $memberSettings MemberSetting */
-			$isOnList  = $memberSettings->isOnIgnoreList($memBig, $flgBig);
+			$isOnList  = $memberSettings->isOnIgnoreListDual($memBig, $flgBig);
 			if (!$isOnList)
 			{
 				$res = $memberSettings->addToIgnoreList($memBig, $flgBig);
@@ -409,33 +409,33 @@ class SignalationsController extends AppController {
         }
         else
         {
-            $this->_apiEr('Bad reason value');
+            $this->_apiEr(__('Bad reason value'));
         }
 
         // Check if type of signalation is valid
         if (!array_key_exists($type, Defines::$signalations))
         {
-            $this->_apiEr('Bad signalation type');
+            $this->_apiEr(__('Bad signalation type'));
         }
 
         // Can be this signalation added?
         $canSignal = $this->Signalation->canSignal($memBig, $flgBig, $type);
         if (!$canSignal)
         {
-            $this->_apiEr('Cannot signal. A signalation with this parameters is already active or was added not long ago.');
+            $this->_apiEr(__('Cannot signal. A signalation with this parameters is already active or was added not long ago.'));
         }
 
         // If signalation is made of type CHAT , add member to ignore list.
         if ($type == SIGNAL_CHAT)
         {
             // Check if member exists? Not needed, the method has a try catch block so there won't be any dirty messages errored out
-            $isOnList  = $this->MemberSetting->isOnIgnoreList($memBig, $flgBig);
+            $isOnList  = $this->MemberSetting->isOnIgnoreListDual($memBig, $flgBig);
             if (!$isOnList)
             {
                 $res = $this->MemberSetting->addToIgnoreList($memBig, $flgBig);
                 if ($res === FALSE)
                 {
-                    $this->_apiEr('Error occured. Member not added to ignore list.');
+                    $this->_apiEr(__('Error occured. Member not added to ignore list.'));
                 }
             }
             // If this is a chat, send last M chat messages with up to N characters
@@ -498,7 +498,7 @@ class SignalationsController extends AppController {
         }
         else
         {
-            $this->_apiEr('Error occured. Signalation not added.');
+            $this->_apiEr(__('Error occured. Signalation not added.'));
         }
 
     }

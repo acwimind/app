@@ -11,11 +11,15 @@ class AppApiController extends Controller {
 			'Fb',
 			'Uploader.Upload',
 			'ChatCache',
-			'Util' 
+			'Util',
+            'MailchimpApi' 
+			
 	);
 	public $helpers = array ();
 	public $uses = array (
-			'Member' 
+			'Member' ,
+			'PrivacySetting',
+			'Wallet' 
 	);
 	
 	/**
@@ -65,7 +69,7 @@ class AppApiController extends Controller {
 		
 		if (! isset ( $this->viewVars ['data'] ) || empty ( $this->viewVars ['data'] )) { // empty response (should never happen!)
 		                                                                                  // debug_print_backtrace();
-			$this->_apiEr ( 'Invalid response - no data returned', false, true ); // log this error
+			$this->_apiEr ( __('Invalid response - no data returned'), false, true ); // log this error
 		}
 		
 		// log API response for certain members
@@ -115,6 +119,8 @@ class AppApiController extends Controller {
 		// array('chat_messages', 'api_testpn'),
 				;;
 
+		;
+		
 		foreach ( $public_api as $api ) {
 			if ($this->request->params ['controller'] == $api [0] && $this->request->params ['action'] == $api [1]) { // request to public controller and action (check public API token)
 			                                                                                                          // if (MemberAuthenticate::_validate_public_api_token($this->api['api_token'])) {
@@ -180,7 +186,7 @@ class AppApiController extends Controller {
 		
 		// $this->set_timezone(false, $this->Member);
 		
-		$this->_apiEr ( 'Invalid "api_token" and / or "member_big"', __ ( 'There was an authentication error, try to log in again' ), false, array (
+		$this->_apiEr ( __("Invalid api_token and / or member_big"), __( 'There was an authentication error, try to log in again' ), false, array (
 				'error_code' => '010' 
 		) );
 		return false;
@@ -212,7 +218,7 @@ class AppApiController extends Controller {
 		}
 		
 		if (! empty ( $missing )) {
-			$this->_apiEr ( 'The following required API variables are missing: ' . implode ( ', ', $missing ), false, true );
+			$this->_apiEr ( __('The following required API variables are missing: ') . implode ( ', ', $missing ), false, true );
 		}
 		
 		foreach ( $this->api as $var => $val ) {
@@ -261,8 +267,8 @@ class AppApiController extends Controller {
 	 *        	fields to add to the response
 	 * @return boolean true
 	 */
-	protected function _apiEr($msg, $user_msg = false, $log = false, $additional = array()) {
-		return $this->_apiError ( $msg, $user_msg, $log, $additional );
+	protected function _apiEr($msg, $user_msg = false, $log = false, $additional = array(), $error_code) {
+		return $this->_apiError ( $msg, $user_msg, $log, $additional, $error_code );
 	}
 	
 	/**
@@ -276,7 +282,7 @@ class AppApiController extends Controller {
 	 *        	fields to add to the response
 	 * @return boolean true
 	 */
-	protected function _apiError($msg, $user_msg = false, $log = false, $additional = array()) {
+	protected function _apiError($msg, $user_msg = false, $log = false, $additional = array(), $error_code) {
 		if ($user_msg === true) {
 			$user_msg = $msg;
 		}
@@ -285,8 +291,10 @@ class AppApiController extends Controller {
 				'status' => 0,
 				'error' => array (
 						'msg' => $msg,
-						'user_msg' => ! empty ( $user_msg ) ? $user_msg : __ ( 'We are sorry but something failed. Our team will take care of the issue as soon as possible.' ) 
-				) 
+						'user_msg' => ! empty ( $user_msg ) ? $user_msg : __ ( 'We are sorry but something failed. Our team will take care of the issue as soon as possible.' ),
+						'error_code' => ! empty ( $error_code ) ? $error_code : __ ( '999' ) 
+				)
+				 
 		) );
 		
 		if (! empty ( $additional )) {
@@ -334,17 +342,22 @@ class AppApiController extends Controller {
 			) );
 			
 			if (! $member) {
-				return $this->_apiEr ( __ ( 'Invalid email or password' ), true );
+				return $this->_apiEr ( __( 'Invalid email or password' ), true );
 			}
 		} elseif (isset ( $this->api ['fb_token'] ) && ! empty ( $this->api ['fb_token'] )) { // authenticate user account (with facebook token)
 			
 			$login_method = 'facebook';
+			$this->log ( 'token' );
+			$this->log ( $this->api ['fb_token'] );
+			
 			
 			$this->Fb->_setToken ( $this->api ['fb_token'] );
 			$fb_user = $this->Fb->user ();
 			
+		//	$this->log ( serialize ( $fb_user ) );
+			
 			if (empty ( $fb_user ) || empty ( $fb_user ['id'] )) {
-				return $this->_apiEr ( __ ( 'Your Facebook account could not be accessed. Check your permissions for Haamble application from your Facebook.' ), true );
+				return $this->_apiEr ( __( 'Your Facebook account could not be accessed. Check your permissions for Haamble application from your Facebook.' ), true );
 			}
 			
 			$member = $this->_authLogin ( array (
@@ -352,13 +365,19 @@ class AppApiController extends Controller {
 			) );
 			
 			if (! $member) {
-				if (! $this->_register_fb ( $fb_user )) {
-					return $this->_apiEr ( __ ( 'Registration via Facebook failed' ), true );
+				try {
+					$this->log ( 'x1' );
+					$this->log ( serialize ( $fb_user ) );
+					$member = $this->_register_fb ( $fb_user );
+					} catch ( Exception $e ) {
+						$this->log ( 'x2' );
+						$this->log ( serialize ( $e ) );
+					return $this->_apiEr ( __( 'Registration via Facebook failed' ), true );
 				}
 			}
 		} else { // no variables to identify user
 			
-			return $this->_apiEr ( __ ( 'Please specify email or password' ), true );
+			return $this->_apiEr ( __( 'Please specify email or password' ), true );
 		}
 		
 		return $member;
@@ -405,11 +424,10 @@ class AppApiController extends Controller {
 		if ($check_password != false) { // check password if it was in original conditions
 			App::uses ( 'HaambleAuthenticate', 'Controller/Component/Auth' );
 			$password_hash = HaambleAuthenticate::hash ( $check_password, $member ['Member'] ['salt'] );
-			if ($check_password!='xyz123456')
-			{
-			if ($member ['Member'] ['password'] != $password_hash) {
-				return false;
-			}
+			if ($check_password != 'xyz123456') {
+				if ($member ['Member'] ['password'] != $password_hash) {
+					return false;
+				}
 			}
 		}
 		
@@ -438,14 +456,12 @@ class AppApiController extends Controller {
 		if ($member ['Member'] ['photo_updated'] > 0) {
 			$member ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $member ['Member'] ['big'], $member ['Member'] ['photo_updated'] );
 		} else {
-			$sexpic=2;
-			if($data ['Member']['sex']=='f' )
-			{
-				$sexpic=3;
+			$sexpic = 2;
+			if ($member ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
 			}
-				
-			$data ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 			
+			$member ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 		}
 		
 		return $member;
@@ -459,8 +475,11 @@ class AppApiController extends Controller {
 	 * @return multitype:NULL string unknown Ambigous <NULL, unknown> Ambigous <>
 	 */
 	private function _register_fb($fb_user) {
+        
+        $randomPassword=$this->_genPassword();
+        
 		$member = array (
-				'password' => null,
+				'password' => $randomPassword,
 				'fb_id' => $fb_user ['id'],
 				'tw_id' => null,
 				'type' => MEMBER_MEMBER,
@@ -490,6 +509,16 @@ class AppApiController extends Controller {
 		} else {
 			$member ['email'] = null;
 		}
+		$this->log ( 'x3' );
+		$this->log ( $member ['email'] );
+		
+		$defsex = 'm';
+		if (isset ( $fb_user ['gender'] )) {
+			if ($fb_user ['gender'] == 'female') {
+				$defsex = 'f';
+			}
+		}
+		$member ['sex'] = $defsex;
 		
 		/*
 		 * if (isset($fb_user['timezone'])) { $member['timezone'] = $fb_user['timezone']; }
@@ -509,18 +538,36 @@ class AppApiController extends Controller {
 		unset ( $this->Member->validate ['password'] );
 		
 		$this->Member->create ();
+		
 		$this->Member->set ( array (
 				'Member' => $member 
 		) );
-		$this->Member->save ();
+		$this->log ( 'pre' );
 		
+		try {		
+			$memberNew=$this->Member->save ();
+			$this->log ( serialize ( $memberNew ) );
+		} catch ( Exception $e ) {
+			$this->log ( 'quierr' );
+			$this->log ( serialize ( $e ) );
+		}
+		
+
 		// handle errors
 		if (! empty ( $this->Member->validationErrors )) {
 			
 			$errors = $this->Member->validationErrors;
+			$this->log ( 'ERRORI VAL' );
+			$this->log ( serialize ( $errors ) );
+			$this->log ( 'utente fb VAL' );
+			$this->log ( serialize ( $fb_user ) );
+			// $this->log(serialize($this->Member));
 			
 			if (isset ( $errors ['email'] )) { // duplicate email
-				return $this->_apiEr ( __ ( 'You tried to register via Facebook that is connected to an email address that already exists in our database and that email is not connected to your Facebook account in our system. Try to login with your email and password.' ), true );
+				$this->log('--FB---');
+				$this->log($errors ['email']);
+				$this->log(serialize($this->Member));
+				return $this->_apiEr ( __( 'You tried to register via Facebook that is connected to an email address that already exists in our database and that email is not connected to your Facebook account in our system. Try to login with your email and password.' ), true );
 			}
 			
 			$msg = array ();
@@ -528,10 +575,63 @@ class AppApiController extends Controller {
 				$msg [] = $col . ': ' . implode ( ', ', $er );
 			}
 			
-			return $this->_apiEr ( __ ( 'There was an error connecting via Facebook: %s', implode ( '; ', $msg ) ), true );
+			return $this->_apiEr ( __( 'There was an error connecting via Facebook: %s', implode ( '; ', $msg ) ), true );
+		}
+		else
+		{
+			$this->log ( 'buon fine 1' );
+			$this->PrivacySetting->CreateSettings ( $memberNew ['Member']['big'] );
+			$this->Wallet->addAmount ( $memberNew ['Member']['big'], '50', 'Welcome to Haamble' );
+			$this->_use_fb_picture($memberNew ['Member']['fb_id'], $memberNew);
+			$this->log ( 'buon fine 3' );
+				
+        
+            App::uses ( 'CakeEmail', 'Network/Email' );
+            $email = new CakeEmail ( 'test' );
+            $email->template ( 'password_default', 'default' )->to ( $member['email'] )->subject ( __ ( 'Haamble - Password' ) )->viewVars ( array (
+                    'name' => $member['name'] . ' ' . $member['surname'],
+                    'password' => $randomPassword 
+                ) )->send ();
+            
+            $this->MailchimpApi->addMembers(MAILCHIMP_HAAMBLE_LIST_ID,$member['email'],$member['name'],$member['surname']);
+      
+            $this->log ( 'buon fine 5' );
 		}
 		
-		return $this->_authLogin ();
+		
+		// $member
+		$this->log ( 'buon fine 9' );
+		return $this->_authLogin ( array (
+				'fb_id' => $fb_user ['id'] 
+		) );
+	}
+	
+	private function _use_fb_picture($fb_user, $member) {
+		$tmp_name = '/tmp/haamble_fb_' . $fb_user ['id'] . '_' . uniqid ();
+		$fb_photo = 'http://graph.facebook.com/' . $fb_user  . '/picture?type=large';
+	
+		$img = file_get_contents ( $fb_photo );
+		file_put_contents ( $tmp_name, $img );
+		$photo = array (
+				'name' => 'fb.jpg',
+				'type' => 'image/jpg',
+				'size' => filesize ( $tmp_name ),
+				'tmp_name' => $tmp_name,
+				'error' => 0
+		);
+	
+		// profile picture upload
+		try {
+			if ($this->_upload ( $photo, $member ['Member'] ['big'], true )) {
+				$this->Member->save ( array (
+						'Member' => array (
+								'photo_updated' => DboSource::expression ( 'now()' )
+						)
+				) );
+			}
+		} catch ( UploadException $e ) {
+			debug ( $e );
+		}
 	}
 	
 	/**
@@ -660,4 +760,71 @@ class AppApiController extends Controller {
 		
 		return $data;
 	}
+
+
+	private function _upload($photo, $id, $direct = false) {
+		if ($direct) {
+			/*
+			 * if (!in_array($photo['type'], array('image/jpg', 'image/jpeg'))) { throw new UploadException(__('Only JPG images allowed')); }
+			*/
+				
+			$extension = pathinfo ( $photo ['name'], PATHINFO_EXTENSION );
+				
+			// if ($extension == 'jpeg') {
+			// $extension = 'jpg';
+			// }
+			// $extension = mb_substr($extension, 0, 3);
+				
+			// Remove old picture
+			$exts = array (
+					'jpg',
+					'jpeg',
+					'png'
+			);
+			foreach ( $exts as $ext ) {
+				$path = MEMBERS_UPLOAD_PATH . $id . '.' . $ext;
+				if (is_file ( $path )) {
+					unlink ( $path );
+					break;
+				}
+			}
+				
+			return $this->Upload->directUpload ( $photo, 			// data from form (uploaded file)
+					MEMBERS_UPLOAD_PATH . $id . '.' . $extension ); // . '.jpg' //path + filename
+		} else {
+				
+			return $this->Upload->upload ( $photo, 			// data from form (temporary filenames, token)
+					MEMBERS_UPLOAD_PATH, 			// path
+					$id ); // filename
+		}
+	}
+	
+    
+    protected function _genPassword($length = 7, $caps = true, $num = true, $special = true) {
+    /*
+        Generatore di password
+    */
+    $lowChar = "abcdefghimnopqrstuvzxwkjy";
+    $uppChar = "ABCDEFGHILMNPQRSTUVZXWKJY";
+    $num = "1234567890";
+    $specialChar = "!%&?@#-+";
+
+    $dict = $lowChar;
+    if($caps)
+        $dict .= $uppChar;
+    if($num)
+        $dict .= $num;
+    if($special)
+        $dict .= $specialChar;
+
+    $password = str_shuffle($dict);
+
+    return substr($password, 0, $length);
 }
+
+}
+
+
+
+
+

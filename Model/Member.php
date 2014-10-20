@@ -227,6 +227,33 @@ class Member extends AppModel {
 	//	$Iyear =  $birthdate->format("Y");
 	$db = $this->getDataSource ();
     
+    $FriendModel = ClassRegistry::init('Friend');
+    $Friends=$FriendModel->findAllfriends($memberBig);
+    
+    foreach($Friends as $key=>$val){
+        
+        $amici[]=($val['Friend']['member1_big']==$memberBig)? $val['Friend']['member2_big']:$val['Friend']['member1_big'];
+                        
+    }
+    
+    $lista_amici=implode(',',$amici);
+       if (count($lista_amici)>0){//se ci sono amici allora filtra
+           
+           $filtroNonAmici=" AND members.big NOT IN ($lista_amici) ";
+                     
+       } else {//se non ha amici non occorre filtrare
+           
+           $filtroNonAmici=' ';
+       }
+       
+     $filtroBloccati=" AND members.big NOT IN (SELECT to_big as \"blockedbig\" ".
+                                               "FROM member_settings ".
+                                               "WHERE from_big=$memberBig AND chat_ignore=1 ".
+                                               "UNION ".
+                                               "SELECT from_big as \"blockedbig\" ".
+                                               "FROM member_settings ".
+                                               "WHERE to_big=$memberBig AND chat_ignore=1) "; 
+      
     $ageAttempts=array(10,15,20);  //increasing values
     $distanceAttempts=array(10,50,100);   //increasing values
     
@@ -237,18 +264,25 @@ class Member extends AppModel {
         for ($j=0; $j<count($ageAttempts); $j++){ //age array iterator index
     
                          
-        $sql2 = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,members.sex,
-	             members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-             
-                FROM public.members
-             
-                WHERE	 (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[$j].' AND '.$ageAttempts[$j].' ) AND sex != \''.$Imember['sex'].'\'
-			        AND	(members.big <> '.$memberBig	.') AND 	(members.status <> 255)  
-	                AND	( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[$i].')
-					ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT . 'OFFSET '.$offset;
-	
-         
+       $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
+               "members.photo_updated,members.sex,".
+               "members.last_lonlat AS \"coordinates\",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) ".
+               "AS \"distance\" ".
+               "FROM members ".
+               "JOIN privacy_settings ON members.big=privacy_settings.member_big ".
+               "WHERE ((".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".$ageAttempts[$j]." ".
+               "AND ".$ageAttempts[$j].") ".
+               "AND sex != '".$Imember['sex']."' ".
+               "AND	(members.big <> ".$memberBig.") ".
+               "AND (members.status <> 255) ".
+               "AND (privacy_settings.visibletousers>0) ".
+               $filtroNonAmici.
+               $filtroBloccati.
+               "AND	( members.last_lonlat <@> ? )::numeric(10,1) < (". NEARBY_RADIUS. "*".$distanceAttempts[$i].
+               ") ".
+               "ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ".
+               "ASC LIMIT ". API_MAP_LIMIT ." OFFSET ".$offset;
+	                 
         $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));
         
         if (count($result)>=MIN_AFFINITY_MEMBERS) {
@@ -260,16 +294,23 @@ class Member extends AppModel {
      
      if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and any members sex
          
-         $sql2 = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,members.sex,
-                  members.last_lonlat AS "coordinates",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance"
-             
-                  FROM public.members
-             
-                  WHERE     (( '.$Iyear.' - DATE_PART(\'year\', birth_date)  ) BETWEEN -'.$ageAttempts[count($ageAttempts)-1].' AND '.$ageAttempts[count($ageAttempts)-1].' )
-                    AND    (members.big <> '.$memberBig    .') AND 	(members.status <> 255)  
-                    AND    ( members.last_lonlat <@> ? )::numeric(10,1) < (' . NEARBY_RADIUS . '*'.$distanceAttempts[count($distanceAttempts)-1].')
-                    ORDER BY  ( members.last_lonlat <@> ?)::numeric(10,1) 
-                    ASC LIMIT ' . API_MAP_LIMIT. 'OFFSET '.$offset; 
+         $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
+                 "members.photo_updated,members.sex,".
+                 "members.last_lonlat AS \"coordinates\",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS ".
+                 "\"distance\" ".
+                 "FROM members ".
+                 "JOIN privacy_settings ON members.big=privacy_settings.member_big ".             
+                 "WHERE (( ".$Iyear." - DATE_PART(\'year\', birth_date)) BETWEEN -".
+                 $ageAttempts[count($ageAttempts)-1]." ".
+                 "AND ".$ageAttempts[count($ageAttempts)-1]." ) ".
+                 "AND (members.big <> ".$memberBig.") AND (members.status <> 255) ".
+                 "AND (privacy_settings.visibletousers>0) ".
+                  $filtroNonAmici.
+                  $filtroBloccati.
+                 "AND ( members.last_lonlat <@> ? )::numeric(10,1) < (" . NEARBY_RADIUS . "*".$distanceAttempts[count($distanceAttempts)-1].") ".
+                 "ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ".
+                 "ASC LIMIT ". API_MAP_LIMIT. " OFFSET ".$offset; 
+         
          
           $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords    ) );
      }
@@ -469,7 +510,8 @@ FROM
 
 			if (!isset($this->data['Member']['salt'])) {
 				if (!isset($salt)) {	//update - member already has salt
-					$salt = $this->find('first', array('fields' => array('salt'), 'conditions' => array('big' => $this->data['Member']['big'])));
+					// strange eror 14-10
+					$salt = $this->find('first', array('fields' => array('salt'), 'conditions' => array('Member.big' => $this->data['Member']['big'])));
 					$salt = $salt['Member']['salt'];
 				}
 			} else {	//we have salt in saved data
@@ -543,6 +585,130 @@ FROM
         } else
             return false;
     }
-           
+        
+        
+        public function deleteMember($memberId){
+        
+        
+        $db = $this->getDataSource ();
+        $query = "UPDATE places ".
+                 "SET default_photo_big=NULL ".
+                 "WHERE default_photo_big IN (SELECT big FROM photos WHERE member_big=$memberId)";
+        
+        $res['places']=$db->fetchAll($query);
+        
+        $query = "DELETE FROM operators ".
+                 "WHERE member_big=$memberId";
+        
+        $res['operators']=$db->fetchAll($query);
+       
+        $query = "DELETE FROM password_reset_tokens ".
+                 "WHERE member_big=$memberId";
+        
+        $res['password_reset_tokens']=$db->fetchAll($query);
+        
+        $query = "DELETE FROM extra_infos ".
+                 "WHERE member_big=$memberId";
+        
+        $res['extra_infos']=$db->fetchAll($query);
+                 
+        $query = "DELETE FROM contacts ".
+                 "WHERE member_big=$memberId";
+        
+        $res['contacts']=$db->fetchAll($query);
+                 
+        $query = "DELETE FROM push_tokens ".
+                 "WHERE member_big=$memberId";
+
+        $res['push_tokens']=$db->fetchAll($query);
+                 
+        $query = "DELETE FROM privacy_settings ".
+                 "WHERE member_big=$memberId";
+        
+        $res['privacy_settings']=$db->fetchAll($query);
+
+        $query = "DELETE FROM comments ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['comments']=$db->fetchAll($query);
+
+        $query = "DELETE FROM signalations ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['signalations']=$db->fetchAll($query);
+
+        $query = "DELETE FROM ratings ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['ratings']=$db->fetchAll($query);
+
+        $query = "DELETE FROM member_settings ".
+                 "WHERE from_big=$memberId OR to_big=$memberId";
+                 
+        $res['member_settings']=$db->fetchAll($query);
+        
+        $query = "DELETE FROM photos ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['photos']=$db->fetchAll($query);
+
+	$query = "DELETE FROM profile_visits ".
+                 "WHERE visitor_big=$memberId OR visited_big=$memberId";
+                 
+        $res['profile_visits']=$db->fetchAll($query);
+
+        $query = "DELETE FROM api_tokens ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['api_tokens']=$db->fetchAll($query);
+        
+        $query = "DELETE FROM member_perms ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['member_perms']=$db->fetchAll($query);
+
+        $query = "DELETE FROM friends ".
+                 "WHERE member1_big=$memberId OR member2_big=$memberId";
+                 
+        $res['friends']=$db->fetchAll($query);
+
+        $query = "DELETE FROM chat_messages ".
+                 "WHERE from_big=$memberId OR to_big=$memberId";
+                 
+        $res['chat_messages']=$db->fetchAll($query);
+
+        $query = "DELETE FROM bookmarks ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['bookmarks']=$db->fetchAll($query);
+
+        $query = "DELETE FROM checkins ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['checkins']=$db->fetchAll($query);
+
+        $query = "DELETE FROM member_rels ".
+                 "WHERE member1_big=$memberId OR member2_big=$memberId";
+                 
+        $res['member_rels']=$db->fetchAll($query);
+
+        $query = "DELETE FROM gems ".
+                 "WHERE member_big=$memberId";
+                 
+        $res['gems']=$db->fetchAll($query);
+
+        $query = "DELETE FROM wallets ".
+                 "WHERE member1_big=$memberId ";
+                 
+        $res['wallets']=$db->fetchAll($query);
+        
+        $query = "DELETE FROM members ".
+                 "WHERE big=$memberId ";
+                 
+        $res['members']=$db->fetchAll($query);
+        
+        return $res;
+        
+    }   
 
 }

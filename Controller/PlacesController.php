@@ -356,7 +356,7 @@ class PlacesController extends AppController {
                     
                 
             } catch ( Exception $e ) {
-                $this->_apiEr ( "Error" );
+                $this->_apiEr ( __("Error") );
             }
             
             if (count($datapos)>0)
@@ -414,13 +414,13 @@ class PlacesController extends AppController {
             
             
         }
-        $this->log("----PlacesController---api_list---------------------");
+        /*$this->log("----PlacesController---api_list---------------------");
         $this->log("member: ".$this->logged['Member']['big']);
         $this->log("phrase: ".$phrase." cat_id: ".$cat_id." region_id: ".$region_id." rating_avg: ".$rating_avg);
         $this->log("lon: ".$lon." lat: ".$lat." offset: ".$offset." coords: ".$coords);
         $this->log("filteroptions: ".$filteroptions);
         $this->log("sex: ".$sex." age: ".$age);
-        $this->log("----------------------------------------------------");
+        $this->log("----------------------------------------------------");*/
         
         
         if ($sex!=null) $myFilter[]=" members.sex='$sex' ";
@@ -471,7 +471,7 @@ class PlacesController extends AppController {
         // Match coords against regular expression
         $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
         if ($crdsMatch == FALSE && (!empty($lon) || !empty($lat))) {
-                        $this->_apiEr('The following API variables are invalid: lon and/or lat');
+                        $this->_apiEr(__('The following API variables are invalid: lon and/or lat'));
                     }
 
         if (empty($phrase) && empty($cat_id) && empty($region_id) && empty($rating_avg) && $crdsMatch)
@@ -878,7 +878,7 @@ class PlacesController extends AppController {
 
 		if (empty($place))
 		{
-			$this->_apiEr('Nonexistent place.');
+			$this->_apiEr(__('Nonexistent place.'));
 		}
 
 		$category = $this->Place->Category->getOne( $place['Place']['category_id'] );
@@ -900,9 +900,10 @@ class PlacesController extends AppController {
 
 		// Add number of people joined and checked in
 		$memBig = $this->logged['Member']['big'];
-		$checkinsCount = $this->Place->Event->Checkin->getCheckinsCountFor($event['Event']['big'], $memBig);
+		$checkinsCount = $this->Place->Event->Checkin->getCheckinsTotalFor($event['Event']['big']);
 		$joinsCount = $this->Place->Event->Checkin->getJoinsCountFor($event['Event']['big'], $memBig);
 		$event['Checkins'] = array('count' => $checkinsCount);
+		//changed to all count 8/10(14 $event['Checkins'] = array('count' => $checkinsCount);
 		$event['Joins'] = array('count' => $joinsCount);
 
 		// Checkin valid indicator
@@ -959,7 +960,7 @@ class PlacesController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr('The following API variables are invalid: lon and/or lat');
+			$this->_apiEr(__('The following API variables are invalid: lon and/or lat'));
 		}
 
 		$all_nearby = $this->Place->getNearbyPlaces($coords);
@@ -1084,7 +1085,7 @@ class PlacesController extends AppController {
 		$result = array('nearby' => $nearby, 'checkable' => $checkable);
 		$result['People'] =$xresponse; 
 		if (empty($result)) {
-			$this->_apiEr('Error occured. No places found nearby.', 'There are no places in your vicinity');
+			$this->_apiEr(__('Error occured. No places found nearby.'), __('There are no places in your vicinity'));
 		} else {
 			$this->_apiOk($result);
 		}

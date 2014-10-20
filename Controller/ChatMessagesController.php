@@ -89,9 +89,10 @@ class ChatMessagesController extends AppController {
 			$updated = $this->ChatMessage->markAsRead ( $memBig, $partnerBig );
 			if (! $updated)
 				CakeLog::warning ( 'Messages not marked as read. Membig ' . $memBig . ' Partner big ' . $partnerBig );
-                 $this->log("-------ChatMessages CONTROLLER-api_receive-----");
+                 /*$this->log("-------ChatMessages CONTROLLER-api_receive-----");
                  $this->log("updated = $updated ");
                  $this->log("--------------close api_receive----------------");
+                 */
 		}
 		$this->Util->transform_name ( $result );
 		$this->_apiOk ( $result );
@@ -172,7 +173,7 @@ class ChatMessagesController extends AppController {
 		$result ['conversations'] = $conversations;
 		
 		if (empty ( $result )) {
-			$this->_apiEr ( 'Error occured. No conversations found.', 'You haven\'t chat with anyone yet.' );
+			$this->_apiEr ( __("Error occured. No conversations found."), __("You haven't chat with anyone yet.") );
 		} else {
 			$this->Util->transform_name ( $result );
 			$this->_apiOk ( $result );
@@ -194,7 +195,7 @@ class ChatMessagesController extends AppController {
             
 			$this->_apiOk ();
 		} else {
-			$this->_apiEr ( 'Error occured. Conversation not removed.' );
+			$this->_apiEr ( __('Error occured. Conversation not removed.') );
 		}
 	}
     
@@ -215,7 +216,7 @@ class ChatMessagesController extends AppController {
             $this->Member->rank($memBig,1); //rank +1 cancella msg chat
             $this->_apiOk ();
         } else {
-            $this->_apiEr ( 'Error occured. Message not removed.' );
+            $this->_apiEr ( __('Error occured. Message not removed.') );
         }
     }
     
@@ -254,7 +255,7 @@ class ChatMessagesController extends AppController {
 		// Check if user is not on partners ignore list
 		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
 		if ($isIgnored) {
-			$this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
+			$this->_apiEr ( __('Cannot send chat message. User is blocked by the second party.'), false, false, array (
 					'error_code' => '510' 
 			) );
 		}
@@ -275,7 +276,7 @@ class ChatMessagesController extends AppController {
 		$frieRel = $this->Friend->FriendsRelationship ( $memBig, $partnerBig, 'A' );
 		
 		if (empty ( $checkinBig ) && empty ( $memRel ) && empty ( $frieRel )) {
-			$this->_apiEr ( 'Error occured. Users are not on the same event and no relationship found.' );
+			$this->_apiEr ( __('Error occured. Users are not on the same event and no relationship found.') );
 		} elseif (empty ( $memRel )) {
 			// Create a new one
 			$relationship = array (
@@ -287,7 +288,7 @@ class ChatMessagesController extends AppController {
 				$memRel = $this->ChatMessage->MemberRel->save ();
 				$relId = $memRel ['MemberRel'] ['id'];
 			} catch ( Exception $e ) {
-				$this->_apiEr ( 'Error occured. Relationship not created.' );
+				$this->_apiEr ( __('Error occured. Relationship not created.') );
 			}
 		} else {
 			$relId = $memRel ['MemberRel'] ['id'];
@@ -374,7 +375,7 @@ class ChatMessagesController extends AppController {
 				}
 			}
 		} catch ( Exception $e ) {
-			$this->_apiEr ( 'Error occured. Message not created.' );
+			$this->_apiEr ( __('Error occured. Message not created.') );
 		}
 		
 		$this->ChatCache->write ( $partnerBig . '_last_msg', strtotime ( $chatMsg ['ChatMessage'] ['created'] ) );
@@ -426,7 +427,7 @@ class ChatMessagesController extends AppController {
 			$this->_apiOk ( $chatMsg );
 			$this->_apiOk ( $newMsgs );
 		} else {
-			$this->_apiEr ( 'Error occured. Message not sent.' );
+			$this->_apiEr ( __('Error occured. Message not sent.') );
 		}
 	}
     
@@ -454,7 +455,7 @@ class ChatMessagesController extends AppController {
         $xfoto = null;
         $pollo=$this->api['photo']; 
         
-        $this->log("api photo = ". $pollo); 
+        //$this->log("api photo = ". $pollo); 
         // $fromStatus = CHAT_NO_JOIN;
         // $toStatus = CHAT_NO_JOIN;
         
@@ -467,7 +468,7 @@ class ChatMessagesController extends AppController {
         // Check if user is not on partners ignore list
         $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreListDual ( $partnerBig, $memBig );
         if ($isIgnored) {
-            $this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
+            $this->_apiEr ( __('Cannot send chat message. User is blocked by the second party.'), false, false, array (
                     'error_code' => '510' 
             ) );
         }
@@ -506,7 +507,7 @@ class ChatMessagesController extends AppController {
                 $this->Member->rank($this->logged['Member']['big'],5);
                 
             } catch ( Exception $e ) {
-                $this->_apiEr ( 'Error occured. Relationship not created.' );
+                $this->_apiEr ( __('Error occured. Relationship not created.') );
             }
         } else {
             $relId = $memRel ['MemberRel'] ['id'];
@@ -534,9 +535,10 @@ class ChatMessagesController extends AppController {
         try {
             $res = $this->ChatMessage->save ();
             $result = ($res) ? true : false;
-             $this->log("-------ChatMessages CONTROLLER-api_receive-----");
+             /*$this->log("-------ChatMessages CONTROLLER-api_receive-----");
              $this->log("id messaggio inserito = ".serialize($res[ChatMessage][id]));
              $this->log("--------------close api_receive----------------");
+             */
             $msgId = $res ['ChatMessage'] ['id'];
             $pars = array (
                     'conditions' => array (
@@ -602,14 +604,14 @@ class ChatMessagesController extends AppController {
                             ) 
                     ) );
                     
-                    $this->Member->rank($memBig,2); //rank +2 invio photo via chat
-                    
+                    $this->Member->rank($memBig,2); //rank +2 invio foto via chat
+                    $this->Wallet->addAmount($memBig, '2', 'Invio foto via Chat' ); //credito +2 invio foto via chat
                 } else {
                     throw new UploadException ( __ ( $msg ) );
                 }
             }
         } catch ( Exception $e ) {
-            $this->_apiEr ( 'Error occured. Message not created.' );
+            $this->_apiEr ( __('Error occured. Message not created.') );
         }
         //$this->log("link photo = $photolink");
         $this->ChatCache->write ( $partnerBig . '_last_msg', strtotime ( $chatMsg ['ChatMessage'] ['created'] ) );
@@ -669,7 +671,7 @@ class ChatMessagesController extends AppController {
             
             
         } else {
-            $this->_apiEr ( 'Error occured. Message not sent.' );
+            $this->_apiEr ( __('Error occured. Message not sent.') );
         }
     }
     
@@ -717,7 +719,7 @@ class ChatMessagesController extends AppController {
 				'23' 
 		), 'chat', 'new' );
 		
-		$this->_apiOk ( 'OK' );
+		$this->_apiOk ( __('OK') );
 	}
 	public function api_send_push() {
 		// CakeLog::debug('Params: ');

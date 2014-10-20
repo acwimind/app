@@ -3,7 +3,10 @@
 App::uses('Advert', 'Model');
 
 class AdvertsController extends AppController {
-	
+	 var $components = array('MailchimpApi');
+     
+     
+     
 	private function _upload($photo, $id, $direct=false) {
 		
 		if ($direct) {
@@ -63,6 +66,20 @@ class AdvertsController extends AppController {
 		$this->render('admin_edit');
 	}
 	
+    
+    public function api_sendcampaign(){
+        
+        $this->_checkVars(array('campaignId'), array());
+        
+        $idReplica=$this->MailchimpApi->campaignReplicate($this->api['campaignId']);
+        $result=$this->MailchimpApi->campaignSendNow($idReplica);
+        //$result=$this->MailchimpApi->campaignList();
+        
+        $this->_apiOk ($result);
+        
+    }
+    
+    
 	public function admin_edit($id=0) {
 		
 		if ($this->request->is('post') || $this->request->is('put')) {

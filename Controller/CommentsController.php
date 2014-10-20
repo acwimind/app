@@ -74,11 +74,11 @@ class CommentsController extends AppController {
             $this->Wallet->addAmount($this->api['member_big'], '4', 'Inserimento Commento' );
             $this->Member->rank($this->api['member_big'],4); 
                         }
-        $this->_apiOk ( "Comment/Like Saved" );
+        $this->_apiOk ( __("Comment/Like Saved") );
 	}
 	else 
 	{	
-		$this->_apiEr( "Comment/Like not saved" );
+		$this->_apiEr( __("Comment/Like not saved") );
 	}
 	}
 

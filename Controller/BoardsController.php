@@ -11,13 +11,16 @@ class BoardsController extends AppController {
 			'Contact',
 			'Checkin',
 			'PrivacySetting',
-			'Event' 
+			'Event',
+            'MemberSetting' 
 	); // load these models
 	
 	/**
 	 * get board content for logged user
 	 */
 	public function api_GetBoardContent2() {
+		
+
         //$this->log ( "------------you are in api_GetBoardContent--------" );
         $this->_checkVars(array(),array('offset'));
         
@@ -290,6 +293,8 @@ class BoardsController extends AppController {
 	
     public function api_GetBoardContent() {
         //$this->log ( "------------you are in api_GetBoardContent--------" );
+    	debug(strcmp('2', IOS_APP_VERSION)>=0);
+    	debug(strcmp('1.0', ANDROID_APP_VERSION)>=0);
         $this->_checkVars(array(),array('offset'));
         
         $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
@@ -348,8 +353,8 @@ class BoardsController extends AppController {
             ) );
             
             // TODO: ARRIVATO QUI !!!! LIKE COUNT
-            $MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
-            $MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+            $MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 0);
+            $MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 0 );
             
             $MyPlaces [$key] ['ILike'] = $xlike;
         }
@@ -427,7 +432,7 @@ class BoardsController extends AppController {
          * $this->log("------------MySugFriends------------"); $this->log($MySugFriends); $this->log("------------Fine MySugFriends-------");
          */
         
-        foreach ( $MySugFriends as $key => &$val ) {
+        foreach ( $MySugFriends as $key => $vals ) {
             
             // ADD MEMBER PHOTO
             // debug( $val ['Member']['Member'] ['photo_updated'] );
@@ -435,7 +440,7 @@ class BoardsController extends AppController {
             $photosVisibility=$privacySetting['photosvisibility'];
             
             if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility > 0) {
-                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $val ['Member'] ['big'], $val ['Member'] ['photo_updated'] );
+                $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $vals ['Member'] ['big'], $vals ['Member'] ['photo_updated'] );
             } else {
                 $sexpic = 2;
                 if ($MySugFriends [$key] ['Member'] ['sex'] == 'f') {
@@ -592,7 +597,7 @@ class BoardsController extends AppController {
         
 		$offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
 		
-        $MyBig = $this->api ['big'];
+        $MyBig = $this->api['big'];
 		
 		// TEST PLACES!!!
 		$MyPlaces = array ();
@@ -649,8 +654,8 @@ class BoardsController extends AppController {
 			) );
 				
 			// TODO: ARRIVATO QUI !!!! LIKE COUNT
-			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
-			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 1 );
+			$MyPlaces [$key] ['CountOfComments'] = $this->Comment->getCommentsCount ( $MyPlaces [$key] [0] ['checkinbig'], 0 );
+			$MyPlaces [$key] ['CountOfLikes'] = $this->Comment->getLikesCount ( $MyPlaces [$key] [0] ['checkinbig'], 0 );
 				
 			$MyPlaces [$key] ['ILike'] = $xlike;
 		}
@@ -663,7 +668,45 @@ class BoardsController extends AppController {
 		$Checkins = array ();
 		
 		$allx = true;
-		$MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx, $offset );
+        
+        if ($MyBig!=$this->logged['Member']['big']) {//se voglio accedere ai checkins di un membro
+        
+               
+        $PrivacyCheckins = $this->PrivacySetting->getPrivacySettings ( $MyBig );
+        $PrivacyCheckins = $PrivacyCheckins[0]['PrivacySetting']['checkinsvisibility'];
+        
+                
+        switch ($PrivacyCheckins){
+            
+            
+            case 0 : //visibile a nessuno
+                    $MyCheckins=array();
+                    break;
+            
+            case 1 : // visibile a tutti
+                    $MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx, $offset );
+                                    
+                    break;
+            
+            case 2 : //visibile solo ad amici
+                    
+                     $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
+                    
+                    if (count($amico)>0){//sono amici quindi ok visualizzazione checkins
+                        
+                        $MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx, $offset );
+                                   
+                    } else {//non sono amici quindi no visualizzazione checkins
+                        
+                            $MyCheckins=array();
+                        
+                    }
+        }                                        
+            
+       } else {//I miei Checkins          
+                 $MyCheckins = $this->Checkin->getNearbyCheckinsMember ( $MyBig, $allx, $offset );
+                 }
+        	
 		foreach ( $MyCheckins as $key => $val ) {
 			
 			if (isset ( $val [0] ['Checkin'] [0] ['Place'] ['DefaultPhoto'] ['big'] ) && $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
@@ -694,20 +737,135 @@ class BoardsController extends AppController {
 				$Checkins [] = $MyCheckins;
 			}
 		}
-		$MyPhotos = $this->Photo->getMemberPhotos ( $MyBig, $offset );
+        
+        if ($MyBig!=$this->logged['Member']['big']) {//Accesso alle foto del diario di un membro
+        
+               
+        $PrivacyFoto = $this->PrivacySetting->getPrivacySettings ( $MyBig );
+        $PrivacyFoto = $PrivacyFoto[0]['PrivacySetting']['photosvisibility'];
+        
+                
+        switch ($PrivacyFoto){
+            
+            
+            case 0 : //foto visibili a nessuno 
+                    $MyPhotos=array();
+                    break;
+            
+            case 1 : //foto visibili a tutti
+                    $MyPhotos = $this->Photo->getMemberPhotos( $MyBig, $offset );
+                                        
+            
+            case 2 ://foto visibili solo amici
+                    
+                    $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
+                    
+                    if (count($amico)>0){//sono amici quindi ok foto
+                        
+                        $MyPhotos = $this->Photo->getMemberPhotos( $MyBig, $offset );
+                                   
+                    } else {//non sono amici quindi niente foto
+                        
+                            $MyPhotos=array();
+                        
+                    }
+                    
+                    break;
+                     
+        }                                        
+            
+       } else {//Accesso alle foto del mio diario           
+		         $MyPhotos = $this->Photo->getMemberPhotos( $MyBig, $offset );
+                 }
+        
+        
 		$MyFriends = array ();
-		$Amici = $this->Friend->GetDiaryFriends ( $MyBig, $offset );
-		
+        
+        
+        if ($MyBig!=$this->logged['Member']['big']) {//se voglio accedere al diario di un membro
+                
+          $Amici = $this->Friend->GetDiaryFriends( $MyBig, $offset );
+        
+          //vedo se sono amici        
+          $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
+            
+           if (count($amico)==0){//logged e MyBig NON sono amici quindi privacy cognome sugli amici di MyBig
+                        
+                        
+                        foreach ($Amici as $key=>$val){
+                            
+                            $cognome=$val[0]['surname'];
+                            
+                            $Amici[$key][0]['surname']=strtoupper($cognome[0].".");
+                            
+                            
+                            /*
+                            Inoltre aggiungi foto se l'amico di MyBig è mio amico e photosvisibility=1,
+                            oppure photosvisibility=2
+                            */
+                                              
+              $PrivacyFotoAmici = $this->PrivacySetting->getPrivacySettings ( $val[0]['big'] );
+              $photoVisibility = $PrivacyFotoAmici[0]['PrivacySetting']['photosvisibility'];
+              $amicoLogged=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$val[0]['big'],'A');               $Amici[$key][0]['photovisibility']=$photoVisibility;
+                          
+            if (($photoVisibility==2 AND count($amicoLogged)>0) OR $photoVisibility==1) {
+                
+                   if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated'] > 0 ) {
+                     
+                     $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated']);
+           } 
+            else 
+                  { 
+                    $sexpic = 2;
+                    if (isset($val[0]['sex']) AND $val[0]['sex'] == 'f') {
+                                    $sexpic = 3;
+                                }
+                
+                $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+                    
+                    
+            } else {
+                    $sexpic = 2;
+                    if (isset ( $val[0]['sex'] ) AND $val[0]['sex'] == 'f') {
+                                    $sexpic = 3;
+                                }
+                
+                $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+                                
+            }
+           
+           }                         
+                   
+        }  
+        }
+            else {//accesso al mio diario quindi non necessaria privacy
+              
+		            $Amici = $this->Friend->GetDiaryFriends( $MyBig, $offset );
+                    
+                    foreach ($Amici as $key=>$val){
+                        
+                       if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated']>0 AND $photoVisibility > 0)
+                       {
+                          $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ($val[0]['big'], $val[0]['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if (isset ( $val[0]['sex']) AND $val[0]['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+            }      
+                } 
+                       
+                    }
+         //print_r($Amici);                             
 		if (is_array ( $Amici )) { // previene il warning Invalid argument supplied for foreach()
 			foreach ( $Amici as $ami ) {
 				// add only if privacy ok
-				if ($ami ["Friend1"] ["big"] == $MyBig) {
-					$friendID = $ami ["Friend2"] ["big"];
-				} 
-
-				else {
-					$friendID = $ami ["Friend1"] ["big"];
-				}
+				
+                $friendID=($ami["Friend1"]["big"] == $MyBig) ? $ami["Friend2"]["big"] : $ami["Friend1"]["big"];
+                                             
 				$Privacyok = $this->PrivacySetting->getPrivacySettings ( $friendID );
 				$goonPrivacy = true;
 				if (count ( $Privacyok ) > 0) {
@@ -957,14 +1115,25 @@ class BoardsController extends AppController {
 			
 			//QUI   !!!  $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
 		//	if ($isIgnored) {
-			
+			$isIgnored=$this->MemberSetting->isOnIgnoreListDual($this->logged ['Member'] ['big'],$val[0]['big']);
 			$Privacyok = $this->PrivacySetting->getPrivacySettings ( $MyFriends [$key] [0]['big'] );
+		//	$this->log("------------BOARDS CONTROLLER------------");
+		//	$this->log($Privacyok [0]['PrivacySetting'] ['visibletousers']);
+		//	$this->log($Privacyok [0] ['visibletousers']);
+		//	$this->log($MyFriends [$key] [0]['big']);
+		//	$this->log($MyFriends [$key] [0]['name'].' '.$MyFriends [$key] [0]['surname'] );
+				
+				
 			$goonPrivacy = true;
 			if (count ( $Privacyok ) > 0) {
-				if ($Privacyok [0]['PrivacySetting'] ['visibletousers'] == 0) {
+				if ($Privacyok [0]['PrivacySetting'] ['visibletousers'] == 0 OR $isIgnored) {
 					$goonPrivacy = false;
 				}
 			}
+		//	$this->log($goonPrivacy );
+		//	$this->log("------------FINE------------");
+				
+				
 			if ($goonPrivacy) {
 			$MyFriendsClean[] = $MyFriends [$key];
 			}
@@ -1001,7 +1170,7 @@ class BoardsController extends AppController {
 		}
 		
 		$response = array (
-				'user_msg' => 'Profile update succesfull' 
+				'user_msg' => __('Profile update succesfull') 
 		);
 		
 		try {
@@ -1274,7 +1443,7 @@ class BoardsController extends AppController {
 		 */
 	}
 	public function mergeArr($a, $b) { // unisce due array del tipo [n]->[Member]->array
-		$this->log ( "------------you are in mergeArr--------" );
+		//$this->log ( "------------you are in mergeArr--------" );
 		$data = array ();
 		
 		if (count ( $a ) > 0) {
@@ -1293,7 +1462,7 @@ class BoardsController extends AppController {
 		return $data;
 	}
 	public function api_CheckContactsprofileDATOGLIERE() {
-		$this->log ( "------------you are in api_CheckContactsprofile--------" );
+		//$this->log ( "------------you are in api_CheckContactsprofile--------" );
 		$InputData = $this->api; // request->input ( 'json_decode', true );
 		                         
 		// debug($this->request);
@@ -1308,13 +1477,13 @@ class BoardsController extends AppController {
 			$PhoneContacts = $this->api ['contacts' . $i];
 		}
 		
-		$this->log ( "------------BOARDS CONTROLLER-----------" );
+		/*$this->log ( "------------BOARDS CONTROLLER-----------" );
 		$this->log ( "------------PhoneContacts---BIG " . $ContactBIG );
 		$this->log ( "------------Chunks " . $numChunks );
 		$this->log ( "-----------------------------------------" );
 		$this->log ( serialize ( $PhoneContacts ) );
 		$this->log ( "-----------------------------------------" );
-		      
+		  */    
         
 		// $XCo2 = json_decode($this->api ['contacts'],true);
 		foreach ( $PhoneContacts as $val ) {
@@ -1347,10 +1516,10 @@ class BoardsController extends AppController {
 			
 			$contactCount = $this->Contact->find ( 'count', $paramsCont );
 			
-			$this->log ( "------------BOARDS CONTROLLER-----------" );
+			/*$this->log ( "------------BOARDS CONTROLLER-----------" );
 			$this->log ( "------------contactCount---" . $contactCount );
 			$this->log ( "------------Fine contactCount-----------" );
-			
+			*/
 			// se non c'è lo inserisco
 			
 			if ($contactCount == 0) {
@@ -1374,10 +1543,11 @@ class BoardsController extends AppController {
 				
 				$logSaveStatus = $this->Contact->save ();
 				
-				$this->log ( "------------BOARDS CONTROLLER-----------" );
+				/*$this->log ( "------------BOARDS CONTROLLER-----------" );
 				$this->log ( "------------Contacts------" . $Contacts );
 				$this->log ( "------------logSaveStatus----" . $logSaveStatus );
 				$this->log ( "------------Fine Contacts e logSave---------" );
+                */
 			}
 			;
 			unset ( $Contacts );
@@ -1417,7 +1587,7 @@ class BoardsController extends AppController {
 	}
 	public function multipleShortQueries($membersMails, $membersPhones, $maxPerQuery) {
 		// verifica se nei contatti della rubrica del telefono ci sono membri haamble
-		$this->log ( "------------you are in multipleShortQueries--------" );
+		//$this->log ( "------------you are in multipleShortQueries--------" );
 		$maxElem = $maxPerQuery;
 		$smallMembersMails = $membersMails;
 		$totalDataByEmails = array ();
@@ -1912,9 +2082,10 @@ class BoardsController extends AppController {
 		foreach ( $data as $key => &$mem ) {
 			
 			// check if any friendship exists yet
-			$AlreadyFr = $this->Friend->FriendsAllRelationship ( $ContactBIG, $mem ['Member'] ['big'] );
+            //first param is logged member big and the second param is member friend
+			$AlreadyFr = $this->Friend->recommendedFriend($ContactBIG,$mem['Member']['big']);
 			
-			if (count ( $AlreadyFr ) == 0) {
+			if ($AlreadyFr) {//se true allora l'amico può essere consigliato
 				
 				if ($mem ['Member'] ['photo_updated'] > 0) {
 					$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $mem ['Member'] ['big'], $mem ['Member'] ['photo_updated'] );

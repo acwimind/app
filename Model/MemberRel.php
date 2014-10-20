@@ -235,9 +235,10 @@ class MemberRel extends AppModel {
                               $memberBig . "  AND  \"ChatMessage\".\"from_status\" != 255) OR ".
                               "(\"ChatMessage\".\"to_big\" = " . $memberBig . "  AND \"ChatMessage\".\"to_status\" != 255))";
 		
-		//print($query);
-                
-		if ($fromChat)
+		$this->log("query_member_rel findconversation ".$query);
+        $this->log("query count member_rel findoconversation ".$countQueryNotRead);        
+		
+        if ($fromChat)
 		{
 			$query .= 'LIMIT ' . API_PER_PAGE . ' ';
 		}

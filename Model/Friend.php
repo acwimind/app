@@ -69,7 +69,7 @@ class Friend extends AppModel {
                         'ORDER BY place_big '.
                         ') AS xxx '.
                      'ORDER BY created DESC '.            
-                     'LIMIT 1';
+                     'LIMIT 20';
          
 			//$this->log("Query ".$MySql);
 			$db = $this->getDataSource ();
@@ -296,6 +296,82 @@ class Friend extends AppModel {
 		        
 		return $cleanResult;
 	}
+    
+    
+    public function recommendedFriend($memBig,$memTwo){
+        /*param :
+          $memBig = logged member big
+          $memTwo = member big da verificare se amico  
+          Verifica se un membro può essere raccomandato ad un dato memberBig
+        */
+        $PrivacySettingModel = ClassRegistry::init ( 'PrivacySetting' );
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
+        $MemberModel = ClassRegistry::init('Member');
+                       
+        $type = 'first';
+        $params = array (
+                'conditions' => array (
+                        'AND' => array (
+                                'OR' => array (
+                                        'Friend.member1_big' => $memBig,
+                                        'Friend.member2_big' => $memBig 
+                                ),array(
+                                'OR' => array (
+                                        'Friend.member1_big' => $memTwo,
+                                        'Friend.member2_big' => $memTwo 
+                                )) 
+                        ) 
+                ) 
+        );
+        //verifico se è già amico o lo è stato A,R,D,X    
+        $result = $this->find ( $type, $params );
+              
+        if (count($result)>0){ 
+            //è già amico quindi non consigliare
+            $status=false;
+            
+        } else  
+            {//non è amico quindi verifico se non bloccato e attivo
+                
+                //verifica se bloccato
+                $memBlocked=$MemberSettingModel->isOnIgnoreListDual($memBig,$memTwo);   
+                
+                //verifica se il member è attivo (< 255) 
+                $memActive=$MemberModel->isActive($memTwo);
+                
+                $Privacyok=$PrivacySettingModel->getPrivacySettings ( $memTwo );
+                $memPrivacy=$Privacyok[0]['PrivacySetting']['visibletousers'];
+                
+            switch ($memPrivacy){
+            
+            
+                    case 0 : //visibile a nessuno
+                            $visible=false;
+                            break;
+            
+                    case 1 : // visibile a tutti
+                            $visible=true;
+                            break;
+                               
+        }                    
+                                              
+                if(!$memBlocked AND $memActive AND $visible){
+                    //se non bloccato, attivo e visibletouser=1 allora può essere consigliato a tutti
+                    //se visibletousers=2 può essere consigliato solo agli amici
+                                
+                                $status=true;
+                
+                } else
+                    //è bloccato o non attivo quindi non può essere consigliato
+                    $status=false;
+            }
+       
+           
+        return $status;
+               
+    }
+    
+    
 	public function FriendsRelationshipGeneric($memberOne, $memberTwo) {
         $MemberSettingModel = ClassRegistry::init('MemberSetting');
 		$relation = 'R';
@@ -397,6 +473,9 @@ class Friend extends AppModel {
 		return $cleanResult;
 	}
 	public function findAllFriends($memberBig) {
+        
+        $MemberSettingModel = ClassRegistry::init('MemberSetting');
+        
 		$type = 'all';
 		$params = array (
 				'conditions' => array (
@@ -433,12 +512,22 @@ class Friend extends AppModel {
 						'Friend2.photo_updated' 
 				)
 				 
-		)
-		;
+		);
 		
 		$result = $this->find ( $type, $params );
-		return $result;
-	}
+        
+        foreach($result as $key=>$val){
+              
+       $memBlocked=$MemberSettingModel->isOnIgnoreListDual($val['Friend']['member1_big'],$val['Friend']['member2_big']);
+            if (!$memBlocked){//se non bloccato metti in output
+            $cleanResult[]=$result[$key];
+            }
+        }
+        
+        
+        return $cleanResult;
+        
+    }
 	
 	// return accepted friens
 	public function findFriends($memberBig,$offset=0) {
@@ -488,6 +577,23 @@ class Friend extends AppModel {
         
          $db = $this->getDataSource();
          $sql = 'UPDATE friends SET read=1 WHERE read=0 AND status=\'R\''.' AND member2_big='.$memBig;
+         
+         try {
+            $db->fetchAll($sql);
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+            return false;
+        }
+
+        return true;
+                  
+    }
+    
+    public function RemoveFriend($memBig1,$memBig2){
+         $db = $this->getDataSource();
+         $sql = 'DELETE FROM friends WHERE ( member1_big='.$memBig1.' AND member2_big='.$memBig2.') OR ( member2_big='.$memBig1.' AND member1_big='.$memBig2.')';
          
          try {
             $db->fetchAll($sql);

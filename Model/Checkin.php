@@ -88,12 +88,20 @@ class Checkin extends AppModel {
 	}
 	public function getMemberAvailableToChat($eventBig, $memberBig) {
 		$db = $this->getDataSource ();
-		$query = 'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count" 
+		$query = 'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."birth_date" AS "Member__birth_date","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count" 
 			FROM "checkins" AS "Checkin" 
 			LEFT JOIN "members" AS "Member" ON ("Checkin"."member_big" = "Member"."big")  
 			LEFT JOIN (SELECT from_big, COUNT(*) AS count FROM chat_messages WHERE read = 0 AND to_big = ? GROUP BY from_big) AS "ChatMessage" ON ("Member"."big" = "ChatMessage"."from_big") 
 			LEFT JOIN "events" AS "Event" ON ("Checkin"."event_big" = "Event"."big") 
-			WHERE "Checkin"."event_big" = ? AND "Member"."status" != 255 
+			WHERE "Checkin"."event_big" = ? AND "Member"."status" != 255 AND 
+            "Member"."big" NOT IN (
+                                SELECT to_big as "blockedbig"
+                                FROM member_settings
+                                WHERE from_big='.$memberBig.' AND chat_ignore=1 '.
+                                'UNION
+                                SELECT from_big as "blockedbig"
+                                FROM member_settings
+                                WHERE to_big='.$memberBig.' AND chat_ignore=1) 
 			AND (("Checkin"."checkout" IS NULL) OR ("Checkin"."checkout" > \'NOW()\')) 
 			AND NOT ("Checkin"."member_big" = ?)   
 			ORDER BY "Checkin"."created" desc';
@@ -151,6 +159,8 @@ class Checkin extends AppModel {
 		
 		return true;
 	}
+	
+	
 	public function getCheckinsCountFor($eventBig, $memberBig = null) {
 		$pars = array (
 				'conditions' => array (
@@ -169,6 +179,22 @@ class Checkin extends AppModel {
 		
 		return intval ( $this->find ( 'count', $pars ) );
 	}
+	
+	// SUM
+	public function getCheckinsTotalFor($eventBig) {
+		$pars = array (
+				'conditions' => array (
+						'Checkin.event_big' => $eventBig,
+					
+						'Member.status !=' => DELETED
+				)
+		);
+	
+	
+		return intval ( $this->find ( 'count', $pars ) );
+	}
+	
+	
 	public function getCheckinsCountForMember($memberBig) {
 		$pars = array (
 				'conditions' => array (
@@ -606,6 +632,17 @@ class Checkin extends AppModel {
         
         if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]' ";
         
+        
+        if ($optParams['onlyfriends']!=null AND $optParams['onlyfriends'] > 0 ) {
+                    $filter[]=" members.big IN (SELECT member2_big AS \"onlyfriends\" ".
+                              "FROM friends ".
+                              "WHERE member1_big=$membig AND status='A' ".
+                              "UNION ".
+                              "SELECT member1_big AS \"onlyfriends\" ".
+                              "FROM friends ".
+                              "WHERE member2_big=$membig AND status='A' ) ";}
+        
+        
         if ($optParams['age']!=null) {
             
             switch ($optParams['age']){
@@ -649,6 +686,7 @@ class Checkin extends AppModel {
               $sql2 = 'WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,
                                             members.surname,members.updated,members.photo_updated,
                                             members.sex,
+              		 						members.birth_date,
                                             date_part('."'year'".',age(now(),members.birth_date)) AS "age",                                                members.last_lonlat AS "coordinates",
                                             ((members.last_lonlat <@> '."'$coords'".' )::numeric(10,1) * 1.6) AS "distance"
                                             FROM public.members
@@ -658,7 +696,15 @@ class Checkin extends AppModel {
                                             WHERE members.status<255 AND 
                                                   checkins.checkout IS NULL AND 
                                                   places.status < 255 AND 
-                                                  events.status < 255 AND 
+                                                  events.status < 255 AND
+                                                  members.big NOT IN (
+                                                        SELECT to_big as "blockedbig"
+                                                        FROM member_settings
+                                                        WHERE from_big='.$membig.' AND chat_ignore=1 '.
+                                                        'UNION
+                                                        SELECT from_big as "blockedbig"
+                                                        FROM member_settings
+                                                        WHERE to_big='.$membig.' AND chat_ignore=1) AND 
                                                   (members.big <> ' . $membig . ') '.$filterString.'      
                                             ORDER BY members.big ) '.'
                        SELECT * FROM tblcategory
@@ -669,19 +715,24 @@ class Checkin extends AppModel {
          } else {
         
                
-        $sql2 = 'SELECT
-                members.big,
-                members.name,
-                members.surname,
-                members.updated,
-                members.photo_updated,
-                members.sex,
-                date_part('."'year'".',age(now(),members.birth_date)) AS "age",members.last_lonlat AS "coordinates",
-                ((members.last_lonlat <@> '."'$coords'".' )::numeric(10,1) * 1.6) AS "distance"
-                FROM public.members 
-                WHERE members.status<255 AND (members.big <> ' . $membig . ') '.$filterString.'      
-                ORDER BY ( members.last_lonlat <@> '."'$coords'".')::numeric(10,1) ASC
-                LIMIT ' . API_MAP_LIMIT ;
+        $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,".
+                "members.sex,members.birth_date,date_part('year',age(now(),members.birth_date)) AS \"age\",".
+                "members.last_lonlat AS \"coordinates\",".
+                "((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) AS \"distance\" ".
+                "FROM public.members ". 
+                "WHERE members.status<255 ".
+                "AND members.big NOT IN ".
+                    "(SELECT to_big AS \"blockedbig\" FROM member_settings ".
+                    "WHERE from_big=$membig AND chat_ignore=1 ".
+                    "UNION ".
+                    "SELECT from_big AS \"blockedbig\" ".
+                    "FROM member_settings ".
+                    "WHERE to_big=$membig AND chat_ignore=1) ".
+                "AND (members.big <> $membig )".$filterString." ".
+                "ORDER BY ( members.last_lonlat <@> '$coords')::numeric(10,1) ASC ".
+                "LIMIT ". API_MAP_LIMIT;
+                
+                
          }      
                
         if(isset($offset))
@@ -750,8 +801,8 @@ class Checkin extends AppModel {
                 //Crediti + Rank per join fisico
                 $WalletModel = ClassRegistry::init('Wallet');
                 $MemberModel = ClassRegistry::init('Member');
-                $this->$WalletModel->addAmount ( $membig, '5', 'Join fisico' );
-                $this->$MemberModel->rank($membig,5);
+                $WalletModel->addAmount ( $membig, '5', 'Join fisico' );
+                $MemberModel->rank($membig,5);
 			}
 		}
 		return $result;

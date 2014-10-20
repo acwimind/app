@@ -4,7 +4,8 @@ class CheckinsController extends AppController {
 			'Member',
 			'Checkin',
 			'Friend',
-			'Wallet' 
+			'Wallet' ,
+			'PrivacySetting'
 	)
 	;
 	
@@ -14,7 +15,7 @@ class CheckinsController extends AppController {
 	public function api_people() {
 		$eventBig = $this->Checkin->getCheckedinEventFor ( $this->logged ['Member'] ['big'] );
 		if (empty ( $eventBig )) {
-			$this->_apiEr ( 'Error occured. No valid checkin found.', 'You have not joined or checked in anywhere.' );
+		$this->_apiEr ( __('Error occured. No valid checkin found.'), __('You have not joined or checked in anywhere.') );
 		}
 		
 		$result = $this->Checkin->getMemberAvailableToChat ( $eventBig, $this->logged ['Member'] ['big'] );
@@ -92,7 +93,7 @@ class CheckinsController extends AppController {
 				
 				CakeLog::error ( 'Error occured. Missing place_big and event_big.' );
 				
-				$this->_apiEr ( 'The following required API variables are missing: place_big and/or event_big' );
+				$this->_apiEr ( __('The following required API variables are missing: place_big and/or event_big') );
 			}
 			
 			$event = $this->Checkin->Event->Place->getCurrentEvent ( $placeBig ); // get place current event
@@ -117,7 +118,7 @@ class CheckinsController extends AppController {
 			CakeLog::info ( 'Called checkin/in with lon lat: Lon = ' . $lon . ' Lat = ' . $lat );
 			
 			if (empty ( $lon ) || empty ( $lat )) { // GPS position is required on checkin
-				$this->_apiEr ( 'The following required API variables are missing: lon and/or lat' );
+				$this->_apiEr ( __('The following required API variables are missing: lon and/or lat') );
 			}
 			
 			$coords = '(' . $lon . ',' . $lat . ')';
@@ -127,7 +128,7 @@ class CheckinsController extends AppController {
 				
 				CakeLog::error ( 'Error occured. Invalid coords.' );
 				
-				$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+				$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 			}
 			
 			$checkin ['lonlat'] = $coords;
@@ -140,7 +141,7 @@ class CheckinsController extends AppController {
 			
 			CakeLog::error ( 'Already checked in or joined' );
 			
-			$this->_apiEr ( 'You already ' . ($physical ? 'checked in at' : 'joined') . ' this event.', true );
+			$this->_apiEr ( __('You already ') . ($physical ? __('checked in at') : __('joined')) . __(' this event.'), true );
 		}
 		
 		// save checkin
@@ -148,13 +149,15 @@ class CheckinsController extends AppController {
 		try {
 			$result = $this->Checkin->save ();
             
-            if ($result) $this->Member->rank($this->logged ['Member'] ['big'],1); //rank +1 se checkin
-            
+            if ($result) {
+                            $this->Member->rank($this->logged ['Member'] ['big'],1); //rank +1 se checkin
+                            $this->Wallet->addAmount($this->logged ['Member'] ['big'], '1', 'checkin' ); //credito +1 se checkin
+                            }
 		} catch ( Exception $e ) {
 			
 			CakeLog::error ( 'Error occured. Checkin failed. Probably non-existent event.' );
 			
-			$this->_apiEr ( 'Error occured. Checkin failed. Probably non-existent event.' );
+			$this->_apiEr ( __('Error occured. Checkin failed. Probably non-existent event.') );
 		}
 		
 		CakeLog::info ( 'Before checkout. CheckinId = ' . $this->Checkin->id . ' MemBig = ' . $this->logged ['Member'] ['big'] );
@@ -168,7 +171,7 @@ class CheckinsController extends AppController {
 			
 			CakeLog::error ( 'Error occured. Check in procedure failed.' );
 			
-			$this->_apiEr ( 'Error occured. Check in procedure failed.', 'We\'re sorry, but a problem occured during checkin.' );
+			$this->_apiEr ( __('Error occured. Check in procedure failed.'), __("We're sorry, but a problem occured during checkin.") );
 		} else {
 			
 			CakeLog::info ( ' ------------------------ Checkin end -----------------------' );
@@ -218,13 +221,13 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
 		
 		$checkinData = $this->Checkin->getCheckedinEventFor ( $memBig, true );
 		// debug($checkinData);
 		if (empty ( $checkinData ) || (isset ( $checkinData ) && $checkinData ['Checkin'] ['physical'] != 1)) {
-			$this->_apiEr ( 'No valid checkin found', null, null, array (
+			$this->_apiEr ( __('No valid checkin found'), null, null, array (
 					'error_code' => '501' 
 			) );
 		}
@@ -468,7 +471,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyCheckins ( $coords, $memBig );
@@ -588,7 +591,7 @@ class CheckinsController extends AppController {
 		
 		
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 			
 		if (count($datapos)>0)
@@ -622,7 +625,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyCheckinsNew ( $coords, $optParams, $memBig );
@@ -704,7 +707,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyPeople ( $coords, $memBig, $offset );
@@ -789,7 +792,8 @@ class CheckinsController extends AppController {
 				'distance',
 				'category',
 				'offset',
-                'name' 
+                'name',
+                'onlyfriends' 
 		) );
 		
 		$memBig = $this->logged ['Member'] ['big'];
@@ -830,7 +834,7 @@ class CheckinsController extends AppController {
 			 
 		
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 		 
 		if (count($datapos)>0)
@@ -851,7 +855,7 @@ class CheckinsController extends AppController {
 		}
 		
 		
-		
+		$onlyfriends = isset ($this->api['onlyfriends']) ? $this->api['onlyfriends'] : null;
 		$sex = isset ( $this->api ['sex'] ) ? $this->api ['sex'] : null; // values are m or f
 		$age = isset ( $this->api ['age'] ) ? $this->api ['age'] : null; // values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55
 		$distance = isset ( $this->api ['distance'] ) ? $this->api ['distance'] : null; // values are number=km or over for >100km
@@ -863,16 +867,17 @@ class CheckinsController extends AppController {
 		$optParams ['distance'] = $distance;
 		$optParams ['category'] = $category;
         $optParams ['name'] = $name;
+        $optParams ['onlyfriends'] = $onlyfriends;
 		
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( 'The following API variables are invalid: lon and/or lat' );
+			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyPeopleNew ( $coords, $optParams, $memBig, $offset );
 		
-		// print_r($all_nearby);
+		//print_r($all_nearby);
 		$xresponse = array ();
 		$xami = array ();
 		
@@ -885,7 +890,11 @@ class CheckinsController extends AppController {
 
 			{
 				$privacy = true;
-				if (! $privacy) {
+				
+				$PrivacyVis2us = $this->PrivacySetting->getPrivacySettings ( $val [0]['big'] );
+				$PrivacyVis2us = $PrivacyVis2us[0]['PrivacySetting']['visibletousers'];
+				
+				if ( $PrivacyVis2us == 0) {
 					// not il list
 				} else {
 					// COMPLETE DATA AND ADD TO REQUEST!!

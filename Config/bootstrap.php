@@ -49,8 +49,9 @@ define('LANG_NONE', 0);
 define('LANG_EN', 1);
 define('LANG_IT', 2);
 
-define('SIGNAL_PHOTO', 5);	//value = value of gem type "Photo" (it must be the same!)
-define('SIGNAL_CHAT', 1);	//value = value of gem type "Member" (it must be the same!)
+define('SIGNAL_PHOTO', 2);	//2 value = value of gem type "Photo" (it must be the same!) ex 5
+define('SIGNAL_CHAT', 1);	//1 value = value of gem type "Chat" (it must be the same!)
+define('SIGNAL_COMMENT',3); 	//3 value = value of gem type "Comment" (it must be the same!)
 
 define('RESIZED_IMAGES', '/resized_images/');
 define('RESIZED_IMAGES_PATH', WWW_ROOT . 'resized_images' . DS);
@@ -120,12 +121,23 @@ define('FLAG_OFFENSIVE', 2);
 define('FLAG_COOLDOWN', 5); // Signalation cooldown time in days 
 define('FLAG_MSG_LIMIT', 30); // Determines how many messages will be sent to admins when signaling a conversation
 define('FLAG_CHAR_LIMIT', 1000); // Determines the maximum sum of charaters sent to admins when signaling a conversation
-define('FLAG_MAIL_TO', 'ivan.kucera@stradiware.sk'); // Where all signalations should be sent
+define('FLAG_MAIL_TO', 'pippo@l.com'); // Where all signalations should be sent
 
 // Push token platforms
 define('PUSH_ANDROID', 1);
 define('PUSH_IOS', 2);
 define('PUSH_WINDOWS', 3);
+
+// App Version
+//define('ANDROID_APP_VERSION',1.0);
+//define('IOS_APP_VERSION',2.0);
+//define('WPHONE_APP_VERSION',1.0);
+
+// App Version
+define('ANDROID_APP_VERSION','1.0');
+define('IOS_APP_VERSION','1.0');
+define('WPHONE_APP_VERSION','1.0');
+
 
 // Type of home screen
 define('HOME_CHECKED_IN', 1);
@@ -142,15 +154,19 @@ define('CHAT_NO_JOIN', 2); // Chatting user is not joined or checked in
 // Frontend pagination
 define('FRONTEND_PER_PAGE', 10); // The number of places/events displayed in the list
 define('MAP_MAXIMUM_RESULTS', 100);
-
+define('LIMIT_QUERY_CONTENT',10);
 define('RATING_MAXIMUM', 5);
 
 // Affinity Members
-define('MIN_AFFINITY_MEMBERS',3); // The min number of affinity members displayed in the list
+define('MIN_AFFINITY_MEMBERS',10); // The min number of affinity members displayed in the list
 
+// MailChimp config
+define('MAILCHIMP_HAAMBLE_LIST_ID','8b7eef3ed5');
+define('MAILCHIMP_API_KEY','b654ad1ba15c0d0df912c2258c9f2623-us9');
 
 // Visibility Product
 define('ID_VISIBILITY_PRODUCTS','1,2,3,4,5'); // ID prodotti sulla visibilità
+define('ID_RADAR_VISIBILITY_PRODUCTS','1,2,3,4,5'); // ID prodotti sulla visibilità
 
 class Defines {
 	
@@ -167,6 +183,7 @@ class Defines {
 		4	=> 'Gallery',
 		5	=> 'Photo',
 		6	=> 'Checkin',
+       
 	);
 	
 	static public $external_sources;
@@ -215,8 +232,9 @@ Defines::$countries = array(
 );
 
 Defines::$signalations = array(
-	SIGNAL_PHOTO => __('Photo'),
 	SIGNAL_CHAT => __('Chat'),
+    SIGNAL_PHOTO => __('Photo'),
+    SIGNAL_COMMENT => __('Comment'),
 );
 
 Defines::$cms_sections = array(

@@ -39,7 +39,7 @@ class PushTokensController extends AppController{
 		}
 		else
 		{
-			$this->_apiEr('Error occured. Push token not saved.');
+			$this->_apiEr(__('Error occured. Push token not saved.'));
 		}
 	}
 	

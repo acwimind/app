@@ -63,11 +63,11 @@ class RegistrationCodesController extends AppController {
 				 //$this->_apiOk ( $response );
 				$this->_apiOk ( $myText );
 			} else {
-				$this->_apiError ( 'Member already registered' );
+				$this->_apiError ( __('Member already registered') );
 			}
 		} else {
 			
-			$this->_apiError ( 'Wrong parameters' );
+			$this->_apiError ( __('Wrong parameters') );
 		}
 	}
 	public function api_checkVerificationCode() {
@@ -84,11 +84,37 @@ class RegistrationCodesController extends AppController {
 			if (count ( $savedCodes ) == 1) {
 				$this->_apiOk ();
 			} else {
-				$this->_apiError ( 'User does not exist' );
+				$this->_apiError ( __('User does not exist') );
 			}
 		} else {
 			
-			$this->_apiError ( 'Wrong parameters' );
+			$this->_apiError ( __('Wrong parameters') );
 		}
 	}
+    
+    
+    public function api_inviteFriends(){
+        
+         $this->_checkVars(array(),array('smscontacts','emailcontacts'));
+                          
+         $array_sms=(isset($this->api['smscontacts'])) ? json_decode($this->api['smscontacts']) : null;
+         $array_email=(isset($this->api['emailcontacts'])) ? json_decode($this->api['emailcontacts']) : null;
+         
+         if (count($array_email)>0){
+             
+             //todo send email
+             
+             
+         }
+         
+         if (count($array_sms)>0){
+             
+             //todo send sms
+                          
+         }
+         
+         $this->_apiOk ('1');
+         
+                
+    }
 }

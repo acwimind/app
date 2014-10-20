@@ -177,7 +177,7 @@ class FriendsController extends AppController {
 		/*
 		 * $this->_checkVars ( array ( '$idMember1', '$idMember2', '$action' ) );
 		 */
-		debug ( $this->api ['idMember1'] );
+		//debug ( $this->api ['idMember1'] );
 		$idMember1 = $this->api ['idMember1'];
 		$idMember2 = $this->api ['idMember2'];
 		$action = $this->api ['action'];
@@ -187,9 +187,9 @@ class FriendsController extends AppController {
 		$WalletModel = ClassRegistry::init('Wallet');
         
 		// Check if user is not on partners ignore list
-		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $idMember1, $idMember2 );
+		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreListDual( $idMember1, $idMember2 );
 		if ($isIgnored) {
-			$this->_apiEr ( 'Cannot send chat message. User is blocked by the second party.', false, false, array (
+			$this->_apiEr ( __('Cannot send chat message. User is blocked by the second party.'), false, false, array (
 					'error_code' => '510' 
 			) );
 		}
@@ -255,7 +255,7 @@ class FriendsController extends AppController {
                     $this->Member->rank($this->logged['Member']['big'],2);
                     
 				} else {
-					$this->_apiEr ( "Record already found" );
+					$this->_apiEr ( __("Record already found") );
 				}
 				
 				break;
@@ -274,7 +274,7 @@ class FriendsController extends AppController {
 					
 					$this->Friend->save ();
 				} else {
-					$this->_apiEr ( "Record not found" );
+					$this->_apiEr ( __("Record not found") );
 				}
 				
 				// PUSH FOR ACCEPTED FRIENDSHIP
@@ -307,7 +307,11 @@ class FriendsController extends AppController {
                 {
                     //crediti e rank per amicizia cancellata o negata 
                     $WalletModel->addAmount ($this->logged['Member']['big'], '2', 'Amicizia cancellata/negata' );
-                    $this->Member->rank($this->logged['Member']['big'],2);                    
+                    $this->Member->rank($this->logged['Member']['big'],2); 
+                   
+                   // $this->Friend->delete()
+                    $ok = $this->Friend->RemoveFriend( $idMember1, $idMember2);
+                    
                 }
 				
 				break;
@@ -371,7 +375,7 @@ class FriendsController extends AppController {
 					}
 					// debug($response ['test']);
 				} else {
-					$this->_apiEr ( "Record already found" );
+					$this->_apiEr ( __("Record already found") );
 				}
 				
 				break;
@@ -390,7 +394,7 @@ class FriendsController extends AppController {
 					
 					$this->Friend->save ();
 				} else {
-					$this->_apiEr ( "Record not found" );
+					$this->_apiEr ( __("Record not found") );
 				}
 				break;
 			

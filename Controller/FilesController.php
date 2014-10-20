@@ -120,7 +120,7 @@ class FilesController extends AppController {
 			die();
 				
 		} else {
-			return $this->_apiEr('File does not exist', true);
+			return $this->_apiEr(__('File does not exist'), true);
 		}
 		
 	}

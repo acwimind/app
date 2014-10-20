@@ -31,7 +31,7 @@ class WalletsController extends AppController {
        $this->_apiOk($amount );
 	   }
 	else  {
-					$this->_apiEr("Amount not added");
+					$this->_apiEr(__("Amount not added"));
 					
 				}
 				

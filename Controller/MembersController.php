@@ -708,23 +708,24 @@ class MembersController extends AppController {
 		switch ($platformId) {
 			
 			case 1 : // Android
-				if ($usedVersion < ANDROID_APP_VERSION) {
-					
+				if (strcmp((string)$usedVersion, (string)ANDROID_APP_VERSION)>=0) {
+				//if ($usedVersion>=ANDROID_APP_VERSION) {
+				
 					$status = true;
 				}
 				
 				break;
 			case 2 : // iOS
-				if ($usedVersion < IOS_APP_VERSION) {
-					
+				if (strcmp((string)$usedVersion, (string)IOS_APP_VERSION)>=0) {
+				//	if ($usedVersion>=IOS_APP_VERSION) {
 					$status = true;
 				}
 				
 				break;
 			
 			case 3 : // Windows Phone
-				if ($usedVersion < WPHONE_APP_VERSION) {
-					
+				//if ($usedVersion>=WPHONE_APP_VERSION) {
+			    if (strcmp((string)$usedVersion, (string)WPHONE_APP_VERSION)>=0) {
 					$status = true;
 				}
 		}
@@ -745,7 +746,7 @@ class MembersController extends AppController {
         $lastLogin=date("d",strtotime($member['Member']['last_mobile_activity']));
         $nowLogin=date("d",time());
         
-        if (lastLogin!=$nowLogin){
+        if ($lastLogin!=$nowLogin){
                       //crediti e rank per il primo login giornaliero  
                       $this->Wallet->addAmount($member['Member']['big'], '5', 'Primo login del giorno' );
                       $this->Member->rank($member['Member']['big'],5);   
@@ -754,8 +755,8 @@ class MembersController extends AppController {
         }
 		if (isset ( $this->api ['version'] ) and $this->api ['version'] != null) {
 			
-			if ($this->checkAppUpdate ( $this->api ['platform_id'], $this->api ['version'] )) {
-				$this->_apiEr ( __ ( 'Your version of Haamble is out of date. Please upgrade your App' ), true );
+			if (!$this->checkAppUpdate ( $this->api ['platform_id'], $this->api ['version'] )) {
+				$this->_apiEr ( __( 'Your version of Haamble is out of date. Please upgrade your App' ), true,null,null,'010');
 			}
 		}
 		
@@ -824,7 +825,7 @@ class MembersController extends AppController {
 		
 		$response = $this->_apiLogin ();
 		
-		$response ['user_msg'] = __ ( 'Registration succesfull' );
+		$response ['user_msg'] = __( 'Registration succesfull' );
 		
 		// Save push token if present
 		if (! empty ( $pushToken ) && ! empty ( $platformId )) {
@@ -853,27 +854,62 @@ class MembersController extends AppController {
 	 * update existing member profile
 	 */
 	public function api_edit() {
-		
+	//	$this->log("------------EDIT--------------------");
 		// update existing member
-		$member = $this->_save ( $this->logged ['Member'] ['big'] );
-		
+		$member = $this->_save($this->logged['Member']['big']);
+		 
+    //     $this->log("memberBig: ".$this->logged['Member']['big']);
+         
+        if ($member) $this->log("member->_save: OK"); else $this->log("member->_save: Fallito"); 
+  //      $this->log("member: ".serialize($member));
+        
 		if (! $member) {
-			$this->_apiEr ( __ ( 'There was an error while saving your profile data' ), true );
+			$this->_apiEr ( __( 'There was an error while saving your profile data' ), true );
 		}
 		
+		$params2 = array(
+				'conditions' => array(
+						'Member.big' => $member['big']
+				),
+				'recursive' => 0,
+		);
+		
+		
+		$memberResp = $this->Member->find ( 'first', $params2 );
+		
+		unset ( $memberResp ['Member'] ['password'] );
+		unset ( $memberResp ['Member'] ['salt'] );
+		
+		
+		
+		if ($memberResp ['Member'] ['photo_updated'] > 0) {
+			$memberResp ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $memberResp ['Member'] ['big'], $memberResp ['Member'] ['photo_updated'] );
+		} else {
+			$sexpic=2;
+			if($memberResp ['Member']['sex']=='f' )
+			{
+				$sexpic=3;
+			}
+		
+			$memberResp ['Member']['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+				
+		}
+		
+		
 		$response = array (
-				'user_msg' => 'Profile update succesfull' 
+				'user_msg' => __('Profile update succesfull'),
+				'member' => $memberResp
 		);
 		
 		try {
-			$this->_api_photo_upload ( $member ['big'] );
+			$this->_api_photo_upload($member['big']);
 			$amount = 30;
 			$reason = "Uploaded picture";
-			$this->Wallet->addAmount ( $member ['big'], $amount, $reason );
+			$this->Wallet->addAmount($member['big'], $amount, $reason );
 		} catch ( UploadException $e ) {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
-		
+//		$this->log("------------FINE EDIT--------------------");
 		$this->_apiOk ( $response );
 	}
 	
@@ -1013,7 +1049,7 @@ class MembersController extends AppController {
 		
 		if (! empty ( $this->Member->validationErrors )) { // we have errors while saving the data
 			
-			$this->_apiEr ( __ ( 'Please fill in all required fields' ), true, false, array (
+			$this->_apiEr ( __( 'Please fill in all required fields' ), true, false, array (
 					'fields' => $this->Member->validationErrors 
 			) );
 		}
@@ -1038,6 +1074,7 @@ class MembersController extends AppController {
 				'big' 
 		) );
 		
+         
 		if (! isset ( $this->api ['big'] )) {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
@@ -1052,21 +1089,22 @@ class MembersController extends AppController {
 				'last_lonlat' => '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')' 
 		);
 		
-		debug ( $memb );
+     //   $this->log("memb: ".serialize($memb));
+        
 		$this->Member->set ( $memb );
 		try {
 			$res = $this->Member->save ();
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 		
 		// AUTO CHECKIN!!!
 		
 		// $myC = $this->Checkin->AutoCheckin( '(' . $this->api ['lat'] . ',' . $this->api ['lon'] . ')',$this->api ['big']);
 		
-		$myC = $this->Checkin->AutoCheckin ( '(' . $this->api ['lon'] . ',' . $this->api ['lat'] . ')', $this->api ['big'] );
+		$myC = $this->Checkin->AutoCheckin('('.$this->api ['lon'].','.$this->api['lat'].')', $this->api ['big']);
 		
-		$this->_apiOk ( "Position set" );
+		$this->_apiOk ( __("Position set") );
 	}
 	
 	/**
@@ -1094,7 +1132,7 @@ class MembersController extends AppController {
 			
 			$this->_apiOk ( $data );
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 	}
 	
@@ -1210,7 +1248,7 @@ class MembersController extends AppController {
 			
 			$this->_apiOk ( $data );
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 	}
 	public function api_getExtraInfos() {
@@ -1249,7 +1287,7 @@ class MembersController extends AppController {
 				$this->_apiOk ( $data );
 			}
 		} catch ( Exception $e ) {
-			$this->_apiEr ( "Error" );
+			$this->_apiEr ( __("Error") );
 		}
 	}
 	
@@ -1623,7 +1661,7 @@ class MembersController extends AppController {
 			$place = $this->_addPlacePhotoUrls ( $place );
 			
 			if (empty ( $place )) {
-				$this->_apiEr ( 'Nonexistent place.' );
+				$this->_apiEr ( __('Nonexistent place.') );
 			}
 			
 			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
@@ -1654,7 +1692,7 @@ class MembersController extends AppController {
 			$place = $this->_addPlacePhotoUrls ( $place );
 			
 			if (empty ( $place )) {
-				$this->_apiEr ( 'Nonexistent place.' );
+				$this->_apiEr ( __('Nonexistent place.') );
 			}
 			
 			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
@@ -1946,4 +1984,31 @@ class MembersController extends AppController {
 			
 			return ($x [0] ['position_bonus'] > $y [0] ['position_bonus']) ? - 1 : + 1;
 	}
+
+	public function api_removeMember(){
+        
+        $this->_checkVars (array('delete_id'), array ());
+        
+        $memberid=$this->api['delete_id'];
+        
+        $params = array(
+                'conditions' => array(
+                        'Member.big' => $memberid
+                ),
+                'recursive' => -1,
+        );
+        
+        
+        $memberVal = $this->Member->find ( 'first', $params );
+        
+        if (count($memberVal)>0) {        
+                  
+        $result=$this->Member->deleteMember($memberid); 
+        
+        } else $result="Membro inesistente";
+        
+        $this->_apiOk ( $result );
+        
+    }
+
 }
