@@ -90,5 +90,13 @@ class WalletsController extends AppController {
 		$this->_apiOk($xresponse );
 	
 	}
+    
+    public function api_sendchatnotif() {
+         
+        
+        
+       //$this->Wallet->sendChatNotification();   
+        
+    }
 	
 }

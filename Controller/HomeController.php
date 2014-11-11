@@ -266,7 +266,6 @@ class HomeController extends AppController {
 	public function index() {
 		
 		
-		
 		$lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
 		switch ($lang){
 			case "fr":
@@ -314,6 +313,8 @@ class HomeController extends AppController {
 			return $this->render('index_first_login');
 			
 		}
+	/*		return $this->redirect('http://www.google.com');
+	*/
 		
 	}
 	

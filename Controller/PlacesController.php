@@ -320,6 +320,8 @@ class PlacesController extends AppController {
         $region_id = isset($this->api['region_id']) ? $this->api['region_id'] : null;
         $rating_avg = isset($this->api['rating_avg']) ? $this->api['rating_avg'] : null;
         $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;
+
+	    $this->log("var passate: ".serialize($this->api));
         
         // PUT IN DEFAULT FILE!!!
         $coords = '(40.6300568,16.2894573999997)';
@@ -414,13 +416,13 @@ class PlacesController extends AppController {
             
             
         }
-        /*$this->log("----PlacesController---api_list---------------------");
+        $this->log("----PlacesController---api_list---------------------");
         $this->log("member: ".$this->logged['Member']['big']);
         $this->log("phrase: ".$phrase." cat_id: ".$cat_id." region_id: ".$region_id." rating_avg: ".$rating_avg);
         $this->log("lon: ".$lon." lat: ".$lat." offset: ".$offset." coords: ".$coords);
         $this->log("filteroptions: ".$filteroptions);
         $this->log("sex: ".$sex." age: ".$age);
-        $this->log("----------------------------------------------------");*/
+        $this->log("----------------------------------------------------");
         
         
         if ($sex!=null) $myFilter[]=" members.sex='$sex' ";
@@ -588,19 +590,30 @@ class PlacesController extends AppController {
                    
         }
         else
-        {
+        {//$phrase non nullo
             
-            $query = "WITH plids as (".
+            if ($sex!=null OR $age!=null){
+            
+            $jointable="JOIN events ON places.big = events.place_big ".
+                       "JOIN checkins ON events.big = checkins.event_big ".
+                       "JOIN members ON checkins.member_big = members.big  ";
+            } else $jointable="";
+            
+            //print($filterString);
+            
+            $queryOLD = "WITH plids as (".
                      "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
                      "SELECT place_big, greatest(rank_pl, rank_ev) as rank ".
                      "FROM (".
-                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl ".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
                         "FROM tsqry,".$table_options.
-                        "WHERE ".
+                        $jointable.
+                        " WHERE ".
                         (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
                         (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
                         (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
-                        " qry @@ places.tsv AND status < 255) plsel ".
+                        " qry @@ places.tsv AND places.status < 255 " . $filterString . " ) plsel ".
                         "FULL OUTER JOIN ".
                         "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
                         "FROM tsqry, events ".
@@ -616,7 +629,7 @@ class PlacesController extends AppController {
                         "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
                         "GROUP BY place_big) evsel ".
                         "USING (place_big) ".
-                        "ORDER BY rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
                         ") ".
                         "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
                         "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
@@ -644,21 +657,81 @@ class PlacesController extends AppController {
                             "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
                         "ORDER BY \"Place__distance\" ASC";
            
-          
+               
+            
+         $query = "WITH plids as (".
+                     "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
+                     "SELECT place_big, greatest(rank_pl, rank_ev) as rank,\"Place__distance\" ".
+                     "FROM (".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
+                        "FROM tsqry,".$table_options.
+                        $jointable.
+                        " WHERE ".
+                        
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " qry @@ places.tsv AND places.status < 255 " . $filterString . " ) plsel ".
+                        "FULL OUTER JOIN ".
+                        "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
+                        "FROM tsqry, events ".
+                        "INNER JOIN places ON places.big = events.place_big ".
+                        "WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") .
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= ". $rating_avg . " AND " : "") .
+                        " qry @@ events.tsv AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                        "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evsel ".
+                        "USING (place_big) ".
+                        "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 1609.344 ".
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        ") ".
+                        "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                        "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                        "places.address_street AS \"Place__address_street\", ".
+                        "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                        "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                        "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                        "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                        "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                        ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) .
+                        " FROM plids ".
+                        "JOIN ".$table_options." ON plids.place_big = places.big ".
+                        "JOIN regions ON regions.id = places.region_id ".
+                        "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                        "LEFT JOIN ( ".
+                            "SELECT place_big, array_agg(events.name) as eventnames,".
+                            "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                            "FROM events ".
+                            "JOIN plids USING (place_big) ".
+                            "WHERE (events.status = 1) ".
+                            "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                            "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                            "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                            "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                            "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
+                            "ORDER BY \"Place__distance\" ASC";
+                    
             
             
             $countQuery = 'WITH tsqry as (SELECT to_tsquery(\'pg_catalog.italian\',$$' . $phrase . '$$) as qry)
                 SELECT COUNT(*)
                 FROM
                 (
-                    SELECT places.big as place_big
-                    FROM tsqry, '.$table_options.' 
+                    SELECT places.big as place_big,
+                    places.lonlat <@> \''. $coords .'\'::point AS "Place__distance" 
+                    FROM tsqry, '.$table_options.' '.$jointable.' 
                     WHERE
                         ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
                         ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
                         ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
                         qry @@ places.tsv
-                        AND status < 255
+                        AND places.status < 255 '. $filterString .'
                 ) plsel
                 FULL OUTER JOIN
                 (
@@ -674,17 +747,20 @@ class PlacesController extends AppController {
                         AND (events.start_date IS NULL or events.start_date < current_timestamp) AND (events.end_date IS NULL or events.end_date > current_timestamp) AND (events.daily_start IS NULL OR events.daily_start < localtime) AND (events.daily_end IS NULL OR events.daily_end > localtime)
                     GROUP BY place_big
                 ) evsel
-                USING (place_big)';
+                USING (place_big) '.
+                "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 ";
         }
 
         $db = $this->Place->getDataSource();
-        /*$this->log("------------PLACES CONTROLLER-----------");
+       //print($countQuery);
+      // print($query);
+        $this->log("------------PLACES CONTROLLER-----------");
         $this->log("---------------query--------------------");
         $this->log($query);
         $this->log("------------Fine PLACES CONTROLLER------");  
-        */
         
-        //print($query);
+        
+       // print($query);
         try {
             $places = $db->fetchAll($query);
             if ($offset == 0)
@@ -765,7 +841,7 @@ class PlacesController extends AppController {
         
         $this->_apiOk($result);
       
-    //print($query);
+    //print($countQuery);
     }
 
     public static function multiFieldSortArray($x, $y) { // sort an array by position_bonus DESC and distance ASC

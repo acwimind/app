@@ -795,7 +795,7 @@ class CheckinsController extends AppController {
                 'name',
                 'onlyfriends' 
 		) );
-		
+		$this->log("Variabili ".serialize($this->api));
 		$memBig = $this->logged ['Member'] ['big'];
 	//	$lon = $this->api ['lon'];
 	//	$lat = $this->api ['lat'];
@@ -874,9 +874,9 @@ class CheckinsController extends AppController {
 		if ($crdsMatch == FALSE) {
 			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
 		}
-		
+		$this->log("Var Age ".$age);
 		$all_nearby = $this->Checkin->getNearbyPeopleNew ( $coords, $optParams, $memBig, $offset );
-		
+		$this->log("parametri filtri ".serialize($optParams));
 		//print_r($all_nearby);
 		$xresponse = array ();
 		$xami = array ();
@@ -920,7 +920,7 @@ class CheckinsController extends AppController {
 					
 					$aa = array ();
 					
-					$val [0] ['Checkin'] = $this->Checkin->getNearbyCheckinsMember ( $val [0] ['big'], true );
+					$val [0] ['Checkin'] = $this->Checkin->getNearbyCheckinsMember ( $val [0] ['big'], false );
 					
 					if (isset ( $val [0] ['Checkin'] [0] ['Place'] ['DefaultPhoto'] ['big'] ) && $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['big'] > 0) { // add URLs to default photos
 						if (isset ( $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['status'] ) && $val [0] ['Checkin'] [0] ['DefaultPhoto'] ['status'] != DELETED) { // add URLs to default photos

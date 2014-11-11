@@ -54,12 +54,11 @@ class SmsComponent extends Component {
 	private function _skebbyGatewaySendSMS($username, $password, $recipients, $text, $sms_type = SMS_TYPE_CLASSIC, $sender_number = '', $sender_string = '', $user_reference = '', $charset = '', $optional_headers = null) {
 		$url = 'http://gateway.skebby.it/api/send/smseasy/advanced/http.php';
 		
-		if (! is_array ( $recipients )) {
-			$recipients = array (
-					$recipients 
-			);
-		}
+		if (!is_array($recipients)) {
+			$recipients = array($recipients);
+		} 
 		
+                
 		switch ($sms_type) {
 			case SMS_TYPE_CLASSIC :
 			default :
@@ -84,6 +83,7 @@ class SmsComponent extends Component {
 		
 		$parameters = 'method=' . urlencode ( $method ) . '&' . 'username=' . urlencode ( $username ) . '&' . 'password=' . urlencode ( $password ) . '&' . 'text=' . urlencode ( $text ) . '&' . 'recipients[]=' . implode ( '&recipients[]=', $recipients );
 		
+        
 		if ($sender_number != '' && $sender_string != '') {
 			parse_str ( 'status=failed&message=' . SENDER_ERROR, $result );
 			return $result;
@@ -102,8 +102,8 @@ class SmsComponent extends Component {
 			default :
 				break;
 		}
-		
-		parse_str ( $this->do_post_request( $url, $parameters, $optional_headers ), $result );
+        		
+        parse_str ( $this->do_post_request( $url, $parameters, $optional_headers ), $result );
 		
 		return $result;
 	}
@@ -124,18 +124,18 @@ class SmsComponent extends Component {
 		return $result;
 	}
 	
+      
 	// Per invio multiplo
 	// $recipients = array('393471234567','393497654321');
 	
 	// ------------ Invio SMS Classic --------------
 	
 	// Invio SMS CLASSIC con mittente personalizzato di tipo alfanumerico
-	public function SmsSend($phone, $code) {
+	public function SmsSend($recipients, $msg) {
 		// Invio singolo
-		$recipients = array (
-				$phone 
-		);
-		$result =$this->_skebbyGatewaySendSMS( 'haamble', 'haamble2014', $recipients, 'Ecco il tuo codice di registrazione ad Haamble: ' . $code, SMS_TYPE_CLASSIC, '', 'HAAMBLE' );
+		
+        
+		$result=$this->_skebbyGatewaySendSMS( 'haamble','haamble2014', $recipients, $msg, SMS_TYPE_CLASSIC, '', 'HAAMBLE' );
  		return $result;
 	}
 	// Invio SMS CLASSIC con mittente personalizzato di tipo numerico

@@ -48,11 +48,30 @@ class ProfileVisit extends AppModel {
 	}
 	
     public function getVisits($member_big) {
+        
+        $db = $this->getDataSource();
+        
+         $sql = "SELECT to_big as \"blockedbig\" ".
+                "FROM member_settings ".
+                "WHERE from_big=$member_big AND chat_ignore=1 ".
+                "UNION ".
+                "SELECT from_big as \"blockedbig\" ".
+                "FROM member_settings ".
+                "WHERE to_big=$member_big AND chat_ignore=1 ";
+        
+        $bloccati = $db->fetchAll ( $sql );
+        
+        foreach ($bloccati as $key=>$val){
+            
+            $utentiBloccati[]=$val[0]['blockedbig'];
+      }
+                    
         $type = 'all';
         $params = array (
                 'conditions' => array (
                         
-                        'visited_big' => $member_big 
+                        'visited_big' => $member_big,
+                         
                 ),
                 'fields' => array (
                         'ProfileVisit.visitor_big' ,
@@ -62,13 +81,16 @@ class ProfileVisit extends AppModel {
                 'group' => array('ProfileVisit.visitor_big'),
                 'order' => array('created' => 'desc'),
                 'recursive' => -1,
-        )
-        ;
+        );
         
+         if (count($utentiBloccati)>0){
+              
+           $params['conditions'][]=array('NOT'=>array('visitor_big'=> $utentiBloccati));
+                   
+        } 
+                
         $result = $this->find ( $type, $params );
-        
-        //print_r($result);
-        
+                        
         return $result;
     }
     
@@ -119,12 +141,39 @@ class ProfileVisit extends AppModel {
     
     public function getNotReadVisits($memBig){
         
+        $db = $this->getDataSource();
         
-        $counter = $this->find('count', array(
+         $sql = "SELECT to_big as \"blockedbig\" ".
+                "FROM member_settings ".
+                "WHERE from_big=$memBig AND chat_ignore=1 ".
+                "UNION ".
+                "SELECT from_big as \"blockedbig\" ".
+                "FROM member_settings ".
+                "WHERE to_big=$memBig AND chat_ignore=1 ";
+        
+        $bloccati = $db->fetchAll ( $sql );
+        
+        foreach ($bloccati as $key=>$val){
+            
+            $utentiBloccati[]=$val[0]['blockedbig'];
+      }
+        
+        
+        $params=array(
             'conditions' => array(
                 'read' => 0, 'visited_big' => $memBig
-            )));
+            ));
         
+        
+        if (count($utentiBloccati)>0){
+              
+           $params['conditions'][]=array('NOT'=>array('visitor_big'=> $utentiBloccati));
+                   
+        } 
+               
+        
+        $counter = $this->find('count', $params);
+                     
                
         //$db = $this->getDataSource();
         //$sql = 'SELECT COUNT(*) AS visits FROM public.profile_visits WHERE read=0 AND visited_big='.$memBig;

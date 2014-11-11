@@ -124,6 +124,7 @@ class Friend extends AppModel {
 				
 				
 				$r ["Checkinbig"] = $r [0] ["big"];
+				$r ["Created"] = $r [0] ["created"];
 
 				if (count($TheMember)>0)
 				{

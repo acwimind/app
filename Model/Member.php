@@ -175,7 +175,7 @@ class Member extends AppModel {
 				'rule' => 'isUnique',
 				'message' => 'This phone address is already in use by another user',
 			),
-			'unique' => array(
+			'len' => array(
 					'rule' => array('minLength', 6),
 					'message' => 'This phone address must be at least 6 characters long',
 			),

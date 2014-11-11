@@ -432,6 +432,8 @@ class Checkin extends AppModel {
 	}
 	public function getNearbyCheckinsNew($coords, $optParams,$membig) {
 		
+        $this->log("user ".$membig." func->getNearbyCheckinsNew");
+        $this->log(serialize($optParams));
         
         if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]'";
         
@@ -458,7 +460,7 @@ class Checkin extends AppModel {
             
             if ($optParams['distance']=='over') $nearby_radius='> 62'; 
                         else
-                         $nearby_radius='< '.$optParams['distance']*.6; 
+                         $nearby_radius='< '.$optParams['distance'] * .621; 
            } else // if null uses default value
                     $nearby_radius='< '.NEARBY_RADIUS; 
         
@@ -488,6 +490,8 @@ class Checkin extends AppModel {
                  ORDER BY ( Places.lonlat <@> ?)::numeric(10,1) ASC
                  LIMIT ' . API_MAP_LIMIT;
 		
+
+		$this->log("query : ".$sql2."coords : ".$coords);
 		// try {
 		$result = $db->fetchAll ( $sql2, array (
 				$coords,
@@ -628,9 +632,9 @@ class Checkin extends AppModel {
         
         $name=strtolower($optParams['name']);
         
-        if ($optParams['name']!=null) $filter[]="LOWER(members.name) LIKE '%$name%' OR LOWER(members.surname) LIKE '%$name%' "; 
+        if ($optParams['name']!=null) $filter[]=" (LOWER(members.name) LIKE '%$name%' OR LOWER(members.surname) LIKE '%$name%') "; 
         
-        if ($optParams['sex']!=null) $filter[]="members.sex='$optParams[sex]' ";
+        if ($optParams['sex']!=null) $filter[]=" members.sex='$optParams[sex]' ";
         
         
         if ($optParams['onlyfriends']!=null AND $optParams['onlyfriends'] > 0 ) {
@@ -666,10 +670,17 @@ class Checkin extends AppModel {
             
             if ($optParams['distance']=='over') $nearby_radius='> 62'; 
                         else
-                         $nearby_radius='< '.$optParams['distance']*.6; 
-           } else // if null uses default value
+                         $nearby_radius='< '.$optParams['distance'] * .621; 
+           
+           //$distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) ".$nearby_radius." AND ";
+           $distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1)) ".$nearby_radius." AND ";
+        }
+            else // if null uses default value
+                    
+                   { 
+                    $distanceFilter="";
                     $nearby_radius='< '.NEARBY_RADIUS; 
-        
+                   }
        
         if ($optParams['category']!=null) $filter[]=" places.category_id=$optParams[category] ";
         
@@ -696,7 +707,7 @@ class Checkin extends AppModel {
                                             WHERE members.status<255 AND 
                                                   checkins.checkout IS NULL AND 
                                                   places.status < 255 AND 
-                                                  events.status < 255 AND
+                                                  events.status < 255 AND '.$distanceFilter.'
                                                   members.big NOT IN (
                                                         SELECT to_big as "blockedbig"
                                                         FROM member_settings
@@ -704,8 +715,8 @@ class Checkin extends AppModel {
                                                         'UNION
                                                         SELECT from_big as "blockedbig"
                                                         FROM member_settings
-                                                        WHERE to_big='.$membig.' AND chat_ignore=1) AND 
-                                                  (members.big <> ' . $membig . ') '.$filterString.'      
+                                                        WHERE to_big='.$membig.' AND chat_ignore=1) AND
+                                                        (members.big <> ' . $membig . ') '.$filterString.'      
                                             ORDER BY members.big ) '.'
                        SELECT * FROM tblcategory
                        ORDER BY distance ASC 
@@ -720,21 +731,23 @@ class Checkin extends AppModel {
                 "members.last_lonlat AS \"coordinates\",".
                 "((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) AS \"distance\" ".
                 "FROM public.members ". 
-                "WHERE members.status<255 ".
-                "AND members.big NOT IN ".
+                "WHERE members.status<255 AND ".$distanceFilter.                
+                " members.big NOT IN ".
                     "(SELECT to_big AS \"blockedbig\" FROM member_settings ".
                     "WHERE from_big=$membig AND chat_ignore=1 ".
                     "UNION ".
                     "SELECT from_big AS \"blockedbig\" ".
                     "FROM member_settings ".
                     "WHERE to_big=$membig AND chat_ignore=1) ".
-                "AND (members.big <> $membig )".$filterString." ".
+                    
+                "AND (members.big <> $membig ) ".$filterString." ".
                 "ORDER BY ( members.last_lonlat <@> '$coords')::numeric(10,1) ASC ".
                 "LIMIT ". API_MAP_LIMIT;
                 
                 
          }      
-               
+        $this->log("filterString ".$filterString);
+	$this->log("Query ".$sql2);         
         if(isset($offset))
         {
             
@@ -748,7 +761,7 @@ class Checkin extends AppModel {
         $modelAnimal = ClassRegistry::init ( 'Animal' );  
         $result=$modelAnimal->AddQuery($sql2);
         */
-         //print ($sql2);             
+         $this->log($sql2);             
         return $result;
     }
     

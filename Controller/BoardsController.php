@@ -293,8 +293,8 @@ class BoardsController extends AppController {
 	
     public function api_GetBoardContent() {
         //$this->log ( "------------you are in api_GetBoardContent--------" );
-    	debug(strcmp('2', IOS_APP_VERSION)>=0);
-    	debug(strcmp('1.0', ANDROID_APP_VERSION)>=0);
+    //	debug(strcmp('2', IOS_APP_VERSION)>=0);
+    //	debug(strcmp('1.0', ANDROID_APP_VERSION)>=0);
         $this->_checkVars(array(),array('offset'));
         
         $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
@@ -302,10 +302,7 @@ class BoardsController extends AppController {
         $MyPlaces = array ();
         $MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
         
-        /*
-         * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
-         */
-        
+                
         foreach ( $MyPlaces as $key => $val ) {
             
             unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
@@ -372,6 +369,11 @@ class BoardsController extends AppController {
             
             foreach ( $MyFriends as $key => $val ) {
                 
+            	unset ( $MyFriends [$key] ['Member'] ['MemberSetting']  );
+            	unset ( $MyFriends [$key] ['Member'] ['Checkin']);
+            	unset ( $MyFriends [$key] ['Member'] ['Photo']);
+            	unset ( $MyFriends [$key] ['Member'] ['Signalation']);
+            	unset ( $MyFriends [$key] ['Member']['Member'] ['password']  );
                 // ADD MEMBER PHOTO
                 // debug( $val ['Member']['Member'] ['photo_updated'] );
                 if (isset ( $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] ) and $MyFriends [$key] ['Member'] ['Member'] ['photo_updated'] > 0 AND $MyFriends [$key]['Member']['PrivacySetting']['photosvisibility'] > 0) {
@@ -601,12 +603,56 @@ class BoardsController extends AppController {
 		
 		// TEST PLACES!!!
 		$MyPlaces = array ();
-		$MyPlaces = $this->Place->getBoardPlaces ( $MyBig, $offset);
-		
-		/*
-		 * $this->log("------------MyPlaces------------"); $this->log($MyPlaces); $this->log("------------Fine MyPlaces-------");
-		*/
-		
+        
+         //Da qui ricavo i PrivacySetting dell'utente 
+        $privacySettings = $this->PrivacySetting->getPrivacySettings ( $MyBig );
+        $privacySettings = $privacySettings[0]['PrivacySetting'];
+        
+        //print_r($privacySettings);
+        //Se checkinsvisibility=0 allora non mostra i posti quindi è inutile estrarli dal db
+        //if ($privacySettings['checkinsvisibility'] > 0)
+       
+           
+        if ($MyBig!=$this->logged['Member']['big']) {//Accesso ai Places di un membro.
+                   
+        
+        switch ($privacySettings['checkinsvisibility']){
+            
+            
+            case 0 : //visibile a nessuno
+                    $MyPlaces = array();
+                    break;
+            
+            case 1 : // visibile a tutti
+                    $MyPlaces = $this->Place->getBoardPlaces($MyBig, $offset);
+                                    
+                    break;
+            
+            case 2 : //visibile solo ad amici. Verificare che non sia amico poi bloccato
+                     //perchè il blocco non tocca lo status di amico                    
+                     $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
+                     $bloccato=$this->MemberSetting->isOnIgnoreListDual($this->logged['Member']['big'],$MyBig);
+                     
+                    if (count($amico)>0 AND !$bloccato){//sono amici non bloccati quindi ok visualizzazione Places
+                        
+                        $MyPlaces = $this->Place->getBoardPlaces($MyBig, $offset);
+                                   
+                    } else {//non sono amici oppure lo erano e ora sono bloccati quindi no visualizzazione Places
+                        
+                            $MyPlaces = array();
+                        
+                    }
+        } 
+            }
+                else {                               
+                   
+		              $MyPlaces = $this->Place->getBoardPlaces( $MyBig, $offset);
+		           }
+		//$this->log("------------MyPlaces------------"); 
+        //$this->log($MyPlaces); 
+        //$this->log("------------Fine MyPlaces-------");
+		      
+               
 		foreach ( $MyPlaces as $key => $val ) {
 				
 			unset ( $MyPlaces [$key] ['Place'] ['Place'] ['region_id'] );
@@ -659,11 +705,10 @@ class BoardsController extends AppController {
 				
 			$MyPlaces [$key] ['ILike'] = $xlike;
 		}
+	
 		
-		
-		//
-		
-		
+		/* PARTE COMMENTATA PERCHE' NON UTILIZZATA DALL'APP
+        			
 		$MyCheckins = array ();
 		$Checkins = array ();
 		
@@ -672,11 +717,8 @@ class BoardsController extends AppController {
         if ($MyBig!=$this->logged['Member']['big']) {//se voglio accedere ai checkins di un membro
         
                
-        $PrivacyCheckins = $this->PrivacySetting->getPrivacySettings ( $MyBig );
-        $PrivacyCheckins = $PrivacyCheckins[0]['PrivacySetting']['checkinsvisibility'];
-        
-                
-        switch ($PrivacyCheckins){
+                     
+        switch ($privacySettings['checkinsvisibility']){
             
             
             case 0 : //visibile a nessuno
@@ -738,14 +780,17 @@ class BoardsController extends AppController {
 			}
 		}
         
+        */
+        
+               
         if ($MyBig!=$this->logged['Member']['big']) {//Accesso alle foto del diario di un membro
         
                
-        $PrivacyFoto = $this->PrivacySetting->getPrivacySettings ( $MyBig );
-        $PrivacyFoto = $PrivacyFoto[0]['PrivacySetting']['photosvisibility'];
+        //$PrivacyFoto = $this->PrivacySetting->getPrivacySettings ( $MyBig );
+        //$PrivacyFoto = $PrivacyFoto[0]['PrivacySetting']['photosvisibility'];
         
                 
-        switch ($PrivacyFoto){
+        switch ($privacySettings['photosvisibility']){
             
             
             case 0 : //foto visibili a nessuno 
@@ -754,23 +799,23 @@ class BoardsController extends AppController {
             
             case 1 : //foto visibili a tutti
                     $MyPhotos = $this->Photo->getMemberPhotos( $MyBig, $offset );
-                                        
+                    break;                    
             
             case 2 ://foto visibili solo amici
                     
                     $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
-                    
-                    if (count($amico)>0){//sono amici quindi ok foto
+                    $bloccato=$this->MemberSetting->isOnIgnoreListDual($this->logged['Member']['big'],$MyBig);
+                     
+                    if (count($amico)>0 AND !$bloccato){//sono amici e non bloccati quindi ok foto
                         
                         $MyPhotos = $this->Photo->getMemberPhotos( $MyBig, $offset );
                                    
-                    } else {//non sono amici quindi niente foto
+                    } else {//non sono amici o lo erano ma ora sono bloccati quindi niente foto
                         
                             $MyPhotos=array();
                         
                     }
-                    
-                    break;
+                                      
                      
         }                                        
             
@@ -785,6 +830,18 @@ class BoardsController extends AppController {
         if ($MyBig!=$this->logged['Member']['big']) {//se voglio accedere al diario di un membro
                 
           $Amici = $this->Friend->GetDiaryFriends( $MyBig, $offset );
+        
+            
+               foreach ($Amici as $key=>$val){
+                //Non visualizza sul diario altrui i membri bloccati da chi visualizza           
+                           
+                      if (!$this->MemberSetting->isOnIgnoreListDual($this->logged['Member']['big'],$val[0]['big'])){                  
+                            $Amici_clean[]=$val;
+                            
+                           }
+               
+                }                                
+            $Amici=$Amici_clean;    
         
           //vedo se sono amici        
           $amico=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$MyBig,'A');
@@ -804,11 +861,11 @@ class BoardsController extends AppController {
                             oppure photosvisibility=2
                             */
                                               
-              $PrivacyFotoAmici = $this->PrivacySetting->getPrivacySettings ( $val[0]['big'] );
-              $photoVisibility = $PrivacyFotoAmici[0]['PrivacySetting']['photosvisibility'];
-              $amicoLogged=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$val[0]['big'],'A');               $Amici[$key][0]['photovisibility']=$photoVisibility;
+              $PrivacyFotoAmico = $this->PrivacySetting->getPrivacySettings ( $val[0]['big'] );
+              $photosVisibility = $PrivacyFotoAmico[0]['PrivacySetting']['photosvisibility'];
+              $amicoLogged=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$val[0]['big'],'A');                  $Amici[$key][0]['photosvisibility']=$photosVisibility;
                           
-            if (($photoVisibility==2 AND count($amicoLogged)>0) OR $photoVisibility==1) {
+            if (($photosVisibility==2 AND count($amicoLogged)>0) OR $photosVisibility==1) {
                 
                    if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated'] > 0 ) {
                      
@@ -908,10 +965,14 @@ class BoardsController extends AppController {
 				$MyPlaces [$i] ["BoardType"] = "Place";
 				$MyBoard [] = $MyPlaces [$i];
 			}
-			if ($i < count ( $Checkins )) {
+			/* COMMENTATO PERCHE' NON USATO NELL'APP
+            if ($i < count ( $Checkins )) {
 				$Checkins [$i] ["BoardType"] = "Checkins";
 				$MyBoard [] = $Checkins [$i];
 			}
+            */
+            
+            
 		/*	if (count ( $Checkins ) > 0 || count ( $MyPhotos ) > 0 || count ( $MyFriends ) > 0) {
 				// put ads only if there is other contents!!
 				if ($i < count ( $MyAds )) {

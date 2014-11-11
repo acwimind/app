@@ -58,8 +58,9 @@ class RegistrationCodesController extends AppController {
 				$myText = $savedCodes[0]['RegistrationCode']['code'];
 				}
 				// send sms!!
-				
-				$SMSReturn = $this->Sms->SmsSend ( $this->api ['phone'], $myText );
+				$smsMsg=__('Ecco il tuo codice di registrazione ad Haamble: ').$myText;
+                
+				$SMSReturn = $this->Sms->SmsSend ( $this->api ['phone'], $smsMsg );
 				 //$this->_apiOk ( $response );
 				$this->_apiOk ( $myText );
 			} else {
@@ -95,22 +96,43 @@ class RegistrationCodesController extends AppController {
     
     public function api_inviteFriends(){
         
+         App::uses ( 'CakeEmail', 'Network/Email' );
          $this->_checkVars(array(),array('smscontacts','emailcontacts'));
+                 
+         $member = $this->Member->find ( 'first', array (
+                    'conditions' => array (
+                            'Member.big =' => $this->logged['Member']['big'] 
+                    ),
+                    'fields' => array('name','surname'),
+                    'recursive' => -1  
+            ) );
+         
+         
+         $memberName=$member['Member']['name'].' '.$member['Member']['surname'];
+         
+         //Per recuperare input in formato json
+         //$data=$this->request->input('json_decode', true );  
                           
          $array_sms=(isset($this->api['smscontacts'])) ? json_decode($this->api['smscontacts']) : null;
          $array_email=(isset($this->api['emailcontacts'])) ? json_decode($this->api['emailcontacts']) : null;
-         
+                  
          if (count($array_email)>0){
-             
-             //todo send email
-             
-             
+                         
+             foreach ($array_email as $key=>$val){
+                           
+                $email = new CakeEmail ( 'test' );
+                $email->template ( 'haamble_invite', 'default' )->to ( $val )->subject ( __ ( 'Haamble - Invite' ) )->viewVars ( array('name' => $memberName) )->send ();
          }
-         
+        }
+        
+        
          if (count($array_sms)>0){
              
-             //todo send sms
-                          
+             
+             $smsMsg=__('Hello, %s installed Haamble App.',$memberName);
+             
+             $SMSReturn = $this->Sms->SmsSend ( $array_sms, $smsMsg );
+                                    
          }
          
          $this->_apiOk ('1');

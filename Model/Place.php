@@ -308,7 +308,7 @@ class Place extends AppModel {
 	public function getBoardPlaces($MemberID, $offset=0) {
 		$db = $this->getDataSource ();
 		
-		$MySql = 'select px.pbig as Place_big,px.ccheckinbig as checkinbig,px.elbig as ebig from (SELECT
+		$MySql = 'select px.pbig as Place_big,px.ccheckinbig as checkinbig,px.in_created as increated,px.elbig as ebig  from (SELECT
 		DISTINCT ON (p.big)  p.big as pbig,
 		p.*,
 		c.created as in_created,
@@ -356,6 +356,7 @@ class Place extends AppModel {
 			$r ["Place"]["Place"]["eventBig"] = $r [0] ["ebig"];;
 			// $r[0] = $ThePlace;
 			$r ["Checkinbig"] = $r [0] ["checkinbig"];
+			$r ["Created"] = $r [0] ["increated"];
 			$xresponse [] = $r;
 			unset ( $ThePlace );
 		}

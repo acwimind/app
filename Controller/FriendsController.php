@@ -79,9 +79,18 @@ class FriendsController extends AppController {
 			}
 			
 			$TheMem=$this->Member->getMemberByBig($xami [0] ['big']);
-			$xami [0]['coordinates']=$TheMem['Member']['last_lonlat'];
 			
-			// CHECK USER NOT DELETED
+            $privacySettings=$this->PrivacySetting->getPrivacySettings($xami [0] ['big']);
+            
+            $privacySettings=$privacySettings[0]['PrivacySetting']['visibletousers'];
+            
+            if ($privacySettings>0){
+            
+            $xami [0]['coordinates']=$TheMem['Member']['last_lonlat'];
+			} else {
+                    $xami [0]['coordinates']=null;
+                    }
+            // CHECK USER NOT DELETED
 			if ($this->Member->isActive ( $xami [0] ['big'] )) {
 				$xresponse [] = $xami [0];
 			}

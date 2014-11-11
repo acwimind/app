@@ -84,8 +84,8 @@ class AppWebController extends Controller {
 
 		$this->Auth->loginAction = array('controller' => 'members', 'action' => 'login');
 		$this->Auth->logoutAction = array('controller' => 'members', 'action' => 'logout');
-		$this->Auth->loginRedirect = '/';
-		$this->Auth->logoutRedirect = '/';
+		$this->Auth->loginRedirect = '/home';
+		$this->Auth->logoutRedirect = '/home';
 
 		return true;
 
@@ -189,6 +189,7 @@ class AppWebController extends Controller {
 			array('members', 'forgot_password'),
 			array('members', 'change_password'),
 			array('members', 'registercheck'),	
+				array('landing', 'index')
 		);
 
 		$here = array($this->request->controller, $this->request->action);

@@ -153,6 +153,19 @@ class ChatMessagesController extends AppController {
 			}
 			unset ( $val ['Recipient'] ['photo_updated'] );
 			
+			
+			
+			$xfriend = $this->Friend->FriendsAllRelationship ( $val ['Recipient'] ['big'], $val ['Sender'] ['big']);
+			$xisFriend = 0;
+			$xstatus = 'NO';
+			if (count ( $xfriend ) > 0) {
+				$xisFriend = 1;
+				$val ['Recipient'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
+				$val ['Sender'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
+				//$xstatus = $xfriend [0] ['Friend'] ['status'];
+			}
+			
+			
 			$memBig = $this->logged ['Member'] ['big'];
 			// $newerThan = (isset($this->api['newer_than'])) ? date('Y-m-d H:i:s', $this->api['newer_than']) : null;
 			// debug($val['MemberRel']['id']);
