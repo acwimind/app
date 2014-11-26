@@ -795,6 +795,7 @@ class CheckinsController extends AppController {
                 'name',
                 'onlyfriends' 
 		) );
+        $this->log("----------------api_nearbyPeople-------------");
 		$this->log("Variabili ".serialize($this->api));
 		$memBig = $this->logged ['Member'] ['big'];
 	//	$lon = $this->api ['lon'];
@@ -854,7 +855,7 @@ class CheckinsController extends AppController {
 		 
 		}
 		
-		
+		$offset = isset( $this->api ['offset'] ) ? $this->api ['offset'] : 0;
 		$onlyfriends = isset ($this->api['onlyfriends']) ? $this->api['onlyfriends'] : null;
 		$sex = isset ( $this->api ['sex'] ) ? $this->api ['sex'] : null; // values are m or f
 		$age = isset ( $this->api ['age'] ) ? $this->api ['age'] : null; // values are 0:<25; 1:25-35; 2:35-45; 3:45-55; 4: >55
@@ -882,21 +883,7 @@ class CheckinsController extends AppController {
 		$xami = array ();
 		
 		foreach ( $all_nearby as $key => &$val ) {
-			
-			// SECONDS!!
-			if (! isset ( $val [0] ['updated'] ) or $val [0] ['updated'] < (date ( "Y-m-d H:i:s" ) - 86400)) {
-				// REMOVE
-			} else 
-
-			{
-				$privacy = true;
-				
-				$PrivacyVis2us = $this->PrivacySetting->getPrivacySettings ( $val [0]['big'] );
-				$PrivacyVis2us = $PrivacyVis2us[0]['PrivacySetting']['visibletousers'];
-				
-				if ( $PrivacyVis2us == 0) {
-					// not il list
-				} else {
+						
 					// COMPLETE DATA AND ADD TO REQUEST!!
 					// FIND CHECKIN AND PLACE
 					
@@ -975,8 +962,8 @@ class CheckinsController extends AppController {
 					// else
 					if (!$removeMember)
                     $xresponse [] = $val [0];
-				}
-			}
+				
+			
 		}
 		
 		usort ( $xresponse, 'CheckinsController::multiFieldSortArray' );

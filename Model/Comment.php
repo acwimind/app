@@ -24,6 +24,19 @@ class Comment extends AppModel {
 	public function saveComment($data) {
 		$res =false;
 		$comment = array ();
+        
+        
+        $query = array (
+                'conditions' => array (
+        
+                        'member_big' => $data['member_big'],
+                        'checkin_big' => $data['checkin_big'],
+                        'comment' => null
+                              ),
+                
+                'recursive' => -1,
+        );
+        
 	/*	foreach ( $data as $column => $field ) {
 			if (isset ( $this->api [$field] )) {
 				$comment [$column] = trim ( $data [$field] );
@@ -39,22 +52,38 @@ class Comment extends AppModel {
 					)
 			); */
 			try {
-				$res = $this->save ( $data );
-				if($data['likeit']==0)
-				{
-					$db = $this->getDataSource ();
-					//TODO: add a chance to unlike places?
-					$sql = 'UPDATE comments set likeit=false where member_big='.$data['member_big'].' AND checkin_big='.$data['checkin_big']; 
-					$this->query($sql);
-				}
-				
+				  
+                  if (isset($data['likeit'])){ // viene passato il like
+                  
+                            $findLike = $this->find('first', $query);  
+                  
+                            if (count($findLike)>0){//esiste già un like
+                                    
+                                    //$likeval=!$findLike['Comment']['likeit'];
+                                    $likeval=$data['likeit'];
+                                    $update=array('likeit' => $likeval);    
+                                    $cond=array('member_big' => $data['member_big'],'checkin_big' => $data['checkin_big'],'comment'=>null);  
+                                    
+                                    $res = $this->updateAll($update,$cond);
+                                              
+                                   } else {//non c'era un like
+                                                            
+                                             $res = $this->save( $data );
+                                                                                                                          
+                                          }
+                                           
+                   } else { //viene passato il comment
+                              $data['likeit']=false;
+                              $res = $this->save( $data );
+                              }
+                                   
 		
 			} catch ( Exception $e ) {
 				//die(debug($e));
 				$res = false;
-			}
+			}                   
 	
-	
+	      
 	
 	/*	if ($member1_big != $member2_big) {
 			

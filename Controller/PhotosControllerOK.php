@@ -74,12 +74,6 @@ class PhotosController extends AppController {
 				'photo',
 				'event_big' 
 		) );
-		$pollo="prima";
-        
-        $this->log("var photo ".$this->api['photo']);
-        $this->log("var event_big ".$this->api['event_big']);
-        $this->log("GlobalVAR FILES ".serialize($_FILES));
-        
 		try {
 			
 			if (! isset ( $this->api ['photo'] ) || ! isset ( $_FILES [$this->api ['photo']] )) {
@@ -96,19 +90,14 @@ class PhotosController extends AppController {
 					),
 					'recursive' => - 1 
 			) );
-            
-            $this->log("Evento ".serialize($event));
-            
 			if (! $event) {
 				$this->_apiEr ( __ ( 'Invalid event_big' ), __ ( 'Sorry, this event does not exist' ) );
 			}
 			
 			$gallery = $this->Photo->Gallery->get ( $this->api ['event_big'], 'event', GALLERY_TYPE_USERS );
-			$this->log("gallery ".serialize($gallery));
-            
+			
 			$extension = pathinfo ( $_FILES [$this->api ['photo']] ['name'], PATHINFO_EXTENSION );
-            $this->log("extension ".$extension);
-			$this->log("cosa contiene ".$_FILES[$this->api ['photo']]['name']);
+			
 			// if ($extension == 'jpeg') {
 			// $extension = 'jpg';
 			// }
@@ -128,34 +117,30 @@ class PhotosController extends AppController {
 				mkdir ( $event_path, 0777, true );
 			}
 		} catch ( Exception $e ) {
-			$pollo="ex1".serialize ( $e );
-			$this->log ( "ex1".serialize ( $e ) );
+			$this->log ( "ex1" );
 			$this->log ( serialize ( $e ) );
 		}
-		
 		try {
 			$this->log ( "ex3" );
 			$this->log (  $event_path  );
 			$this->log (  $this->Photo->id  );
 			$this->log (  $extension  );
-		$uploaded = $this->Upload->directUpload ( $_FILES [$this->api ['photo']], 		// data from form (uploaded file)
-		$event_path . $this->Photo->id . '.' . $extension )		// path + filename
-		;
+	//	$uploaded = $this->Upload->directUpload ( $_FILES [$this->api ['photo']], 		// data from form (uploaded file)
+//		$event_path . $this->Photo->id . '.' . $extension )		// path + filename
+//		;
 
-	//			$uploaded = $this->Upload->upload ( $_FILES [$this->api ['photo']], 		// data from form (uploaded file)
-	//				$event_path , $this->Photo->id . '.' . $extension )		// path + filename
-	//				;
+				$uploaded = $this->Upload->upload ( $_FILES [$this->api ['photo']], 		// data from form (uploaded file)
+					$event_path , $this->Photo->id . '.' . $extension )		// path + filename
+					;
 					
 		} catch ( Exception $e ) {
 			$this->log ( "ex2" );
 			$this->log ( serialize ( $e ) );
-			$pollo="ex2".serialize ( $e );
-			$this->_apiEr ( __ ( serialize ( $e ) ), __ ( serialize ( $e )), true, null, '989' );
+			$this->_apiEr ( __ ( 'Photo serialize failed' ), __ ( 'Photo serialize failed' ), true, null, '989' );
 		}
 		if (! $uploaded) { // TODO: check if upload is succesfull before saving to DB?
 			$this->Photo->delete ( $this->Photo->id );
-			//$this->_apiEr ( __ ( 'Photo upload failed' ), __ ( 'Photo upload failed' ), true, null, '989' );
-			$this->_apiEr ( $pollo,$pollo, true, null, '989' );
+			$this->_apiEr ( __ ( 'Photo upload failed' ), __ ( 'Photo upload failed' ), true, null, '989' );
 		}
 		
 		$this->_apiOk ( array (

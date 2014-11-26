@@ -1,5 +1,6 @@
 <?php
 class Place extends AppModel {
+           
 	public $primaryKey = 'big';
 	public $belongsTo = array (
 			'Category',
@@ -262,7 +263,7 @@ class Place extends AppModel {
 					photos.big as "DefaultPhoto__big",
 					photos.original_ext as "DefaultPhoto__original_ext"
 				FROM places AS Place
-				LEFT JOIN photos ON (Place.default_photo_big = photos.big) AND photos.status != 255
+				LEFT JOIN photos ON (Place.default_photo_big = photos.big AND photos.status != 255) 
 				WHERE	Place.status != 255 ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) asc LIMIT 15'; // todo: rimettere . API_MAP_LIMIT;
 		// LIMIT ' . API_MAP_LIMIT;
 		// TODO: set a limit?		(( Place.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance",
@@ -303,11 +304,12 @@ class Place extends AppModel {
 	}
 	
 	
-	
-	
 	public function getBoardPlaces($MemberID, $offset=0) {
-		$db = $this->getDataSource ();
 		
+               
+        $db = $this->getDataSource ();
+		$offset=$offset*API_CHAT_PER_PAGE;
+        
 		$MySql = 'select px.pbig as Place_big,px.ccheckinbig as checkinbig,px.in_created as increated,px.elbig as ebig  from (SELECT
 		DISTINCT ON (p.big)  p.big as pbig,
 		p.*,
@@ -362,7 +364,10 @@ class Place extends AppModel {
 		}
 		
 		return $xresponse;
+                
 	}
+    
+    
 	public function getCurrentEvent($place_big, $select_photo = false, $ob_created = false) {
 		$exceptions = array ();
 		if ($select_photo) {

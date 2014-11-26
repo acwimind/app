@@ -34,25 +34,7 @@ class ChatMessagesController extends AppController {
 		$refresh = (isset ( $this->api ['refresh'] ) && $this->api ['refresh'] == 'true') ? true : false;
 		
 		$result = $this->ChatMessage->findConversations ( $memBig, $partnerBig, $olderThan, $newerThan, $offset, $refresh );
-		$recipient=$result['members']['Recipient'];
-        $sender=$result['members']['Sender'];
-        //print_r($result);
-        $xfriend = $this->Friend->FriendsAllRelationship ( $memBig,$partnerBig );
-        
-            if ($xfriend[0]['Friend']['status'] != 'A') {//se non sono amici oscura il nome del corrispondente in chat
-                
-                if ($sender['big']==$memBig){//se io sono sender oscura il recipient e viceversa
-                
-                $result['members']['Recipient']['surname'] = strtoupper(substr( $recipient['surname'], 0, 1 )) . '.';
-                
-                } else {
-                    
-                $result['members']['Sender']['surname'] = strtoupper(substr( $sender['surname'], 0, 1 )) . '.';
-            }
-            } 
-        
-            
-        
+		
 		if (empty ( $result )) {
 			$result = array (
 					'msg' => 'The conversation has not started yet.' 
@@ -112,7 +94,7 @@ class ChatMessagesController extends AppController {
                  $this->log("--------------close api_receive----------------");
                  */
 		}
-		//$this->Util->transform_name ( $result );
+		$this->Util->transform_name ( $result );
 		$this->_apiOk ( $result );
 	}
 	public function api_conversations() {
@@ -576,10 +558,10 @@ class ChatMessagesController extends AppController {
         try {
             $res = $this->ChatMessage->save ();
             $result = ($res) ? true : false;
-             $this->log("-------ChatMessages CONTROLLER-api_receive-----");
+             /*$this->log("-------ChatMessages CONTROLLER-api_receive-----");
              $this->log("id messaggio inserito = ".serialize($res[ChatMessage][id]));
              $this->log("--------------close api_receive----------------");
-             
+             */
             $msgId = $res ['ChatMessage'] ['id'];
             $pars = array (
                     'conditions' => array (
@@ -598,9 +580,9 @@ class ChatMessagesController extends AppController {
             // Crack for image save!!
              
             if (isset ( $this->api ['photo'] )) {
-                $this->log("-------ChatMessages CONTROLLER-api_send-----");
+               /* $this->log("-------ChatMessages CONTROLLER-api_send-----");
                  $this->log("api[photo] = $this->api[photo]");
-                 $this->log("--------------close api_send----------------");
+                 $this->log("--------------close api_send----------------");*/
                 $myphoto = $_FILES [$this->api ['photo']];
                 
                 try {

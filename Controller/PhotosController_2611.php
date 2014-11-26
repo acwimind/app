@@ -75,11 +75,6 @@ class PhotosController extends AppController {
 				'event_big' 
 		) );
 		$pollo="prima";
-        
-        $this->log("var photo ".$this->api['photo']);
-        $this->log("var event_big ".$this->api['event_big']);
-        $this->log("GlobalVAR FILES ".serialize($_FILES));
-        
 		try {
 			
 			if (! isset ( $this->api ['photo'] ) || ! isset ( $_FILES [$this->api ['photo']] )) {
@@ -96,19 +91,14 @@ class PhotosController extends AppController {
 					),
 					'recursive' => - 1 
 			) );
-            
-            $this->log("Evento ".serialize($event));
-            
 			if (! $event) {
 				$this->_apiEr ( __ ( 'Invalid event_big' ), __ ( 'Sorry, this event does not exist' ) );
 			}
 			
 			$gallery = $this->Photo->Gallery->get ( $this->api ['event_big'], 'event', GALLERY_TYPE_USERS );
-			$this->log("gallery ".serialize($gallery));
-            
+			
 			$extension = pathinfo ( $_FILES [$this->api ['photo']] ['name'], PATHINFO_EXTENSION );
-            $this->log("extension ".$extension);
-			$this->log("cosa contiene ".$_FILES[$this->api ['photo']]['name']);
+			
 			// if ($extension == 'jpeg') {
 			// $extension = 'jpg';
 			// }

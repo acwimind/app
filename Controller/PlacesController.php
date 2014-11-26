@@ -313,16 +313,17 @@ class PlacesController extends AppController {
         App::uses('Search', 'Lib');
         
         // removed lon and lat for no geoloc
-        $this->_checkVars(array(),array('lon','lat','name','category','region_id','rating_avg','offset','sex','age','filteroptions'));
+        $this->_checkVars(array(),array('lon','lat','name','category','city','rating','offset','sex','age','filteroptions'));
         
         $phrase = isset($this->api['name']) ? Search::PrepareTSQuery($this->api['name']) : null;
         $cat_id = isset($this->api['category']) ? $this->api['category'] : null;
-        $region_id = isset($this->api['region_id']) ? $this->api['region_id'] : null;
-        $rating_avg = isset($this->api['rating_avg']) ? $this->api['rating_avg'] : null;
+        $region_id = isset($this->api['city']) ? $this->api['city'] : null;
+        $rating_avg = isset($this->api['rating']) ? $this->api['rating'] : null;
         $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;
+    
 
 	    $this->log("var passate: ".serialize($this->api));
-        
+        $this->log("getquotes ".get_magic_quotes_gpc());
         // PUT IN DEFAULT FILE!!!
         $coords = '(40.6300568,16.2894573999997)';
         $lon = '16.2894573999999';
@@ -395,7 +396,8 @@ class PlacesController extends AppController {
                   $table_options="(SELECT places.* ".
                                  "FROM bookmarks ".
                                  "JOIN places ON bookmarks.place_big=places.big ".
-                                 "WHERE bookmarks.member_big = ".$this->logged['Member']['big'].") places ";
+                                 "WHERE bookmarks.member_big = ".$this->logged['Member']['big'].
+                                 " AND places.published <> 3 ) places ";
                                    break;
                 case 'friend' :
                     
@@ -410,6 +412,7 @@ class PlacesController extends AppController {
                                  "JOIN events ON events.place_big=places.big ".
                                  "JOIN checkins ON checkins.event_big=events.big ".
                                  "WHERE checkins.physical=1 AND checkins.checkout IS NULL ".
+                                 "AND places.published <> 3 ".
                                  "AND checkins.member_big IN (".$placesWithFriends.") ) places ";
                                  break;
             }
@@ -540,7 +543,7 @@ class PlacesController extends AppController {
                                                   'JOIN events ON places.big = events.place_big '.
                                                   'JOIN checkins ON events.big = checkins.event_big '.
                                                   'JOIN members ON checkins.member_big = members.big '.
-                                                  'WHERE status < 255 AND checkins.checkout IS NULL '.$filterString. 
+                                                  'WHERE places.status < 255 AND checkins.checkout IS NULL '.$filterString. 
                                                   (!empty($where)  ? $where : '') .' '. 
                                                   'ORDER BY places.big,places.name ASC '.
                                                   'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ')';
@@ -549,7 +552,7 @@ class PlacesController extends AppController {
             } else {//se non abbiamo filtri sex e age
                             $queryPrefix2='WITH plids as ( SELECT places.big '.
                                                            'FROM '.$table_options.
-                                                           'WHERE status < 255 '.
+                                                           'WHERE places.status < 255 '.
                                                            (!empty($where)  ? $where : '') . ' '.
                                                            'ORDER BY places.name ASC '.
                                                            'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
@@ -668,10 +671,10 @@ class PlacesController extends AppController {
                         "FROM tsqry,".$table_options.
                         $jointable.
                         " WHERE ".
-                        
                         (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
                         (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
                         (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " places.published <> 3 AND ".
                         " qry @@ places.tsv AND places.status < 255 " . $filterString . " ) plsel ".
                         "FULL OUTER JOIN ".
                         "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
@@ -730,7 +733,7 @@ class PlacesController extends AppController {
                         ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
                         ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
                         ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
-                        qry @@ places.tsv
+                        qry @@ places.tsv  
                         AND places.status < 255 '. $filterString .'
                 ) plsel
                 FULL OUTER JOIN
@@ -748,7 +751,7 @@ class PlacesController extends AppController {
                     GROUP BY place_big
                 ) evsel
                 USING (place_big) '.
-                "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 ";
+                "WHERE places.published <> 3 AND \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 ";
         }
 
         $db = $this->Place->getDataSource();
@@ -1626,4 +1629,56 @@ class PlacesController extends AppController {
 		}
 	}
 
+    
+    public function api_placeswithpeople(){
+        
+         $this->_checkVars(array('city'),array());
+        
+        
+         $region_id = isset($this->api['city']) ? $this->api['city'] : null;
+         
+         if (is_numeric($region_id)){//verifica che region_id sia un numero (sql inj prevention)
+            
+         $query="SELECT places.name,places.big,places.rating_avg,places.category_id,places.address_street,".
+                "places.address_street_no,places.lonlat AS coordinates,places.address_town AS city,".
+                "region_id,ARRAY_AGG(member_big) AS members,COUNT(member_big) AS numbers ".
+                "FROM places ".
+                "JOIN events ON (places.big=events.place_big) ".
+                "JOIN checkins ON (events.big=checkins.event_big) ".
+                "WHERE checkins.checkout IS NULL ".
+                "AND events.status!=255 ".
+                "AND region_id=$region_id ".
+                "GROUP BY places.name,places.big ".
+                "ORDER BY numbers DESC ".
+                "LIMIT 15";
+        
+       $db = $this->Place->getDataSource();
+       
+       try {
+            $places = $db->fetchAll($query);
+            
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+        }
+        
+        foreach ($places as $key=>$val){
+            
+            
+            $res[$key]['Place']=$val[0];
+            
+        }
+        
+        $result = array('places' => $res);
+        //print_r($result);
+        
+        $this->_apiOk($result);
+        
+        
+    } else 
+        $this->_apiEr ( __("Parameter Error") );
+   }
+    
+    
 }

@@ -630,6 +630,8 @@ class Checkin extends AppModel {
     public function getNearbyPeopleNew($coords, $optParams,$membig,$offset) {
         $myc = $this->AutoCheckout ();
         
+        $BUGLIMIT=API_MAP_LIMIT + 250;
+        
         $name=strtolower($optParams['name']);
         
         if ($optParams['name']!=null) $filter[]=" (LOWER(members.name) LIKE '%$name%' OR LOWER(members.surname) LIKE '%$name%') "; 
@@ -639,12 +641,12 @@ class Checkin extends AppModel {
         
         if ($optParams['onlyfriends']!=null AND $optParams['onlyfriends'] > 0 ) {
                     $filter[]=" members.big IN (SELECT member2_big AS \"onlyfriends\" ".
-                              "FROM friends ".
-                              "WHERE member1_big=$membig AND status='A' ".
-                              "UNION ".
-                              "SELECT member1_big AS \"onlyfriends\" ".
-                              "FROM friends ".
-                              "WHERE member2_big=$membig AND status='A' ) ";}
+                                                "FROM friends ".
+                                                "WHERE member1_big=$membig AND status='A' ".
+                                                "UNION ".
+                                                "SELECT member1_big AS \"onlyfriends\" ".
+                                                "FROM friends ".
+                                                "WHERE member2_big=$membig AND status='A' ) ";}
         
         
         if ($optParams['age']!=null) {
@@ -668,9 +670,9 @@ class Checkin extends AppModel {
         //over: > 62 miglia; 1..n: 1..n miglia 1km=0.62mi
         if ($optParams['distance']!=null) {
             
-            if ($optParams['distance']=='over') $nearby_radius='> 62'; 
+            if ($optParams['distance']=='over') $nearby_radius='distance > 62 AND '; 
                         else
-                         $nearby_radius='< '.$optParams['distance'] * .621; 
+                         $nearby_radius='distance <= '.$optParams['distance'] .' AND '; 
            
            //$distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) ".$nearby_radius." AND ";
            $distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1)) ".$nearby_radius." AND ";
@@ -679,7 +681,7 @@ class Checkin extends AppModel {
                     
                    { 
                     $distanceFilter="";
-                    $nearby_radius='< '.NEARBY_RADIUS; 
+                    $nearby_radius=''; 
                    }
        
         if ($optParams['category']!=null) $filter[]=" places.category_id=$optParams[category] ";
@@ -694,55 +696,63 @@ class Checkin extends AppModel {
         
          if ($optParams['category']!=null) {
              
-              $sql2 = 'WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,
-                                            members.surname,members.updated,members.photo_updated,
-                                            members.sex,
-              		 						members.birth_date,
-                                            date_part('."'year'".',age(now(),members.birth_date)) AS "age",                                                members.last_lonlat AS "coordinates",
-                                            ((members.last_lonlat <@> '."'$coords'".' )::numeric(10,1) * 1.6) AS "distance"
-                                            FROM public.members
-                                            JOIN checkins on members.big=checkins.member_big
-                                            JOIN events on events.big=checkins.event_big
-                                            JOIN places on places.big=events.place_big 
-                                            WHERE members.status<255 AND 
-                                                  checkins.checkout IS NULL AND 
-                                                  places.status < 255 AND 
-                                                  events.status < 255 AND '.$distanceFilter.'
-                                                  members.big NOT IN (
-                                                        SELECT to_big as "blockedbig"
-                                                        FROM member_settings
-                                                        WHERE from_big='.$membig.' AND chat_ignore=1 '.
-                                                        'UNION
-                                                        SELECT from_big as "blockedbig"
-                                                        FROM member_settings
-                                                        WHERE to_big='.$membig.' AND chat_ignore=1) AND
-                                                        (members.big <> ' . $membig . ') '.$filterString.'      
-                                            ORDER BY members.big ) '.'
-                       SELECT * FROM tblcategory
-                       ORDER BY distance ASC 
-                       LIMIT '. API_MAP_LIMIT ;
+              $sql2 = "WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,".
+                                           "members.surname,members.updated,members.photo_updated,".
+                                           "members.sex,members.birth_date,".
+                                           "date_part('year',age(now(),members.birth_date)) AS \"age\",".                                                        "members.last_lonlat AS \"coordinates\",".
+                                           "((members.last_lonlat <@> '$coords')::numeric(10,1)*1.6) AS \"distance\" ".
+                                           "FROM public.members ".
+                                           "JOIN checkins on members.big=checkins.member_big ".
+                                           "JOIN events on events.big=checkins.event_big ".
+                                           "JOIN places on places.big=events.place_big ".
+                                           "WHERE members.status<255 ".
+                                                  "AND checkins.checkout IS NULL ".
+                                                  "AND places.status < 255 ".
+                                                  "AND events.status < 255 ".
+                                                  "AND $nearby_radius ".
+                                                  "members.big NOT IN ( ".
+                                                        "SELECT to_big as \"blockedbig\" ".
+                                                        "FROM member_settings ".
+                                                        "WHERE from_big=$membig AND chat_ignore=1 ".
+                                                        "UNION ".
+                                                        "SELECT from_big as \"blockedbig\" ".
+                                                        "FROM member_settings ".
+                                                        "WHERE to_big=$membig AND chat_ignore=1) ".
+                                                        "AND (members.big <> $membig ) $filterString ".
+                                                        "ORDER BY members.big ) ".
+                     "SELECT tblcategory.*,visibletousers FROM tblcategory ".
+                     "JOIN privacy_settings ON (tblcategory.big=privacy_settings.member_big) ".
+                     "WHERE visibletousers=1 ".
+                     "LIMIT ".$BUGLIMIT; //rimettere quando ok API_MAP_LIMIT
                
              
          } else {
         
                
-        $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,".
+        $sql2 = "SELECT members.*,visibletousers FROM ".
+                "(SELECT members.big,members.name,members.surname,members.status,members.updated,".
+                "members.photo_updated,".
                 "members.sex,members.birth_date,date_part('year',age(now(),members.birth_date)) AS \"age\",".
                 "members.last_lonlat AS \"coordinates\",".
                 "((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) AS \"distance\" ".
-                "FROM public.members ". 
-                "WHERE members.status<255 AND ".$distanceFilter.                
-                " members.big NOT IN ".
+                "FROM public.members) AS members ".
+                "JOIN privacy_settings ON (members.big=privacy_settings.member_big) ". 
+                "WHERE members.status<255 AND ".//$distanceFilter  
+                $nearby_radius.
+                "visibletousers=1 ".
+                /*"AND NOW() < members.updated + interval '1 day' ".*/              
+                "AND members.big NOT IN ".
+             
                     "(SELECT to_big AS \"blockedbig\" FROM member_settings ".
                     "WHERE from_big=$membig AND chat_ignore=1 ".
                     "UNION ".
                     "SELECT from_big AS \"blockedbig\" ".
                     "FROM member_settings ".
                     "WHERE to_big=$membig AND chat_ignore=1) ".
-                    
+                  
                 "AND (members.big <> $membig ) ".$filterString." ".
-                "ORDER BY ( members.last_lonlat <@> '$coords')::numeric(10,1) ASC ".
-                "LIMIT ". API_MAP_LIMIT;
+                "ORDER BY distance ASC ".
+                "LIMIT ".$BUGLIMIT; //rimettere quando ok API_MAP_LIMIT;
                 
                 
          }      

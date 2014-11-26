@@ -23,28 +23,8 @@ class AppApiController extends Controller {
 	);
     
     
-    //nuovo filtro per bug array di array passati in post
-	function stringSanitize($array){
-        
-        	foreach($array as $key=>$val){
-        
-         	    if (is_array($val)){
-             
-             		foreach($val as $key2=>$val2){
-                 
-                		$array[$key][$key2]=pg_escape_string(strval($val2)); 
-                                  
-                        }     
-             
-             
-         } else            
-            $array[$key]=pg_escape_string(strval($val));
-               
-        }
-        return $array;
-  }
 
-	/*function stringSanitize($array){
+	function stringSanitize($array){
         
         foreach($array as $key=>$val){
         
@@ -52,7 +32,7 @@ class AppApiController extends Controller {
                
         }
         return $array;
-  }*/
+  }
 	
 	/**
 	 * Functionality to be executed on every single request before functionality in controller
@@ -75,7 +55,7 @@ class AppApiController extends Controller {
 		$this->isApi = true;
 		$this->set ( 'isApi', true );
 		
-	$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $this->stringSanitize($_POST) : $this->stringSanitize($_GET);
+		$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $this->stringSanitize($_POST) : $this->stringSanitize($_GET);
         //$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $_POST : $_GET;      
 		$this->api_additional = array ();
 		

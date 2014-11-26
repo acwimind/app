@@ -290,14 +290,8 @@ class BoardsController extends AppController {
         $this->_apiOk ( $MyBoard );
     }
 
-	function getmicrotime(){
-        list($usec, $sec) = explode(" ",microtime());
-        return ((float)$usec + (float)$sec);
-        }
-        
-        
+	
     public function api_GetBoardContent() {
-        $time_start = $this->getmicrotime();//sec iniziali
         //$this->log ( "------------you are in api_GetBoardContent--------" );
     //	debug(strcmp('2', IOS_APP_VERSION)>=0);
     //	debug(strcmp('1.0', ANDROID_APP_VERSION)>=0);
@@ -306,10 +300,8 @@ class BoardsController extends AppController {
         $offset = isset($this->api['offset']) ? $this->api['offset'] : 0;
         
         $MyPlaces = array ();
-        $time_start_1 = $this->getmicrotime();//sec iniziali
         $MyPlaces = $this->Place->getBoardPlaces ( $this->logged ['Member'] ['big'],$offset );
         
-        $utenteTime=$this->logged ['Member'] ['big'];
                 
         foreach ( $MyPlaces as $key => $val ) {
             
@@ -363,13 +355,10 @@ class BoardsController extends AppController {
             
             $MyPlaces [$key] ['ILike'] = $xlike;
         }
-          $time_end_1 = $this->getmicrotime();//sec finali
-          $time_1 = $time_end_1 - $time_start_1;//differenza in secondi
-          $this->log("TIME (getBoardPlaces -> $utenteTime) $time_1 s ");  
+        
         // recovery friends order by checkins
         
         $MyFriends = array ();
-        $time_start_2 = $this->getmicrotime();//sec iniziali
         $MyFriends = $this->Friend->getBoardFriends ( $this->logged ['Member'] ['big'], $offset );
         
         //$this->log("Myfriends ".serialize($MyFriends));
@@ -436,13 +425,9 @@ class BoardsController extends AppController {
                 $MyFriends [$key] ['ILike'] = $xlike;
             }
         }
-          $time_end_2 = $this->getmicrotime();//sec finali
-          $time_2 = $time_end_2 - $time_start_2;//differenza in secondi
-          $this->log("TIME (getBoardFriends -> $utenteTime) $time_2 s ");
         // recovery suggested friends order by ?
         
         $MySugFriends = array ();
-        $time_start_3 = $this->getmicrotime();//sec iniziali
         $MySugFriends = $this->BoardContacts ( $this->logged ['Member'] ['big']);
         //print_r($MySugFriends);
         /*
@@ -456,7 +441,7 @@ class BoardsController extends AppController {
             $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugFriends[$key]['Member']['big']);
             $photosVisibility=$privacySetting['photosvisibility'];
             
-            if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility > 0) {
+            if ($MySugFriends [$key] ['Member'] ['photo_updated'] > 0 AND $photosVisibility >= 0) {
                 $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $vals ['Member'] ['big'], $vals ['Member'] ['photo_updated'] );
             } else {
                 $sexpic = 2;
@@ -467,13 +452,10 @@ class BoardsController extends AppController {
                 $MySugFriends [$key] ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
             }
         }
-          $time_end_3 = $this->getmicrotime();//sec finali
-          $time_3 = $time_end_3 - $time_start_3;//differenza in secondi
-          $this->log("TIME (BoardContacts -> $utenteTime) $time_3 s ");
+        
         // die(debug($MySugFriends));
         
         $MySugAffinity = array ();
-        $time_start_4 = $this->getmicrotime();//sec iniziali
         $MySugAffinity = $this->Member->getAffinityMembers ( $this->logged ['Member'] ['big'],$offset );
         
         foreach($MySugAffinity as $key=>$val){
@@ -487,13 +469,13 @@ class BoardsController extends AppController {
         //print_r($MySugAffinity2);
         
             foreach ( $MySugAffinity2 as $key2 => &$val2 ) {
-         
+        /*   */ 
         $privacySetting=$this->PrivacySetting->getPrivacySetting($MySugAffinity[$key2]['Member']['big']);
-            //$photosVisibility=$privacySetting['photosvisibility'];
+            $photosVisibility=$privacySetting['photosvisibility'];
             // ADD MEMBER PHOTO
             // debug($MySugAffinity [$key] [0]['sex']);
-            if ($MySugAffinity2 [$key2]  ['photo_updated'] > 0 /*AND $photosVisibility > 0*/) {
-                $MySugAffinity2 [$key2]  ['profile_picture'] = $this->FileUrl->profile_picture ( $val2['big'], $val2['photo_updated'] );
+            if ($MySugAffinity2 [$key2]  ['photo_updated'] > 0 AND $photosVisibility > 0) {
+                $MySugAffinity2 [$key2]  ['profile_picture'] = $this->FileUrl->profile_picture ( $val [0] ['big'], $val [0] ['photo_updated'] );
             } else {
                 $sexpic = 2;
                 if ($MySugAffinity2 [$key2] ['sex'] == 'f') {
@@ -512,9 +494,7 @@ class BoardsController extends AppController {
         // debug($MySugAffinity);
         
         // recovery members members order by checkins
-          $time_end_4 = $this->getmicrotime();//sec finali
-          $time_4 = $time_end_4 - $time_start_4;//differenza in secondi
-          $this->log("TIME (getAffinityMembers -> $utenteTime) $time_4 s ");
+        
         $MyAds = array ();
         $MyAds = $this->Advert->getBoardAds ( $this->logged ['Member'] ['big'] );
         //print_r($MyAds);
@@ -600,10 +580,6 @@ class BoardsController extends AppController {
         // $MyBoard ["AffinityMembers"] = $MyBoardAff[0];
         
         $this->_apiOk ( $MyBoard );
-        $time_end = $this->getmicrotime();//sec finali
-        $time = $time_end - $time_start;//differenza in secondi
-        $this->log("TIME (TOTgetBoardContent -> $utenteTime) $time s");  
-
     }
     
     
@@ -887,8 +863,7 @@ class BoardsController extends AppController {
                                               
               $PrivacyFotoAmico = $this->PrivacySetting->getPrivacySettings ( $val[0]['big'] );
               $photosVisibility = $PrivacyFotoAmico[0]['PrivacySetting']['photosvisibility'];
-              $amicoLogged=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$val[0]['big'],'A');                  
-              $Amici[$key][0]['photosvisibility']=$photosVisibility;
+              $amicoLogged=$this->Friend->FriendsRelationship($this->logged['Member']['big'],$val[0]['big'],'A');                  $Amici[$key][0]['photosvisibility']=$photosVisibility;
                           
             if (($photosVisibility==2 AND count($amicoLogged)>0) OR $photosVisibility==1) {
                 
@@ -919,37 +894,6 @@ class BoardsController extends AppController {
            
            }                         
                    
-        } else {//logged e MyBig sono amici quindi per ogni amico di MyBig visualizzo la foto del profilo se presente
-                   
-                     foreach ($Amici as $key=>$val){
-                          
-                      $amico=$this->Friend->FriendsRelationship($val[0]['big'],$this->logged['Member']['big'],'A');
-                      
-                      if ($amico==0){//Se gli amici sul diario di un mio amico non sono anche amici miei allora mi vengono visualizzati con privacy cognome
-                          
-                            $cognome=$val[0]['surname'];
-                            
-                            $Amici[$key][0]['surname']=strtoupper($cognome{0}.".");
-                                               
-                      }
-                      
-                         
-                    if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated'] > 0 ) {
-                                      
-                     $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated']);
-           } 
-            else 
-                  { 
-                    $sexpic = 2;
-                    if (isset($val[0]['sex']) AND $val[0]['sex'] == 'f') {
-                                    $sexpic = 3;
-                                }
-                
-                $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-            }   
-            
-            
-            }  
         }  
         }
             else {//accesso al mio diario quindi non necessaria privacy
@@ -958,7 +902,7 @@ class BoardsController extends AppController {
                     
                     foreach ($Amici as $key=>$val){
                         
-                       if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated']>0 )
+                       if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated']>0 AND $photoVisibility > 0)
                        {
                           $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ($val[0]['big'], $val[0]['photo_updated'] );
             } else {
@@ -1156,16 +1100,13 @@ class BoardsController extends AppController {
 	 * get radar content for logged user
 	 */
 	public function api_GetRadarContent() {
-         $time_start = $this->getmicrotime();//sec iniziali
 		$MyPlaces = array ();
         //prende i dati del member loggato dalla tabella Members
         $IPmember = ($this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] ));
         //Riduce profondità array. Imember contiene tutti i dati del member
         $Imember = $IPmember ['Member'];
-        $utenteTime=$this->logged ['Member'] ['big'];
         //Memorizza in $coords l'ultima posizione in tabella 
         $coords = $Imember ['last_lonlat'];
-        $time_start_1 = $this->getmicrotime();//sec iniziali
         //Prende i Places ordinati per distanza crescente da coords
         $MyPlaces = $this->Place->getRadarPlaces ( $coords );
 		
@@ -1200,14 +1141,12 @@ class BoardsController extends AppController {
 		}
 		
 		// recovery friends order by checkins
-		  $time_end_1 = $this->getmicrotime();//sec finali
-          $time_1 = $time_end_1 - $time_start_1;//differenza in secondi
-          $this->log("TIME (getRadarPlaces -> $utenteTime) $time_1 s ");
+		
 		$MyFriends = array ();
 		$MyFriendsClean = array ();
 		//$MyFriends = $this->Member->getRadarMembers ( $this->logged ['Member'] ['big'] );
 		$serviceList=explode(',',ID_RADAR_VISIBILITY_PRODUCTS);
-        $time_start_2 = $this->getmicrotime();//sec iniziali
+        
         $MyFriends = $this->Member->getRadarPrivacyMembers ( $this->logged ['Member'] ['big'],$serviceList,true);
         
 		foreach ( $MyFriends as $key => $val ) {
@@ -1262,9 +1201,7 @@ class BoardsController extends AppController {
 		}
 		$MyFriends=$MyFriendsClean;
 		// die(debug($MySugFriends));
-		$time_end_2 = $this->getmicrotime();//sec finali
-          $time_2 = $time_end_2 - $time_start_2;//differenza in secondi
-          $this->log("TIME (Radar -> MyFriends -> $utenteTime) $time_1 s ");
+		
 		$MyBoard = array ();
 		
 		for($i = 0; $i <= 10; $i ++) {
@@ -1279,10 +1216,6 @@ class BoardsController extends AppController {
 		}
 		
 		$this->_apiOk ( $MyBoard );
-        
-        $time_end = $this->getmicrotime();//sec finali
-        $time = $time_end - $time_start;//differenza in secondi
-        $this->log("TIME (getRadarContent) $time s");  
 	}
 	
 	/**
@@ -1718,7 +1651,7 @@ class BoardsController extends AppController {
 		//$this->log ( "------------you are in multipleShortQueries--------" );
 		$maxElem = $maxPerQuery;
 		$smallMembersMails = $membersMails;
-		$totalDataByEmails = array();
+		$totalDataByEmails = array ();
 		$start = 0;
 		$stop = 0;
 		$mv = 0;
@@ -1727,14 +1660,15 @@ class BoardsController extends AppController {
 		
 		while ( count ( $smallMembersMails ) > 0 ) {
 			
-			//print_r($smallMembersMails);
+			// print_r($smallMembersMails);
 			$params = array (
 					'conditions' => array (
 							array (
 									'Member.email' => $smallMembersMails 
 							) 
-					),
-					'recursive' => -1,
+					)
+					,
+					'recursive' => - 1,
 					'fields' => array (
 							'Member.big',
                             //'Privacy.member_big',
@@ -1777,17 +1711,13 @@ class BoardsController extends AppController {
 			);
 			
 			$dataByEmails = $this->Member->find ( 'all', $params );
-            //print_r($dataByEmails);
-            //print("----------------");
 			$totalDataByEmails = $this->mergeArr ( $dataByEmails, $totalDataByEmails );
-			//print_r($totalDataByEmails);
-            //print("****************");
+			
 			$mv += 1;
 			$stop = $maxElem;
 			$start = 0 + $stop * $mv;
 			
 			$smallMembersMails = array_slice ( $membersMails, $start, $stop );
-            
 		}
 		
 		$dataByEmails = $totalDataByEmails;
@@ -1844,8 +1774,7 @@ class BoardsController extends AppController {
 		$dataByPhones = $totalDataByPhones;
 		
 		$data = $this->mergeArr ( $dataByEmails, $dataByPhones );
-		//print_r($dataByEmails);
-        //print_r($dataByPhones);
+		
 		//$this->log ( "------------multipleShortQueries (data)--" );
 		//$this->log ( serialize ( $data ) );
 		//$this->log ( "-----------------------------------------" );
@@ -2203,27 +2132,8 @@ class BoardsController extends AppController {
 		
         $membersMails = array_unique ( $membersMails );
 		$membersPhones = array_unique ( $membersPhones );
-
+		
 		$data = $this->multipleShortQueries ( $membersMails, $membersPhones, 50 );
-       
-        $index = array($ContactBIG);//previene che l'utente sia consigliato a se stesso nel caso avesse i propri
-                                    //numeri in rubrica
-                                    
-        //Questo foreach elimina i doppioni che si verificano nel caso in cui
-        //la ricerca contatti vada a buon fine per email e numero di telefono
-        foreach ($data as $key=>$val){
-            
-            if (!in_array($val['Member']['big'],$index)){
-                
-                $index[]=$val['Member']['big'];
-                
-                $dataUnique[]=$val;
-                
-            }
-                      
-        }
-        
-        $data=$dataUnique; 
 		$dbo = $this->Member->getDatasource ();
 		$logs = $dbo->getLog ();
 		$lastLog = end ( $logs ['log'] );
@@ -2254,12 +2164,7 @@ class BoardsController extends AppController {
 			}
 		}
 		
-        //ordina l'array per nome
-        usort( $AppoMem, 'BoardsController::multiFieldSortArray' );
-        
-        //print_r($AppoMem);
-		 
-        /*
+		/*
 		 *
 		 */
 		//$this->log ( "------------BoardsController--------------" );
@@ -2268,9 +2173,4 @@ class BoardsController extends AppController {
 		//$this->log ( "-----------------------------------------" );
 		return $AppoMem;
 	}
-    
-     public static function multiFieldSortArray($x, $y) { // ordina per nome
-                
-            return ($x ['Member']['name'] > $y ['Member']['name']) ? + 1 : - 1;
-    }
 }

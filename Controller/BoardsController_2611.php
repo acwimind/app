@@ -919,37 +919,6 @@ class BoardsController extends AppController {
            
            }                         
                    
-        } else {//logged e MyBig sono amici quindi per ogni amico di MyBig visualizzo la foto del profilo se presente
-                   
-                     foreach ($Amici as $key=>$val){
-                          
-                      $amico=$this->Friend->FriendsRelationship($val[0]['big'],$this->logged['Member']['big'],'A');
-                      
-                      if ($amico==0){//Se gli amici sul diario di un mio amico non sono anche amici miei allora mi vengono visualizzati con privacy cognome
-                          
-                            $cognome=$val[0]['surname'];
-                            
-                            $Amici[$key][0]['surname']=strtoupper($cognome{0}.".");
-                                               
-                      }
-                      
-                         
-                    if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated'] > 0 ) {
-                                      
-                     $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $val[0]['big'], $val[0]['photo_updated']);
-           } 
-            else 
-                  { 
-                    $sexpic = 2;
-                    if (isset($val[0]['sex']) AND $val[0]['sex'] == 'f') {
-                                    $sexpic = 3;
-                                }
-                
-                $Amici[$key][0]['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
-            }   
-            
-            
-            }  
         }  
         }
             else {//accesso al mio diario quindi non necessaria privacy

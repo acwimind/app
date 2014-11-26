@@ -96,13 +96,20 @@ class FriendsController extends AppController {
 			}
 			unset ( $xami );
 		}
-		
+		//ordina l'array per nome
+        usort( $xresponse, 'FriendsController::multiFieldSortArray' );
 		
 		// reset counter
 		$this->Friend->setReadFriendRequest($idMember);
 		
 		$this->_apiOk ( $xresponse );
 	}
+    
+    public static function multiFieldSortArray($x, $y) { // ordina per nome
+                
+            return ($x ['name'] > $y ['name']) ? + 1 : - 1;
+    }
+    
 	public function _add($placeBig) {
 	}
 	public function admin_edit($id = 0) {

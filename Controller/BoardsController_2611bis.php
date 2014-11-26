@@ -922,17 +922,6 @@ class BoardsController extends AppController {
         } else {//logged e MyBig sono amici quindi per ogni amico di MyBig visualizzo la foto del profilo se presente
                    
                      foreach ($Amici as $key=>$val){
-                          
-                      $amico=$this->Friend->FriendsRelationship($val[0]['big'],$this->logged['Member']['big'],'A');
-                      
-                      if ($amico==0){//Se gli amici sul diario di un mio amico non sono anche amici miei allora mi vengono visualizzati con privacy cognome
-                          
-                            $cognome=$val[0]['surname'];
-                            
-                            $Amici[$key][0]['surname']=strtoupper($cognome{0}.".");
-                                               
-                      }
-                      
                          
                     if (isset($val[0]['photo_updated']) AND $val[0]['photo_updated'] > 0 ) {
                                       

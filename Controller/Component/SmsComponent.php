@@ -135,7 +135,7 @@ class SmsComponent extends Component {
 		// Invio singolo
 		
         
-		$result=$this->_skebbyGatewaySendSMS( 'haamble','haamble2014', $recipients, $msg, SMS_TYPE_CLASSIC, '', 'HAAMBLE' );
+		$result=$this->_skebbyGatewaySendSMS( 'haamble','haamble2014', $recipients, $msg, SMS_TYPE_CLASSIC_PLUS, '', 'HAAMBLE' );
  		return $result;
 	}
 	// Invio SMS CLASSIC con mittente personalizzato di tipo numerico

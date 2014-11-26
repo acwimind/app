@@ -13,8 +13,7 @@ class MembersController extends AppController {
 			'Place',
 			'Category',
 			'ExtraInfos',
-			'Wallet',
-            'MemberSetting' 
+			'Wallet' 
 	);
     
     var $components = array('MailchimpApi');
@@ -115,25 +114,6 @@ class MembersController extends AppController {
 		
 		return $this->redirect ( '/' );
 	}
-	
-	
-
-	private function api_messa() {
-		$MySugAffinityAll = $this->Member->find ( 'all', array ( // find user in our DB
-				'recursive' => - 1
-		) );
-		
-		foreach ( $MySugAffinityAll as $key => &$val ) {
-				
-			// check if any friendship exists yet
-			// debug($val[0] ['big']);
-			$this->Wallet->sendChatNotification($val [0] ['big'],'Ciao, abbiamo pubblicato un aggiornamento per questa app, se stai sperimentando problemi puoi uscire (impostazioni->logout) e rientrare (login) per sincronizzare nuovamente il tuo account.Grazie');
-			
-		}
-		
-	}
-	
-	
 	private function _fb_login_connect($fb_user = array()) {
 		$user = $this->Member->find ( 'first', array ( // find user in our DB
 				'conditions' => array (
@@ -328,7 +308,6 @@ class MembersController extends AppController {
 		}
 	}
 	public function edit($register = false) {
-		
 		$this->set ( 'register', $register );
 		
 		if ($this->request->is ( 'put' )) {
@@ -400,8 +379,6 @@ class MembersController extends AppController {
 		}
 	}
 	public function forgot_password() {
-		
-		$this->layout='api';
 		if ($this->logged) {
 			
 			$this->Session->setFlash ( __ ( 'You are already logged in. You can change your password here.' ), 'flash/success' );
@@ -443,18 +420,11 @@ class MembersController extends AppController {
 			
 			$this->Session->setFlash ( __ ( 'Please check your e-mail for further instruction. (Make sure to check your spam folder as well.)' ), 'flash/success' );
 			$this->redirect ( array (
-					'action' => 'postreq' 
+					'action' => 'login' 
 			) );
 		}
 	}
-	
-	public function postreq() {
-		$this->layout='api';
-		$this->render ( 'postreq' );
-	}
-	
 	public function change_password($member_big = 0, $token = '') {
-		$this->layout='api';
 		$data = $this->Member->PasswordResetToken->find ( 'first', array (
 				'conditions' => array (
 						'PasswordResetToken.token !=' => null,
@@ -876,7 +846,7 @@ class MembersController extends AppController {
 		$this->PrivacySetting->CreateSettings ( $member ['big'] );
 		// give some credit
 		$this->Wallet->addAmount ( $member ['big'], '50', 'Welcome to Haamble' );
-		$this->Wallet->sendChatNotification($member ['big'], 'Benvenuto su Haamble');
+		
 		$this->_apiOk ( $response );
 	}
 	
@@ -1639,7 +1609,6 @@ class MembersController extends AppController {
 		
 		$memBig = $this->api ['user_big'];
 		
-        
 		// Get member data
 		unbindAllBut ( $this->Member );
 		$params = array (
@@ -1661,7 +1630,7 @@ class MembersController extends AppController {
 		
 		$privacySettings = $this->PrivacySetting->getPrivacySettings ( $memBig );
 		$photosVisibility = $privacySettings [0] ['PrivacySetting'] ['photosvisibility'];
-		       
+		
 		$data = $this->Member->find ( 'first', $params );
 		$xisFriend = 0;
 		$xfriend = $this->Friend->FriendsAllRelationship ( $this->api ['user_big'], $this->api ['member_big'] );
@@ -1673,36 +1642,7 @@ class MembersController extends AppController {
 		
 		// debug($data);
 		// Get checkin or join
-        
-        $checkinsVisibility=$privacySettings[0]['PrivacySetting']['checkinsvisibility'];
-       
-        switch ($checkinsVisibility){
-            
-            case 0 : //visibile a nessuno
-                    $checkin = array();
-                    break;
-            
-            case 1 : // visibile a tutti
-                    $checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
-                                    
-                    break;
-            
-            case 2 : //visibile solo ad amici. Verificare che non sia amico poi bloccato
-                     //perchè il blocco non tocca lo status di amico                    
-                   $amico=$this->Friend->FriendsRelationship($memBig, $this->api ['member_big'],'A');
-                   $bloccato=$this->MemberSetting->isOnIgnoreListDual($memBig,$this->api['member_big']);
-                    if (count($amico)>0 AND !$bloccato){//sono amici non bloccati quindi ok visualizzazione Places
-                        
-                         $checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
-                                   
-                    } else {//non sono amici oppure lo erano e ora sono bloccati quindi no visualizzazione Places
-                        
-                             $checkin = array();
-                        
-                    }
-        }
-		
-        //$checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
+		$checkin = $this->Member->Checkin->getCheckedinEventFor ( $memBig, true );
 		// debug($checkin);
 		if (! empty ( $checkin ) && $checkin ['Event'] ['type'] == 2 && $checkin ['Event'] ['status'] == 0) {
 			

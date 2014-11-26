@@ -66,7 +66,7 @@ class Friend extends AppModel {
                         'SELECT DISTINCT ON(events.place_big) place_big, checkins.member_big,checkins.created,checkins.big '.
                         'FROM public.checkins,public.events '.
                         'WHERE checkins.event_big = events.big AND checkins.member_big IN ('. $FriendsID . ') '.
-                        'ORDER BY place_big '.
+                        //'ORDER BY place_big '.
                         ') AS xxx '.
                      'ORDER BY created DESC '.            
                      'LIMIT 20';
@@ -532,7 +532,10 @@ class Friend extends AppModel {
 	
 	// return accepted friens
 	public function findFriends($memberBig,$offset=0) {
-		$type = 'all';
+		
+        $offset=$offset*API_CHAT_PER_PAGE;
+        
+        $type = 'all';
 		$params = array (
 				'conditions' => array (
 						'AND' => array (
@@ -545,7 +548,7 @@ class Friend extends AppModel {
 								) 
 						) 
 				),
-                'limit' => 10,
+                'limit' => API_CHAT_PER_PAGE,
                 'offset' => $offset,
                 'order' => array('Friend.big ASC') 
 		);
