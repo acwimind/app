@@ -56,8 +56,7 @@ class ApnsPHP_Push extends ApnsPHP_Abstract
 
 	protected $_aServiceURLs = array(
 		'ssl://gateway.push.apple.com:2195', // Production environment
-			'ssl://gateway.push.apple.com:2195'
-//TODO: rimetterlo??		'ssl://gateway.sandbox.push.apple.com:2195' // Sandbox environment
+		'ssl://gateway.sandbox.push.apple.com:2195' // Sandbox environment
 	); /**< @type array Service URLs environments. */
 
 	protected $_aMessageQueue = array(); /**< @type array Message queue. */
@@ -93,13 +92,11 @@ class ApnsPHP_Push extends ApnsPHP_Abstract
 	 */
 	public function add(ApnsPHP_Message $message)
 	{
-		//die(debug($message));
 		$sMessagePayload = $message->getPayload();
 		$nRecipients = $message->getRecipientsNumber();
 
 		$nMessageQueueLen = count($this->_aMessageQueue);
 		for ($i = 0; $i < $nRecipients; $i++) {
-		
 			$nMessageID = $nMessageQueueLen + $i + 1;
 			$this->_aMessageQueue[$nMessageID] = array(
 				'MESSAGE' => $message,
@@ -140,10 +137,7 @@ class ApnsPHP_Push extends ApnsPHP_Abstract
 			$this->_log("INFO: Sending messages queue, run #{$nRun}: $nMessages message(s) left in queue.");
 
 			$bError = false;
-	
 			foreach($this->_aMessageQueue as $k => &$aMessage) {
-			
-				
 				if (function_exists('pcntl_signal_dispatch')) {
 					pcntl_signal_dispatch();
 				}
@@ -176,7 +170,7 @@ class ApnsPHP_Push extends ApnsPHP_Abstract
 
 				$nLen = strlen($aMessage['BINARY_NOTIFICATION']);
 				$this->_log("STATUS: Sending message ID {$k} {$sCustomIdentifier} (" . ($nErrors + 1) . "/{$this->_nSendRetryTimes}): {$nLen} bytes.");
-		
+
 				$aErrorMessage = null;
 				if ($nLen !== ($nWritten = (int)@fwrite($this->_hSocket, $aMessage['BINARY_NOTIFICATION']))) {
 					$aErrorMessage = array(

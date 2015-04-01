@@ -28,19 +28,8 @@ echo $this->AdvForm->inputs(array(
 	'Member.address_region' => array('label' => __('Region'), 'required' => false),
 	'Member.address_country' => array('label' => __('Country'), 'required' => false),
 	'Member.address_zip' => array('label' => __('ZIP Code'), 'required' => false, 'autocomplete' => 'off'),
-		'Member.address_zip' => array('label' => __('ZIP Code'), 'required' => false, 'autocomplete' => 'off'),
 ));
-?>
 
-<div >
-<label>SMS Verification code:</label>
-<div >
-<?php echo $this->Form->input('xme', array(
-            'div'=>false, 'label'=>false)); ?>
-    </div>
-</div>
-
-<?php
 $img = '';
 if (isset($this->data['Member']['big']) && isset($this->data['Member']['photo_updated'])) {
 	$img = $this->Html->image(

@@ -33,7 +33,10 @@ class ChatMessagesController extends AppController {
 		$offset = (isset ( $this->api ['offset'] )) ? $this->api ['offset'] : 0;
 		$refresh = (isset ( $this->api ['refresh'] ) && $this->api ['refresh'] == 'true') ? true : false;
 		
-		$result = $this->ChatMessage->findConversations ( $memBig, $partnerBig, $olderThan, $newerThan, $offset, $refresh );
+        $result = $this->ChatMessage->findConversationsNew( $memBig, $partnerBig, $olderThan, $newerThan, $offset, $refresh );
+        
+        //$result = $this->ChatMessage->findConversations ( $memBig, $partnerBig, $olderThan, $newerThan, $offset, $refresh );
+        
 		$recipient=$result['members']['Recipient'];
         $sender=$result['members']['Sender'];
         //print_r($result);
@@ -43,11 +46,13 @@ class ChatMessagesController extends AppController {
                 
                 if ($sender['big']==$memBig){//se io sono sender oscura il recipient e viceversa
                 
-                $result['members']['Recipient']['surname'] = strtoupper(substr( $recipient['surname'], 0, 1 )) . '.';
-                
+              $result['members']['Recipient']['surname'] = (strlen($recipient['surname'])>1) ? strtoupper(mb_substr($recipient['surname'], 0, 1 )) . '.' : '';
+               $this->log("RECIPIENT SURNAME ".strlen($recipient['surname'])); 
                 } else {
+                
                     
-                $result['members']['Sender']['surname'] = strtoupper(substr( $sender['surname'], 0, 1 )) . '.';
+              $result['members']['Sender']['surname'] = (strlen($sender['surname'])>1) ? strtoupper(mb_substr($sender['surname'], 0, 1 )) . '.' : '';
+              $this->log("SENDER SURNAME ".strlen($sender['surname'])); 
             }
             } 
         
@@ -115,7 +120,7 @@ class ChatMessagesController extends AppController {
 		//$this->Util->transform_name ( $result );
 		$this->_apiOk ( $result );
 	}
-	public function api_conversations() {
+	public function api_conversationsOLD() {
 		$memBig = $this->logged ['Member'] ['big'];
 		$offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] : 0;
 		
@@ -126,16 +131,6 @@ class ChatMessagesController extends AppController {
 		// debug($result);
 		foreach ( $conversations as $key=>&$val ) {
         
-		//	if (! $this->MemberSetting->isOnIgnoreList($val ['Sender'] ['big'],$val ['Recipient'] ['big']))
-		//	{
-				
-		//		debug('not in');
-		//	}
-		//	else
-		//	{
-		//		debug('in');
-		//	}
-				
 			
 			// Sender
             $SenderPrivacySettings = $this->PrivacySetting->getPrivacySettings( $val['Sender']['big'] );
@@ -181,19 +176,21 @@ class ChatMessagesController extends AppController {
 				$val ['Sender'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
 				//$xstatus = $xfriend [0] ['Friend'] ['status'];
 			}
-			if ($xfriend[0]['Friend']['status'] != 'A') {//se non sono amici oscura il nome del corrispondente in chat
+			if ($xfriend[0]['Friend']['status'] != 'A' OR count($xfriend)==0) {//se non sono amici oscura il nome del corrispondente in chat
                 
                 if ($val['Sender']['big']==$memBig){//se io sono sender oscura il recipient e viceversa
                 
-                 $val['Recipient'] ['surname'] = strtoupper(substr( $val['Recipient'] ['surname'], 0, 1 )) . '.';
+                 $val['Recipient']['surname'] = (strlen($val['Recipient']['surname'])>1) ? strtoupper(mb_substr($val['Recipient']['surname'], 0, 1 )) . '.' :'';
+                 //$val['Sender'] ['surname'] = strtoupper(substr( $val['Sender'] ['surname'], 0, 1 )) . '.';
                 
                 } else {
                     
-                 $val['Sender'] ['surname'] = strtoupper(substr( $val['Sender'] ['surname'], 0, 1 )) . '.';
+                 $val['Sender']['surname'] = (strlen($val['Sender'] ['surname'])>1) ? strtoupper(mb_substr($val['Sender'] ['surname'], 0, 1 )) . '.' : '';
+                 //$val['Recipient'] ['surname'] = strtoupper(substr( $val['Recipient'] ['surname'], 0, 1 )) . '.';
             }
             }
 			
-			$memBig = $this->logged ['Member'] ['big'];
+			//$memBig = $this->logged ['Member'] ['big'];
 			// $newerThan = (isset($this->api['newer_than'])) ? date('Y-m-d H:i:s', $this->api['newer_than']) : null;
 			// debug($val['MemberRel']['id']);
 			$params = array (
@@ -202,7 +199,7 @@ class ChatMessagesController extends AppController {
 							'ChatMessage.to_big' => $memBig,
 							'ChatMessage.rel_id' => $val ['MemberRel'] ['id'],
 							'ChatMessage.read ' => 0,
-							'ChatMessage.status != ' => 255 
+							'ChatMessage.to_status < ' => 255 
 					) 
 			);
 			
@@ -213,13 +210,135 @@ class ChatMessagesController extends AppController {
 		$result ['conversations'] = $conversations;
 		
 		if (empty ( $result )) {
-			$this->_apiEr ( __("Error occured. No conversations found."), __("You haven't chat with anyone yet.") );
+			$this->_apiEr ( __("Si è verificato un errore. Nessuna conversazione trovata."), __("Non hai ancora chattato con qualcuno.") );
 		} else {
 			//$this->Util->transform_name ( $result );
             
 			$this->_apiOk ( $result );
 		}
 	}
+    
+    
+    public function api_conversations() {
+        $memBig = $this->logged ['Member'] ['big'];
+        $offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] : 0;
+        
+        $result = $this->ChatMessage->MemberRel->findConversationsNew ( $memBig, $offset, true);
+        $conversations = $result ['conversations'];
+       
+        //print_r($conversations);
+ //       debug($result);
+        
+        foreach ( $conversations as $key=>&$val ) {
+            
+            $textmsg=$val['ChatMessage']['text'];          
+            
+            $val['ChatMessage']['text']=stripslashes($textmsg);
+
+        //    $val['ChatMessage']['photo_updated'] =$val['ChatMessage']['photo_updated'];            
+            
+            //$val['ChatMessage']['image']= $this->FileUrl->chatmsg_picture ( $val ['ChatMessage'] ['msg_id'] );
+            
+            
+            if ($val ['ChatMessage'] ['photo_updated'] > 0 ) {
+           	debug( "qui");
+            
+                $val['ChatMessage']['image']= $this->FileUrl->chatmsg_picture ( $val ['ChatMessage'] ['id'] );
+            		
+          
+
+            }
+            
+            
+            
+            
+            // Sender
+            //$SenderPhotosVisibility = $val['Sender']['photosvisibility'];
+           
+            if ($val ['Sender'] ['photo_updated'] > 0 ) {
+                $val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Sender'] ['big'], $val ['Sender'] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($val ['Sender'] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $val ['Sender'] ['photo'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+            unset ( $val ['Sender'] ['photo_updated'] );
+            
+            // Recipient
+            //$RecipientPhotosVisibility = $val['Recipient']['photosvisibility'];
+                        
+            if ($val ['Recipient'] ['photo_updated'] > 0 ) {
+                $val ['Recipient'] ['photo'] = $this->FileUrl->profile_picture ( $val ['Recipient'] ['big'], $val ['Recipient'] ['photo_updated'] );
+            } else {
+                $sexpic = 2;
+                if ($val ['Recipient'] ['sex'] == 'f') {
+                    $sexpic = 3;
+                }
+                
+                $val ['Recipient'] ['photo'] = $this->FileUrl->profile_picture ( $sexpic );
+            }
+            unset ( $val ['Recipient'] ['photo_updated'] );
+            
+            
+            
+            $xfriend = $val['MemberRel']['status'];
+            
+            $xstatus = 'NO';
+            if ($xfriend != NULL) {
+             
+                $val ['Recipient'] ['friendstatus'] = $xfriend;
+                $val ['Sender'] ['friendstatus'] = $xfriend;
+               
+            }
+            if ($xfriend != 'A' OR $xfriend==NULL) {//se non sono amici oscura il nome del corrispondente in chat
+                
+                if ($val['Sender']['big']==$memBig){//se io sono sender oscura il recipient e viceversa
+                
+                 $val['Recipient']['surname'] = (strlen($val['Recipient']['surname'])>1) ? strtoupper(mb_substr($val['Recipient']['surname'], 0, 1 )) . '.' :'';
+                 //$val['Sender'] ['surname'] = strtoupper(substr( $val['Sender'] ['surname'], 0, 1 )) . '.';
+                
+                } else {
+                    
+                 $val['Sender']['surname'] = (strlen($val['Sender'] ['surname'])>1) ? strtoupper(mb_substr($val['Sender'] ['surname'], 0, 1 )) . '.' : '';
+                 //$val['Recipient'] ['surname'] = strtoupper(substr( $val['Recipient'] ['surname'], 0, 1 )) . '.';
+            }
+            }
+            
+                        
+            //$memBig = $this->logged ['Member'] ['big'];
+            // $newerThan = (isset($this->api['newer_than'])) ? date('Y-m-d H:i:s', $this->api['newer_than']) : null;
+            // debug($val['MemberRel']['id']);
+            $params = array (
+                    
+                    'conditions' => array (
+                            'ChatMessage.to_big' => $memBig,
+                            'ChatMessage.rel_id' => $val ['MemberRel'] ['id'],
+                            'ChatMessage.read ' => 0,
+                            'ChatMessage.status != ' => 255 
+                    ) 
+            );
+            
+            $resultNR = $this->ChatMessage->find ( 'count', $params );
+            // debug($resultNR);
+            $val ['CountMessagesNotRead'] = $resultNR;
+        }  //chiude foreach
+        
+        $result ['conversations'] = $conversations;
+        
+        if (empty ( $result )) {
+            $this->_apiEr ( __("Si è verificato un errore. Nessuna conversazione trovata."), __("Non hai ancora chattato con qualcuno.") );
+        } else {
+            //$this->Util->transform_name ( $result );
+            
+            $this->_apiOk ( $result );
+        }
+    }
+    
+    
+    
 	public function api_remove() {
 		$this->_checkVars ( array (
 				'member_big',
@@ -236,7 +355,7 @@ class ChatMessagesController extends AppController {
             
 			$this->_apiOk ();
 		} else {
-			$this->_apiEr ( __('Error occured. Conversation not removed.') );
+			$this->_apiEr ( __('Errore. Conversazione non cancellata.') );
 		}
 	}
     
@@ -257,7 +376,7 @@ class ChatMessagesController extends AppController {
             $this->Member->rank($memBig,1); //rank +1 cancella msg chat
             $this->_apiOk ();
         } else {
-            $this->_apiEr ( __('Error occured. Message not removed.') );
+            $this->_apiEr ( __('Errore. Messaggio non cancellato.') );
         }
     }
     
@@ -296,9 +415,7 @@ class ChatMessagesController extends AppController {
 		// Check if user is not on partners ignore list
 		$isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreList ( $partnerBig, $memBig );
 		if ($isIgnored) {
-			$this->_apiEr ( __('Cannot send chat message. User is blocked by the second party.'), false, false, array (
-					'error_code' => '510' 
-			) );
+			$this->_apiEr ( __('Non posso inviare il messaggio. Il destinatario ha bloccato l\'utente'), false, false, null, '510');
 		}
 		
 		// Find valid checkin for member and partner
@@ -317,7 +434,7 @@ class ChatMessagesController extends AppController {
 		$frieRel = $this->Friend->FriendsRelationship ( $memBig, $partnerBig, 'A' );
 		
 		if (empty ( $checkinBig ) && empty ( $memRel ) && empty ( $frieRel )) {
-			$this->_apiEr ( __('Error occured. Users are not on the same event and no relationship found.') );
+			$this->_apiEr ( __('Errore. Gli utenti non sono nello stesso evento e non è stata trovata una relazione.') );
 		} elseif (empty ( $memRel )) {
 			// Create a new one
 			$relationship = array (
@@ -329,7 +446,7 @@ class ChatMessagesController extends AppController {
 				$memRel = $this->ChatMessage->MemberRel->save ();
 				$relId = $memRel ['MemberRel'] ['id'];
 			} catch ( Exception $e ) {
-				$this->_apiEr ( __('Error occured. Relationship not created.') );
+				$this->_apiEr ( __('Errore. Relazione non creata.') );
 			}
 		} else {
 			$relId = $memRel ['MemberRel'] ['id'];
@@ -416,7 +533,7 @@ class ChatMessagesController extends AppController {
 				}
 			}
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __('Error occured. Message not created.') );
+			$this->_apiEr ( __('Errore. Messaggio non creato.') );
 		}
 		
 		$this->ChatCache->write ( $partnerBig . '_last_msg', strtotime ( $chatMsg ['ChatMessage'] ['created'] ) );
@@ -468,7 +585,7 @@ class ChatMessagesController extends AppController {
 			$this->_apiOk ( $chatMsg );
 			$this->_apiOk ( $newMsgs );
 		} else {
-			$this->_apiEr ( __('Error occured. Message not sent.') );
+			$this->_apiEr ( __('Errore. Messaggio non inviato.') );
 		}
 	}
     
@@ -478,16 +595,20 @@ class ChatMessagesController extends AppController {
         /*
          * Needed values: rel_id - based on member_big and partner_big find a member_rel record. If does not exists, create it from_big - the sender of the message,member_big to_big - recipient of the message, partner_big checkin_big - (optional) text - message/text - text of the message from_status - sender status (joined/checkedin) based on current checkin of member field physical to_status - recipient status (joined/checkedin) based on current checkin of member field physical created - now() status - 1 Push notifications will be part of this call. $pollo=$this->api['photo']; Logger::Info($this->api[$pollo]);
          */
+        $this->log("******************DEBUG chat_messages/send************************"); 
+        $parametri=print_r($this->api,true);
+        $this->log("Parametri ".$parametri);
         $this->_checkVars ( array (
                 'partner_big',
                 'text' 
         ), array (
                 'rel_id',
                 'newer_than',
-                'photo' 
+                'photo',
+        		'msgclientid' 
         ) );
         
-              
+            
         $memBig = $this->logged ['Member'] ['big'];
         $partnerBig = $this->api ['partner_big'];
         $text = $this->api ['text'];
@@ -495,12 +616,19 @@ class ChatMessagesController extends AppController {
         $checkinBig = null;
         $xfoto = null;
         $pollo=$this->api['photo']; 
+        $msgclientid=$this->api['msgclientid'];
         
         //$this->log("api photo = ". $pollo); 
         // $fromStatus = CHAT_NO_JOIN;
         // $toStatus = CHAT_NO_JOIN;
-        
+        $android=false;
         $newerThan = (isset ( $this->api ['newer_than'] )) ? $this->api ['newer_than'] : null;
+        
+        if ($newerThan!=null OR $this->api['platform_id']==1){
+           //chiamata da Android 
+            $android=true;
+            
+        } 
         
         /*
          * Check if user is not in partners ignore list Find checkins -> because of status and checkin big Find ,potentially create member_rel If users are not checked in at the same place, they have to have a memberRel record (chat started based on previous conversation) Save to DB
@@ -509,9 +637,7 @@ class ChatMessagesController extends AppController {
         // Check if user is not on partners ignore list
         $isIgnored = $this->ChatMessage->Sender->MemberSetting->isOnIgnoreListDual ( $partnerBig, $memBig );
         if ($isIgnored) {
-            $this->_apiEr ( __('Cannot send chat message. User is blocked by the second party.'), false, false, array (
-                    'error_code' => '510' 
-            ) );
+            $this->_apiEr ( __('Non posso inviare il messaggio. Il destinatario ha bloccato l\'utente'), false, false, null, '510');
         }
         
         // Find valid checkin for member and partner
@@ -548,7 +674,7 @@ class ChatMessagesController extends AppController {
                 $this->Member->rank($this->logged['Member']['big'],5);
                 
             } catch ( Exception $e ) {
-                $this->_apiEr ( __('Error occured. Relationship not created.') );
+                $this->_apiEr ( __('Errore. Relazione non creata.') );
             }
         } else {
             $relId = $memRel ['MemberRel'] ['id'];
@@ -564,7 +690,8 @@ class ChatMessagesController extends AppController {
                 'from_status' => 1, // from status = 1 (not deleted)
                 'to_status' => 1, // tp status = 1 (not deleted)
                 'created' => 'NOW()',
-                'status' => 1 
+                'status' => 1 ,
+        		'msgclientid' => $msgclientid
         // 'photo' => $hasphoto,
                 );
         
@@ -581,6 +708,7 @@ class ChatMessagesController extends AppController {
              $this->log("--------------close api_receive----------------");
              
             $msgId = $res ['ChatMessage'] ['id'];
+            //print("ID Messaggio ".$msgId);
             $pars = array (
                     'conditions' => array (
                             'ChatMessage.id' => $msgId 
@@ -588,7 +716,8 @@ class ChatMessagesController extends AppController {
                     'fields' => array (
                             'ChatMessage.id',
                             'ChatMessage.rel_id',
-                            'ChatMessage.created' 
+                            'ChatMessage.created',
+                    		'ChatMessage.msgclientid'
                     ),
                     'recursive' => - 1 
             );
@@ -652,7 +781,7 @@ class ChatMessagesController extends AppController {
                 }
             }
         } catch ( Exception $e ) {
-            $this->_apiEr ( __('Error occured. Message not created.') );
+            $this->_apiEr ( __('Errore. Messaggio non creato.') );
         }
         //$this->log("link photo = $photolink");
         $this->ChatCache->write ( $partnerBig . '_last_msg', strtotime ( $chatMsg ['ChatMessage'] ['created'] ) );
@@ -681,7 +810,16 @@ class ChatMessagesController extends AppController {
         if ($goonPrivacy)
         {
         $strLen = 50;
+        
+        $friendsRel=$this->Friend->FriendsRelationship($memBig, $partnerBig, 'A');
+        if (count($friendsRel)>0){
         $name = $this->logged ['Member'] ['name'] . (! empty ( $this->logged ['Member'] ['middle_name'] ) ? ' ' . $this->logged ['Member'] ['middle_name'] . ' ' : ' ') . $this->logged ['Member'] ['surname'];
+        } else {
+            
+          $name = $this->logged ['Member'] ['name'] . ' '. strtoupper(mb_substr( $this->logged ['Member'] ['surname'], 0, 1 )) . '.';  
+            
+        }
+        $this->log("NOME CHATPUSH ".$name);
         $msg = (strlen ( $text ) > $strLen + 4) ? substr ( $text, 0, $strLen ) . ($text [$strLen + 1] == ' ' ? ' ...' : '...') : $text;
         $this->PushToken->sendNotification ( $name, $msg, array (
                 'partner_big' => $memBig,
@@ -696,21 +834,41 @@ class ChatMessagesController extends AppController {
         
         }
         // return chat messages like in the receive call with refresh enabled
-        $newMsgs = $this->ChatMessage->findConversations ( $memBig, $partnerBig, null, $newerThan, 0, true );
         
+        $newerThan=null; //fix del problema UTC che non ritorna messaggi del futuro
+        $newMsgs = $this->ChatMessage->findConversations ( $memBig, $partnerBig, null, $newerThan, 0, true );
+        $this->log("memBig ".$memBig."---- partner ".$partnerBig."----- newer ".$newerThan);
+        $this->log("Prima ".serialize($newMsgs));
+        $msgCount=count($newMsgs['chat_messages']);
+        //print_r($newMsgs);
         // Mark mesaages as read
-        if (! empty ( $newMsgs ['chat_messages'] )) {
+        if ($msgCount>0){
+        //if (! empty ( $newMsgs ['chat_messages'] )) {
             $updated = $this->ChatMessage->markAsRead ( $memBig, $partnerBig );
+            $newMsgs['chat_messages'][$msgCount-1]['photo']=$this->FileUrl->chatmsg_picture($msgId);
             if (! $updated)
                 CakeLog::warning ( 'Messages not marked as read. Membig ' . $memBig . ' Partner big ' . $partnerBig );
                 /* $this->log("-------ChatMessages CONTROLLER-api_send-----");
                  $this->log("updated = $updated ");
                  $this->log("WWWROOT =".WWW_ROOT);
                  $this->log("--------------close api_send----------------");*/
+        } else {
+                
+                $this->_apiEr ( __('Errore. Messaggio non inviato.') );
+                //print_r($newMsgs);
+        }
+        //print_r($newMsgs);
+        if ($android){ //elimina i msg precedenti non richiesti da App Android
+                                     
+                       $newMsgsFix['chat_messages'][]=$newMsgs['chat_messages'][$msgCount-1]; 
+                       $newMsgsFix['msg_count']=count($newMsgsFix['chat_messages']);                           
+                       $newMsgs=$newMsgsFix;             
         }
         
-        $newMsgs['chat_messages'][count($newMsgs['chat_messages'])-1]['photo']=$this->FileUrl->chatmsg_picture($msgId);
-        //print_r($newMsgs);
+        
+         $this->log("chatmsg ".serialize($chatMsg));        
+         $this->log("Dopo ".serialize($newMsgs));
+        
         if ($result !== false) {
             $this->Util->transform_name ( $chatMsg );
             $this->Util->transform_name ( $newMsgs );
@@ -719,14 +877,50 @@ class ChatMessagesController extends AppController {
             
             
         } else {
-            $this->_apiEr ( __('Error occured. Message not sent.') );
+            $this->_apiEr ( __('Errore. Messaggio non inviato.') );
         }
+        
+        $this->log("*************FINE DEBUG chat_messages/send************************");
     }
     
     
-    
+    public function api_testfunction(){
+        
+                        
+        $newMsgs = $this->ChatMessage->findConversations ( 55360230,44956140, null, '2015-03-05 19:07:01.000910+0100', 0, true );
+        print_r($newMsgs);
+        print("count ".count($newMsgs));
+        $this->_apiOk($newMsgs);
+           
+        
+        
+    }
     
 	public function api_badges() {
+        //Usato per conteggiare i messaggi non letti per ogni utente
+        /* Input : member_big
+         * Output : 
+                     
+        {"status": 1,"data": [
+        {
+            "ChatMessage": {
+                "msg_count": 1,
+                "from_big": 45933337
+            }
+        },
+        {
+            "ChatMessage": {
+                "msg_count": 1,
+                "from_big": 45920452
+            }
+        } 
+        ]
+      }
+           
+      */  
+        
+        
+        
 		// $this->_checkVars(array('newer_than'));
 		$memBig = $this->logged ['Member'] ['big'];
 		// $newerThan = (isset($this->api['newer_than'])) ? date('Y-m-d H:i:s', $this->api['newer_than']) : null;
@@ -744,7 +938,8 @@ class ChatMessagesController extends AppController {
 						// ),
 						// 'ChatMessage.created >=' => $newerThan,
 						'ChatMessage.read ' => 0,
-						'ChatMessage.status <' => 255 
+                        'ChatMessage.status <' => 255,
+						'ChatMessage.to_status <' => 255 
 				),
 				'group' => array (
 						'ChatMessage.from_big' 
@@ -786,7 +981,7 @@ class ChatMessagesController extends AppController {
 		$memBig = $this->request->data ['membig'];
 		$member = $this->Member->getMemberByBig ( $memBig );
 		if (! empty ( $member )) {
-			$name = $member ['Member'] ['name'] . (! empty ( $member ['Member'] ['middle_name'] ) ? ' ' . mb_substr ( $member ['Member'] ['middle_name'], 0, 1 ) . '. ' : ' ') . mb_substr ( $member ['Member'] ['surname'], 0, 1 ) . '.';
+			$name = $member ['Member'] ['name'] . (! empty ( $member ['Member'] ['middle_name'] ) ? ' ' . mb_substr ( $member ['Member'] ['middle_name'], 0, 1 ) . '. ' : ' ') . mb_substr ( $member ['Member'] ['surname'], 0, 1 ) . '..';
 		}
 		$created = $this->request->data ['created'];
 		$relId = $this->request->data ['relid'];

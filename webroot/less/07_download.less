@@ -1,0 +1,106 @@
+#download {
+    .container {
+        padding-top: 114px;
+        padding-bottom: 0;
+
+        .download-container {
+            padding-bottom: 0;
+
+            h2 {
+                color: @blue;
+                font-family: 'proxima_novalight';
+                font-size: 52px;
+                letter-spacing: -1.4px;
+                .fontfix;
+                line-height: 1;
+                margin: 0;
+            }
+			h6
+			{
+                color: @blue;
+				margin-top: 50px;
+				text-align: center;
+                font-size: 28px;
+			}	
+			
+            ul.download-buttons {
+                text-align: center;
+                margin-top: 16px;
+
+                li {
+                    float: none;
+                    display: inline-block;
+					margin-left: 7px;
+                    &:first-child {
+                        margin-left: 7px;
+                    }
+
+                    a {
+                        text-align: left;
+					width: 190px;
+                    }
+                }
+            }
+
+            p {
+                color: @blue;
+                font-family: 'proxima_novalight';
+                width: 100%;
+                text-align: center;
+                font-size: 18px;
+                margin: 70px 0 80px 0;
+            }
+        }
+    }
+}
+
+@media only screen and (max-width : 767px) {
+    #download {
+        .container {
+            padding-top: 60px;
+
+            .download-container {
+
+                h2 {
+                    font-size: 40px;
+                }
+
+                ul.download-buttons {
+                    text-align: center;
+                    margin-top: 46px;
+
+                    li {
+                        display: block;
+
+                        &:first-child {
+                            margin-right: 0px;
+                            margin-bottom: 10px;
+                        }
+
+                        a {
+                            display: inline-block;
+							padding-left: 60px;
+                        }
+                    }
+                }
+
+                p {
+                    font-size: 18px;
+                    margin: 40px 0 50px 0;
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 768px) {
+}
+
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+}
+
+@media only screen and (min-width : 992px) and (max-width : 1199px) {
+}
+
+@media only screen and (min-width : 1200px) {
+}

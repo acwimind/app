@@ -12,7 +12,7 @@ class Wallet extends AppModel{
         $credito_precedente=$this->getCredit($memBig);
         $credito_precedente=$credito_precedente[0][0]['credit'];
         
-        $this->log("credito precedente ".$credito_precedente);
+        //$this->log("credito precedente ".$credito_precedente);
         
         $oldCreditInt=intval($credito_precedente/$soglia);
         
@@ -21,17 +21,18 @@ class Wallet extends AppModel{
                 'amount' => $amount,
                 'reason' => $reason
         );
+        $this->create();
         $this->set($data);
         
         if ($this->save())
         {
             $return=true;
-            $this->log("return=true");
+            //$this->log("return=true");
         
         
             $credito_aggiornato=$credito_precedente+$amount;
             
-            $this->log("credito aggiornato ".$credito_aggiornato); 
+            //$this->log("credito aggiornato ".$credito_aggiornato); 
             
             $newCreditInt=intval($credito_aggiornato/$soglia);
             
@@ -134,6 +135,7 @@ class Wallet extends AppModel{
         }
         
         $message = array (
+        		//*MOD commentata 'id' => null,
                 'rel_id' => $relId,
                 'from_big' => $memBig,
                 'to_big' => $partnerBig,
@@ -147,7 +149,7 @@ class Wallet extends AppModel{
                 );
         
         // $this->Model->getLastInsertId();
-        
+        $ChatMessage->create();   //*MOD aggiunta
         $ChatMessage->set ( $message );
         $msgId = null;
         $chatMsg = null;
@@ -193,6 +195,26 @@ class Wallet extends AppModel{
         ), 'chat', 'new' );
         
          
+    }
+    
+    
+    public function getCreditByReason($memberBig,$reason)
+    {
+        // Verifica se è stato fatto un accredito con il reason specificato 
+        
+        $db = $this->getDataSource ();
+        
+        $MySql= "SELECT COUNT(*) AS count ".
+                "FROM public.wallets ".
+                "WHERE wallets.member1_big=$memberBig AND wallets.reason='$reason'";
+        // try {
+        $result = $db->fetchAll ( $MySql );
+        
+        $result=$result[0][0]['count'];
+        //ritorna direttamente il valore numerico senza array
+        return $result;
+            
+        
     }
     
 }

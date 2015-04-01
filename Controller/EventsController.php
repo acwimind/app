@@ -122,7 +122,7 @@ class EventsController extends AppController {
 	public function admin_add($place_big=0) {
 		
 		if ($this->request->prefix == 'admin' && $place_big == 0) {
-			$this->Session->setFlash(__('Please select a place to create a new event for (use the icon on right)'), 'flash/info');
+			$this->Session->setFlash(__('Selezionare un posto per creare un nuovo evento'), 'flash/info');
 			return $this->redirect(array('controller' => 'places', 'action' => 'index'));
 		}
 		
@@ -158,11 +158,11 @@ class EventsController extends AppController {
 				
 				}
 				
-				$this->Session->setFlash(__('Event saved'), 'flash/success');
+				$this->Session->setFlash(__('Evento salvato'), 'flash/success');
 				return $this->redirect(array('action' => 'index'));
 				
 			} else {
-				$this->Session->setFlash(__('Error while saving event'), 'flash/error');
+				$this->Session->setFlash(__('Errore durante il salvataggio dell\'evento'), 'flash/error');
 			}
 			
 		} elseif ($big > 0) {
@@ -183,7 +183,7 @@ class EventsController extends AppController {
 			$place = $this->Event->Place->find('first', array('conditions' => array('Place.big' => $place_big), 'recursive' => -1));
 			
 			if (!$place && $big == 0) {
-				$this->Session->setFlash(__('This place does not exist'), 'flash/error');
+				$this->Session->setFlash(__('Posto inesistente'), 'flash/error');
 				return $this->redirect(array('controller' => 'places', 'action' => 'index'));
 			}
 			
@@ -225,7 +225,7 @@ class EventsController extends AppController {
 		 *  - checkins
 		 */
 		
-		$this->Session->setFlash(__('Event deleted'), 'flash/success');
+		$this->Session->setFlash(__('Evento Cancellato'), 'flash/success');
 		return $this->redirect(array('action' => 'index'));
 		
 	}
@@ -257,10 +257,10 @@ class EventsController extends AppController {
 		try {
 			$this->_upload($this->request->data['photos'], $big);
 		} catch (UploadException $e) {
-			$this->Session->setFlash(__('Error while uploading photos'), 'flash/error');
+			$this->Session->setFlash(__('Errore durante l\'upload delle foto'), 'flash/error');
 		}
 		
-		$this->Session->setFlash(__('Photos saved'), 'flash/success');
+		$this->Session->setFlash(__('Foto salvate'), 'flash/success');
 		return $this->redirect(array('controller' => 'galleries', 'action' => 'index', $event['Gallery'][0]['big']));
 		
 	}
@@ -797,7 +797,7 @@ class EventsController extends AppController {
 		$this->set('event', $event);
 
 		if (!$event) {
-			$this->Session->setFlash(__('The event does not exist'), 'flash/error');
+			$this->Session->setFlash(__('L\'evento non esiste'), 'flash/error');
 			return $this->redirect('/');
 		}
 

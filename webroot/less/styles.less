@@ -1,0 +1,58 @@
+
+@import 'functions.less';
+@import 'fonts.less';
+@import 'animations.less';
+@import 'components.less';
+@import '01_home.less';
+@import '02_cerca.less';
+@import '03_conosci.less';
+@import '04_crediti.less';
+@import '05_categories.less';
+@import '06_commenti.less';
+@import '07_download.less';
+@import '08_footer.less';
+@import '09_network.less';
+@import '10_overlay.less';
+
+.map-bg {
+    background: url(../images/haamble/map-bg.jpg) no-repeat 0 0 transparent;
+    background-size: cover;
+}
+html
+{
+	overflow-x: hidden !important;
+}
+@grey: #666666;
+@orange: #ff5500;
+@blue: #1878d4;
+
+.fontfix {
+    -webkit-font-smoothing: antialiased !important;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.004);
+}
+
+.sprite(@pos, @color: transparent) {
+    background: url(../images/haamble/sprite.png) no-repeat @pos @color;
+}
+
+.sprite2x(@pos, @color: transparent) {
+    background: url(../images/haamble/sprite2x.png) no-repeat @pos @color;
+    background-size: 80px 2230px;
+}
+
+.spritecerca(@pos, @color: transparent) {
+    background: url(../images/haamble/sprite-cerca.png) no-repeat @pos @color;
+}
+
+.spritecerca940(@pos, @color: transparent) {
+    background: url(../images/haamble/sprite-cerca.png) no-repeat @pos @color;
+    background-size: 386px 386px;
+}
+
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+
+	.nav > li > a {
+		padding: 15px 12px;
+	}
+}
+

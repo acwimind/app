@@ -6,8 +6,9 @@ class CheckinsController extends AppController {
 			'Friend',
 			'Wallet' ,
 			'PrivacySetting'
-	)
-	;
+	);
+    
+    var $components = array('MailchimpApi','Mandrill');
 	
 	/**
 	 * Return list of people available to chat
@@ -15,7 +16,7 @@ class CheckinsController extends AppController {
 	public function api_people() {
 		$eventBig = $this->Checkin->getCheckedinEventFor ( $this->logged ['Member'] ['big'] );
 		if (empty ( $eventBig )) {
-		$this->_apiEr ( __('Error occured. No valid checkin found.'), __('You have not joined or checked in anywhere.') );
+		$this->_apiEr ( __('Errore. Nessun checkin trovato.'), __('Non hai fatto join o check-in in qualche posto.') );
 		}
 		
 		$result = $this->Checkin->getMemberAvailableToChat ( $eventBig, $this->logged ['Member'] ['big'] );
@@ -44,7 +45,7 @@ class CheckinsController extends AppController {
 			}
 			
 			if ($xstatus != 'A') {
-				$result [$key] ['Member'] ['surname'] = substr ( $result [$key] ['Member'] ['surname'], 0, 1 ) . '.';
+				$result [$key] ['Member'] ['surname'] = mb_substr ( $result [$key] ['Member'] ['surname'], 0, 1 ) . '.';
 			}
 			
 			$result [$key] ['Member'] ['isFriend'] = $xisFriend;
@@ -93,7 +94,7 @@ class CheckinsController extends AppController {
 				
 				CakeLog::error ( 'Error occured. Missing place_big and event_big.' );
 				
-				$this->_apiEr ( __('The following required API variables are missing: place_big and/or event_big') );
+				$this->_apiEr ( __('La seguente variabile è stata omessa: place_big and/or event_big') );
 			}
 			
 			$event = $this->Checkin->Event->Place->getCurrentEvent ( $placeBig ); // get place current event
@@ -118,7 +119,7 @@ class CheckinsController extends AppController {
 			CakeLog::info ( 'Called checkin/in with lon lat: Lon = ' . $lon . ' Lat = ' . $lat );
 			
 			if (empty ( $lon ) || empty ( $lat )) { // GPS position is required on checkin
-				$this->_apiEr ( __('The following required API variables are missing: lon and/or lat') );
+				$this->_apiEr ( __('La seguente variabile è stata omessa: lon and/or lat') );
 			}
 			
 			$coords = '(' . $lon . ',' . $lat . ')';
@@ -128,7 +129,7 @@ class CheckinsController extends AppController {
 				
 				CakeLog::error ( 'Error occured. Invalid coords.' );
 				
-				$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+				$this->_apiEr ( __('Le coordinate non sono valide: lon and/or lat') );
 			}
 			
 			$checkin ['lonlat'] = $coords;
@@ -141,11 +142,19 @@ class CheckinsController extends AppController {
 			
 			CakeLog::error ( 'Already checked in or joined' );
 			
-			$this->_apiEr ( __('You already ') . ($physical ? __('checked in at') : __('joined')) . __(' this event.'), true );
+			$this->_apiEr ( __('Hai già fatto ') . ($physical ? __('check-in') : __('join')) . __(' in questo evento.'), true );
 		}
 		
 		// save checkin
 		$this->Checkin->set ( $checkin );
+        
+        //Verifica se primo checkin
+        if ($this->firstCheckin($this->logged ['Member'] ['big'])) {
+            
+             $mandrillResult=$this->mandrill_PrimoJoinReminder($this->api['email']);
+             $this->Wallet->addAmount($this->logged ['Member'] ['big'], '50', 'Primo Join' );
+        }
+        
 		try {
 			$result = $this->Checkin->save ();
             
@@ -157,7 +166,7 @@ class CheckinsController extends AppController {
 			
 			CakeLog::error ( 'Error occured. Checkin failed. Probably non-existent event.' );
 			
-			$this->_apiEr ( __('Error occured. Checkin failed. Probably non-existent event.') );
+			$this->_apiEr ( __('Errore. Check-in fallito. Probabile evento inesistente.') );
 		}
 		
 		CakeLog::info ( 'Before checkout. CheckinId = ' . $this->Checkin->id . ' MemBig = ' . $this->logged ['Member'] ['big'] );
@@ -171,7 +180,7 @@ class CheckinsController extends AppController {
 			
 			CakeLog::error ( 'Error occured. Check in procedure failed.' );
 			
-			$this->_apiEr ( __('Error occured. Check in procedure failed.'), __("We're sorry, but a problem occured during checkin.") );
+			$this->_apiEr ( __('Errore. Check-in fallito.'), __("Siamo spiacenti ma si è verificato un problema durante il check-in.") );
 		} else {
 			
 			CakeLog::info ( ' ------------------------ Checkin end -----------------------' );
@@ -192,6 +201,40 @@ class CheckinsController extends AppController {
 		}
 	}
 	
+    
+    
+    public function mandrill_PrimoJoinReminder($email){
+    //REMINDER                   
+       
+       $message = array('message'=>array(
+                                            'subject' => "Complimenti hai fatto il tuo primo Join",
+                                            'from_email' => 'haamble@haamble.com',
+                                            'to' => array(array('email' => "$email", 
+                                                                'name' => ""))));
+                        
+                        
+
+       $template_name = array('template_name'=>'PrimoJoin_reminder');
+
+       
+       $template_content = array('template_content'=>array(array(
+                                                                    'name' => 'main',
+                                                                    'content' => ''
+                                                                    )
+                                                          )      
+                                );
+                                
+       $params=array_merge($template_name,$template_content,$message);                                
+              
+       //risposta non usata per verificare failure
+       $this->Mandrill->messagesSend_template($params);
+           
+       
+   } 
+          
+    
+    
+    
 	/**
 	 * Checkout from an event
 	 * We checkout from all events, because member cannot be checked at more than 1 events at a time
@@ -221,13 +264,13 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+			$this->_apiEr ( __('Le coordinate non sono valide: lon and/or lat') );
 		}
 		
 		$checkinData = $this->Checkin->getCheckedinEventFor ( $memBig, true );
 		// debug($checkinData);
 		if (empty ( $checkinData ) || (isset ( $checkinData ) && $checkinData ['Checkin'] ['physical'] != 1)) {
-			$this->_apiEr ( __('No valid checkin found'), null, null, array (
+			$this->_apiEr ( __('Nessun check-in valido trovato'), null, null, array (
 					'error_code' => '501' 
 			) );
 		}
@@ -389,7 +432,7 @@ class CheckinsController extends AppController {
 		if ($eventBig == 0) {
 			
 			if ($placeBig == 0) {
-				$this->Session->setFlash ( __ ( 'No place or event specified for join.' ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'Non è stato specificato alcun posto o evento per il join.' ), 'flash/error' );
 				$this->redirect ( '/' );
 			}
 			
@@ -408,7 +451,7 @@ class CheckinsController extends AppController {
 		try {
 			$result = $this->Checkin->save ();
 		} catch ( Exception $e ) {
-			$this->Session->setFlash ( __ ( 'Join failed. Event or place does not exist.' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Join fallito. Evento o posto inesistente.' ), 'flash/error' );
 			// $this->redirect('/');
 		}
 		
@@ -419,13 +462,13 @@ class CheckinsController extends AppController {
 		
 		if ($event ['Event'] ['type'] != EVENT_TYPE_DEFAULT) {
 			
-			$this->Session->setFlash ( __ ( 'You have joined an event %s', $event ['Event'] ['name'] ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Hai fatto join ad un evento %s', $event ['Event'] ['name'] ), 'flash/success' );
 		} else {
 			
 			$this->Checkin->Event->Place->recursive = - 1;
 			$place = $this->Checkin->Event->Place->findByBig ( $event ['Event'] ['place_big'] );
 			
-			$this->Session->setFlash ( __ ( 'You have joined an event at place %s', $place ['Place'] ['name'] ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Hai fatto join ad un evento nel posto %s', $place ['Place'] ['name'] ), 'flash/success' );
 			// return $this->redirect(array('controller' => 'places', 'action' => 'detail', $place['Place']['big'], $place['Place']['slug']));
 		}
 		
@@ -446,9 +489,9 @@ class CheckinsController extends AppController {
 		$checkedOut = $this->Checkin->out ( $this->logged ['Member'] ['big'] );
 		
 		if ($checkedOut) {
-			$this->Session->setFlash ( __ ( 'You were succesfully checked out' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Check out avvenuto con successo' ), 'flash/success' );
 		} else {
-			$this->Session->setFlash ( __ ( 'You are not checked in at the moment' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Al momento non hai un check-in' ), 'flash/error' );
 		}
 		
 		$this->redirect ( '/' ); // array('controller' => '', 'action' => ''));
@@ -471,7 +514,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+			$this->_apiEr ( __('Le coordinate non sono valide: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyCheckins ( $coords, $memBig );
@@ -529,7 +572,7 @@ class CheckinsController extends AppController {
 			}
 			
 			if ($xstatus != 'A') {
-				$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+				$data ['Member'] ['surname'] = mb_substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
 			}
 			
 			$data ['Member'] ['isFriend'] = $xisFriend;
@@ -591,7 +634,7 @@ class CheckinsController extends AppController {
 		
 		
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 			
 		if (count($datapos)>0)
@@ -625,7 +668,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+			$this->_apiEr ( __('Le coordinate non sono valide: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyCheckinsNew ( $coords, $optParams, $memBig );
@@ -678,7 +721,7 @@ class CheckinsController extends AppController {
 			}
 			
 			if ($xstatus != 'A') {
-				$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+				$data ['Member'] ['surname'] = mb_substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
 			}
 			
 			$data ['Member'] ['isFriend'] = $xisFriend;
@@ -707,7 +750,7 @@ class CheckinsController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+			$this->_apiEr ( __('Le coordinate non sono valide: lon and/or lat') );
 		}
 		
 		$all_nearby = $this->Checkin->getNearbyPeople ( $coords, $memBig, $offset );
@@ -793,7 +836,9 @@ class CheckinsController extends AppController {
 				'category',
 				'offset',
                 'name',
-                'onlyfriends' 
+                'onlyfriends',
+                'vip',
+                //'photo' 
 		) );
         $this->log("----------------api_nearbyPeople-------------");
 		$this->log("Variabili ".serialize($this->api));
@@ -801,7 +846,7 @@ class CheckinsController extends AppController {
 	//	$lon = $this->api ['lon'];
 	//	$lat = $this->api ['lat'];
 //		$coords = '(' . $lon . ',' . $lat . ')';
-		$offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] * API_MAP_LIMIT : 0;
+		//$offset = isset ( $this->api ['offset'] ) ? $this->api ['offset'] * API_MAP_LIMIT : 0;
 		
 		
 		$coords = '(40.6300568,16.2894573999997)'; 
@@ -835,7 +880,7 @@ class CheckinsController extends AppController {
 			 
 		
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 		 
 		if (count($datapos)>0)
@@ -854,7 +899,9 @@ class CheckinsController extends AppController {
 		}
 		 
 		}
-		
+		$vip = isset($this->api['vip']) ? $this->api['vip'] : null;
+        //$photo = isset($this->api['photo']) ? $this->api['photo'] : null;
+        
 		$offset = isset( $this->api ['offset'] ) ? $this->api ['offset'] : 0;
 		$onlyfriends = isset ($this->api['onlyfriends']) ? $this->api['onlyfriends'] : null;
 		$sex = isset ( $this->api ['sex'] ) ? $this->api ['sex'] : null; // values are m or f
@@ -869,14 +916,17 @@ class CheckinsController extends AppController {
 		$optParams ['category'] = $category;
         $optParams ['name'] = $name;
         $optParams ['onlyfriends'] = $onlyfriends;
+        $optParams ['vip'] = $vip;
+        //$optParams ['photo'] = $photo;
 		
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match ( '/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords );
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr ( __('The following API variables are invalid: lon and/or lat') );
+			$this->_apiEr ( __('Le coordinate non sono valide: lon e/o lat') );
 		}
 		$this->log("Var Age ".$age);
 		$all_nearby = $this->Checkin->getNearbyPeopleNew ( $coords, $optParams, $memBig, $offset );
+        //print_r($all_nearby);
 		$this->log("parametri filtri ".serialize($optParams));
 		//print_r($all_nearby);
 		$xresponse = array ();
@@ -944,7 +994,7 @@ class CheckinsController extends AppController {
                                         $removeMember=true;
                                         
                                         }
-                        $val [0]  ['surname'] = substr ( $val [0]  ['surname'], 0, 1 ) . '.'; 
+                        $val[0]['surname'] = mb_substr ($val[0]['surname'], 0, 1 ).'.'; 
                         } 
 									
                     //$val [0]  ['surname'] = substr ( $val [0]  ['surname'], 0, 1 ) . '.';
@@ -970,6 +1020,23 @@ class CheckinsController extends AppController {
 		
 		$this->_apiOk ( $xresponse );
 	}
+    
+    
+    public function firstCheckin($memberBig){
+          //verifica il numero dei checkins fatti dall'utente
+          //utile per verificare il primo checkins       
+          //return TRUE se primo checkins  
+          
+          $checkins = $this->Checkin->find('count', array(
+                                            'conditions' => array('Checkin.member_big' => $memberBig)
+                                                ));
+          
+          if ($checkins==0) return true; else
+                        return false;        
+          
+        
+    }
+    
     
     
 	public static function multiFieldSortArray($x, $y) { // sort an array by position_bonus DESC and distance ASC

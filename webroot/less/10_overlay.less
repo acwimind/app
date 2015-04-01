@@ -1,0 +1,157 @@
+/* Overlay style */
+.overlay {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	background: rgba(24,120,212,0.85);
+}
+
+/* Overlay closing cross */
+.overlay .overlay-close {
+	width: 80px;
+	height: 80px;
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	overflow: hidden;
+	border: none;
+	background: url(../images/cross.png) no-repeat center center;
+	text-indent: 200%;
+	color: transparent;
+	outline: none;
+	z-index: 100;
+}
+
+/* Effects */
+.overlay-slidedown {
+	visibility: hidden;
+	-webkit-transform: translateY(-100%);
+	transform: translateY(-100%);
+	-webkit-transition: -webkit-transform 0.4s ease-in-out, visibility 0s 0.4s;
+	transition: transform 0.4s ease-in-out, visibility 0s 0.4s;
+}
+
+.overlay-slidedown.open {
+	visibility: visible;
+	-webkit-transform: translateY(0%);
+	transform: translateY(0%);
+	-webkit-transition: -webkit-transform 0.4s ease-in-out;
+	transition: transform 0.4s ease-in-out;
+	z-index: 2147483647;
+}
+
+.body-wrapper
+{
+	width: 100%;
+	
+	&.open
+	{
+		height: 100%;
+		left: 0;
+		overflow: hidden;
+		position: fixed;
+		top: 0;
+	}
+}
+
+.overlay-slidedown
+{
+	.inner-wrapper
+	{
+		padding: 30px 0;
+		height: 100%;
+		
+		.inner
+		{
+			width: 80%;
+			height: 100%;
+			color: #fff;
+			font-family: 'proxima_nova_rgregular';
+			font-size: 18px;
+			line-height: 24px;
+			text-align: left;
+			margin: 0 auto;
+			overflow: auto;
+			   max-width: 800px;
+			ol
+			{
+				list-style: lower-alpha outside none;
+				 padding-left: 20px !important;
+				> li
+				{
+					list-style: lower-alpha outside none;
+					padding-left: 10px;
+					
+				}
+			}
+			
+			
+			ul
+			{
+				list-style: disc outside none;
+				 padding-left: 20px !important;
+				> li
+				{
+					list-style: disc outside none;
+					padding-left: 10px;
+				}
+			}
+		}
+	}
+}
+
+
+.mCSB_scrollTools .mCSB_draggerRail {
+    background-color: rgba(255, 255, 255, 0.4);
+	width: 4px;
+}
+
+.mCSB_scrollTools .mCSB_dragger .mCSB_dragger_bar {
+	width: 8px;
+}
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+	.overlay .overlay-close {
+		width: 60px;
+		height: 60px;
+		background-size: 75% 75%;
+		
+	}
+}
+@media only screen and (max-width : 767px) {
+	.overlay .overlay-close {
+		width: 40px;
+		height: 40px;
+		background-size: 50% 50%;		
+		right: 0;
+		top: 0;
+	}
+	
+	.overlay-slidedown
+	{
+		.inner-wrapper
+		{			
+			padding: 40px 0px 0px 10px;
+			.inner
+			{
+				width: 100%;
+				
+				ol
+				{
+					 padding-left: 25px !important;
+					> li
+					{
+						
+						
+					}
+				}
+				
+			}
+		}
+	}
+}
+@media only screen and (max-width : 480px) {
+}
+
+

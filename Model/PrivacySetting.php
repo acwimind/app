@@ -58,7 +58,7 @@ class PrivacySetting extends AppModel {
 
 	public function CreateSettings($dataBig) {
 		$res =false;
-		$comment = array ();
+		//$comment = array ();
 		/*	foreach ( $data as $column => $field ) {
 		 if (isset ( $this->api [$field] )) {
 		$comment [$column] = trim ( $data [$field] );
@@ -80,6 +80,7 @@ class PrivacySetting extends AppModel {
 	    $data['boardsponsor']='1';
 	    $data['checkinsvisibility']='1';
 	    $data['photosvisibility']='1';
+        $data['friendsvisibility']='1';
 	    
 	    
 	    

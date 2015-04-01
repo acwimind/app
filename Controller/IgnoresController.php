@@ -149,7 +149,7 @@ class IgnoresController extends AppController {
 		try {
 			
 			$this->_add($ignore_big);
-			$this->Session->setFlash(__('User added to ignore list'), 'flash/success');
+			$this->Session->setFlash(__('Utente aggiunto alla black list'), 'flash/success');
 
 		} catch (ErrorEx $e) {
 
@@ -166,7 +166,7 @@ class IgnoresController extends AppController {
 		try {
 			
 			$this->_remove($ignore_big);
-			$this->Session->setFlash(__('User removed from ignore list'), 'flash/success');
+			$this->Session->setFlash(__('Utente rimosso dalla black list'), 'flash/success');
 
 		} catch (ErrorEx $e) {
 

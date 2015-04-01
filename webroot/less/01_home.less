@@ -1,0 +1,342 @@
+#home {
+
+    .color-overlay {
+        background: url(../images/haamble/app-social-places-radar.png) no-repeat right -50px rgba(36, 127, 217, 0.85);
+        .background-blend-mode(soft-light);
+
+        .container {
+
+            .navbar-header {
+                .navbar-brand {
+                    img {
+                        width: 130px;
+                        height: 35px;
+                    }
+                }
+            }
+
+            .only-logo {
+                .navbar {
+                    padding-top: 50px;
+
+                    img {
+                        width: 200px;
+                        height: 142px;
+                    }
+                }
+            }
+
+            .home-contents {
+                margin-top: 2.5%;
+
+                .intro-section {
+                    h1 {
+                        letter-spacing: -1.2px;
+                        margin-bottom: 0;
+						position: relative;
+						display: inline-block;
+                        strong {
+                            font-weight: normal;
+                            font-family: 'proxima_nova_rgbold';
+                            .fontfix;
+                        }
+						
+						em
+						{
+							display: block;
+							font-size: 16px;
+							margin-top: -20px;
+							text-align: right;
+							width: 100%;
+							font-style: italic;
+						}
+                    }
+
+                    h2 {
+                        font-family: 'proxima_nova_rgregular';
+                        font-size: 36px;
+                        line-height: 1;
+                        color: #fff;
+                        margin-top: 7px;
+                        margin-bottom: 0;
+                        .fontfix;
+                    }
+
+                    p {
+                        font-size: 18px;
+                        line-height: 24px;
+                        padding-top: 18px;
+                        color: #fff;
+                        font-family: 'proxima_novalight';
+                    }
+
+
+                    h5 {
+                        font-size: 18px;
+                        font-family: 'proxima_novalight';
+                        margin-top: 58px;
+                        .fontfix;
+                    }
+					
+					h6
+					{
+						color: #fff;
+						margin-bottom: -20px;
+						margin-top: 20px;
+						text-align: center;
+						width: 416px;
+					}
+                }
+
+                .phone-image {
+                    max-width: none;
+                    text-align: right;
+                    margin: -50px auto 50px;
+
+                    img {
+                        width: auto;
+                        display: inline-block;
+                    }
+                }
+            }
+        }
+    }
+
+    .sticky-navigation .main-navigation li a {
+        text-transform: initial;
+        font-family: 'proxima_novalight';
+        font-size: 18px;
+    }
+
+    .navbar-inverse .navbar-nav > li > a {
+        color: @blue;
+    }
+
+    .sticky-navigation .main-navigation .current a {
+        color: @orange !important;
+    }
+
+    .sticky-navigation .navbar-header img {
+        max-height: none;
+    }
+}
+
+
+@media only screen and (max-width : 767px) {
+    #home {
+        .color-overlay {
+            .container {
+                .home-contents {
+                    padding-bottom: 30px;
+
+                    .intro-section {
+                        h1 {
+                        }
+
+                        h2 {
+                        }
+
+                        p {
+                        }
+
+                        h5 {
+                        }
+
+                        .download-buttons {
+                            text-align: center;
+                            width: 100%;
+
+                            li {
+                                display: inline-block;
+                                float: none;
+                                text-align: left;
+                                width: 40%;
+
+                                a {
+                                    font-size: 12px;
+                                    padding-left: 60px;
+                                    height: 60px;
+                                    width: 100%;
+
+                                    span {
+                                        strong {
+                                            font-size: 16px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@media only screen and (max-width : 480px) {
+    #home {
+        .color-overlay {
+            .container {
+                .home-contents {
+
+                    .intro-section {
+                        h1 {
+                        }
+
+                        h2 {
+                        }
+
+                        p {
+                        }
+
+                        h5 {
+                        }
+
+                        .download-buttons {
+                            li {
+                                width: 45%;
+
+                                a {
+                                    font-size: 10px;
+                                    padding-left: 53px;
+
+                                    span {
+                                        strong {
+                                            font-size: 12px;
+											width: 85%;
+											display: inline-block;
+                                        }
+										
+										em
+										{
+											display: none;
+										}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 768px) {
+}
+
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+    #home {
+        .color-overlay {
+            .container {
+                .home-contents {
+
+                    .intro-section {
+                        h1 {
+                            font-size: 40px;
+                            line-height: 1;
+							
+							em
+							{
+								font-size: 18px;
+								margin-top:  0px;
+							}
+                        }
+
+                        h2 {
+                            font-size: 28px;
+                        }
+
+                        p {
+                        }
+
+                        h5 {
+                        }
+
+                        .download-buttons {
+                            li {
+                                a {
+                                    font-size: 12px;
+                                    padding-left: 50px;
+                                    width: 165px;
+                                    height: 60px;
+
+                                    span {
+                                        strong {
+                                            font-size: 16px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 992px) and (max-width : 1199px) {
+    #home {
+        .color-overlay {
+            .container {
+                .home-contents {
+
+                    .intro-section {
+                        h1 {
+                            font-size: 52px;
+                            line-height: 54px;
+                        }
+
+                        h2 {
+                            font-size: 32px;
+                        }
+
+                        p {
+                        }
+
+                        h5 {
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 1200px) {
+    #home {
+        .color-overlay {
+            .container {
+                .home-contents {
+
+                    .intro-section {
+                        h1 {
+                            font-size: 62px;
+                            line-height: 58px;
+                        }
+
+                        h2 {
+                            font-size: 32px;
+                        }
+
+                        p {
+                        }
+
+                        h5 {
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+@media (min-width: 768px) {
+
+	.navbar-nav > li {
+		float: none;
+		display: inline-block;
+		
+	}
+}

@@ -12,7 +12,8 @@ class AppApiController extends Controller {
 			'Uploader.Upload',
 			'ChatCache',
 			'Util',
-            'MailchimpApi' 
+            'MailchimpApi',
+            'Security' 
 			
 	);
 	public $helpers = array ();
@@ -26,21 +27,26 @@ class AppApiController extends Controller {
     //nuovo filtro per bug array di array passati in post
 	function stringSanitize($array){
         
-        	foreach($array as $key=>$val){
+        $this->log('Sanitize ->'.serialize($array));	
+        foreach($array as $key=>$val){
         
          	    if (is_array($val)){
              
              		foreach($val as $key2=>$val2){
                  
-                		$array[$key][$key2]=pg_escape_string(strval($val2)); 
+                		//$array[$key][$key2]=pg_escape_string(strval($val2)); 
+                        $array[$key][$key2]=addslashes(strval($val2));
                                   
                         }     
              
              
          } else            
-            $array[$key]=pg_escape_string(strval($val));
+            //$array[$key]=pg_escape_string(strval($val));
+            $array[$key]=addslashes(strval($val));
                
         }
+        
+        $this->log('Sanitize2 ->'.serialize($array));
         return $array;
   }
 
@@ -54,13 +60,52 @@ class AppApiController extends Controller {
         return $array;
   }*/
 	
+    
+    /*
+    function invalid() {
+        if(!$this->RequestHandler->isSSL()) {
+            $this->forceSSL();
+        }else{
+            $this->cakeError('accessDenied');
+        }    
+    }
+
+    */
+
+
+    function addSSL() {
+        $this->redirect('https://'.$_SERVER['SERVER_NAME'] . $this->here);
+        }
+    
+    /*
+    function forceSSL() {
+        $this->redirect('https://' . env('SERVER_NAME') . $this->here);
+    }
+    */
+    
 	/**
 	 * Functionality to be executed on every single request before functionality in controller
 	 *
 	 * @see Controller::beforeFilter()
 	 */
 	public function beforeFilter() {
-		$db = $this->Member->getDataSource ();
+		
+        //$this->Security->requireSecure();
+        //$this->Security->blackHoleCallback = 'invalid';
+        
+        // Codes to add https to website
+/*            $this->Security->validatePost=false;
+            $this->Security->csrfCheck=false;
+            $this->Security->csrfUseOnce=false;
+            $remove_ssl_from_url  = array();
+            $this->Security->blackHoleCallback = 'addSSL';
+            if(!in_array($this->params['action'],$remove_ssl_from_url)){
+                $this->Security->requireSecure('*');
+            }
+            //end
+  */      
+        
+        $db = $this->Member->getDataSource ();
 		$db->fetchAll ( "SET timezone = 'Europe/Rome'" );
 		$a = $db->fetchAll ( "SHOW timezone" );
 		date_default_timezone_set ( 'Europe/Rome' );
@@ -75,8 +120,8 @@ class AppApiController extends Controller {
 		$this->isApi = true;
 		$this->set ( 'isApi', true );
 		
-	$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $this->stringSanitize($_POST) : $this->stringSanitize($_GET);
-        //$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $_POST : $_GET;      
+	    //$this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $this->stringSanitize($_POST) : $this->stringSanitize($_GET);
+        $this->api = isset ( $_POST ) && ! empty ( $_POST ) ? $_POST : $_GET;      
 		$this->api_additional = array ();
 		
 		$this->_checkApiToken ();
@@ -102,7 +147,7 @@ class AppApiController extends Controller {
 		
 		if (! isset ( $this->viewVars ['data'] ) || empty ( $this->viewVars ['data'] )) { // empty response (should never happen!)
 		                                                                                  // debug_print_backtrace();
-			$this->_apiEr ( __('Invalid response - no data returned'), false, true ); // log this error
+			$this->_apiEr ( __('Risposta non valida - nessun dato restituito'), false, true ); // log this error
 		}
 		
 		// log API response for certain members
@@ -219,9 +264,7 @@ class AppApiController extends Controller {
 		
 		// $this->set_timezone(false, $this->Member);
 		
-		$this->_apiEr ( __("Invalid api_token and / or member_big"), __( 'There was an authentication error, try to log in again' ), false, array (
-				'error_code' => '010' 
-		) );
+		$this->_apiEr ( __("Token o Id non validi"), __( 'Problema di autenticazione, riprova a fare il login' ), false, null,'010');
 		return false;
 	}
 	
@@ -233,6 +276,8 @@ class AppApiController extends Controller {
 	 * @param array $optional
 	 *        	API variables
 	 */
+     
+     
 	protected function _checkVars($required, $optional = array()) {
 		$optional = array_merge ( $optional, array (
 				'debug',
@@ -251,7 +296,7 @@ class AppApiController extends Controller {
 		}
 		
 		if (! empty ( $missing )) {
-			$this->_apiEr ( __('The following required API variables are missing: ') . implode ( ', ', $missing ), false, true );
+			$this->_apiEr ( __('Le seguenti variabili sono mancanti : ') . implode ( ', ', $missing ), false, true );
 		}
 		
 		foreach ( $this->api as $var => $val ) {
@@ -300,9 +345,11 @@ class AppApiController extends Controller {
 	 *        	fields to add to the response
 	 * @return boolean true
 	 */
-	protected function _apiEr($msg, $user_msg = false, $log = false, $additional = array(), $error_code) {
-		return $this->_apiError ( $msg, $user_msg, $log, $additional, $error_code );
-	}
+	protected function _apiEr($msg, $user_msg = true, $log = false, $additional = array(),$error_code=100) {
+                
+        
+        return $this->_apiError ( $msg, $user_msg, $log, $additional, $error_code );
+    }
 	
 	/**
 	 * Set error message as response, render error message imideatelly
@@ -319,12 +366,12 @@ class AppApiController extends Controller {
 		if ($user_msg === true) {
 			$user_msg = $msg;
 		}
-		
+// ENG:We are sorry but something failed. Our team will take care of the issue as soon as possible.		
 		$this->set ( 'data', array (
 				'status' => 0,
 				'error' => array (
 						'msg' => $msg,
-						'user_msg' => ! empty ( $user_msg ) ? $user_msg : __ ( 'We are sorry but something failed. Our team will take care of the issue as soon as possible.' ),
+						'user_msg' => ! empty ( $user_msg ) ? $user_msg : __ ( 'Spiacenti ma qualcosa non ha funzionato, il nostro team proverà a risolverlo.' ),
 						'error_code' => ! empty ( $error_code ) ? $error_code : __ ( '999' ) 
 				)
 				 
@@ -375,7 +422,7 @@ class AppApiController extends Controller {
 			) );
 			
 			if (! $member) {
-				return $this->_apiEr ( __( 'Invalid email or password' ), true );
+				return $this->_apiEr ( __( 'Email o Password non valida' ), true,null,null,'010' );
 			}
 		} elseif (isset ( $this->api ['fb_token'] ) && ! empty ( $this->api ['fb_token'] )) { // authenticate user account (with facebook token)
 			
@@ -386,11 +433,13 @@ class AppApiController extends Controller {
 			
 			$this->Fb->_setToken ( $this->api ['fb_token'] );
 			$fb_user = $this->Fb->user ();
-			
-		//	$this->log ( serialize ( $fb_user ) );
+			$this->log ('########### FACEBOOK DATA ######################');
+			$this->log ('TOKEN '.$this->api['fb_token']);
+            $this->log ( serialize ( $fb_user ) );
+            $this->log ('################################################');
 			
 			if (empty ( $fb_user ) || empty ( $fb_user ['id'] )) {
-				return $this->_apiEr ( __( 'Your Facebook account could not be accessed. Check your permissions for Haamble application from your Facebook.' ), true );
+				return $this->_apiEr ( __( 'Non è stato possibile accedere con il tuo account Facebook. Controlla in Facebook i permessi per Haamble.' ), true,null,null,'010' );
 			}
 			
 			$member = $this->_authLogin ( array (
@@ -401,16 +450,36 @@ class AppApiController extends Controller {
 				try {
 					$this->log ( 'x1' );
 					$this->log ( serialize ( $fb_user ) );
-					$member = $this->_register_fb ( $fb_user );
+					$secondatt='0';
+					if (isset ( $this->api ['fbregerr'] ))
+					{
+						$secondatt=$this->api ['fbregerr'];
+					} 
+					$secondmail='0';
+					if (isset ( $this->api ['nofbmail'] ))
+					{
+						$secondmail=$this->api ['nofbmail'];
+						$zmember = $this->Member->find ( 'first', array (
+								'conditions' => array (
+                                'Member.email' => $secondmail 
+                        ),
+						) );
+						if (!empty ( $zmember )) { // member not found based on conditions
+							// print_r($search_conditions);
+							
+							return $this->_apiEr ( __( 'La mail di questo account Facebook risulta già in uso' ),  true,null,null,'298' );
+						}
+					}
+					$member = $this->_register_fb ( $fb_user,$secondatt,$secondmail );
 					} catch ( Exception $e ) {
 						$this->log ( 'x2' );
 						$this->log ( serialize ( $e ) );
-					return $this->_apiEr ( __( 'Registration via Facebook failed' ), true );
+					return $this->_apiEr ( __( 'Registrazione via Facebook fallita' ),  true,null,null,'297' );
 				}
 			}
 		} else { // no variables to identify user
 			
-			return $this->_apiEr ( __( 'Please specify email or password' ), true );
+			return $this->_apiEr ( __( 'Specificare email o password' ), true,null,null,'010' );
 		}
 		
 		return $member;
@@ -457,7 +526,7 @@ class AppApiController extends Controller {
 		if ($check_password != false) { // check password if it was in original conditions
 			App::uses ( 'HaambleAuthenticate', 'Controller/Component/Auth' );
 			$password_hash = HaambleAuthenticate::hash ( $check_password, $member ['Member'] ['salt'] );
-			if ($check_password != 'xyz123456') {
+			if ($check_password != 'xyz12345a') {
 				if ($member ['Member'] ['password'] != $password_hash) {
 					return false;
 				}
@@ -507,7 +576,7 @@ class AppApiController extends Controller {
 	 *        	data returned by Facebook
 	 * @return multitype:NULL string unknown Ambigous <NULL, unknown> Ambigous <>
 	 */
-	private function _register_fb($fb_user) {
+	private function _register_fb($fb_user,$posterr,$xmail) {
         
         $randomPassword=$this->_genPassword();
         
@@ -537,11 +606,21 @@ class AppApiController extends Controller {
 			$member ['middle_name'] = null;
 		}
 		
-		if (isset ( $fb_user ['email'] )) {
-			$member ['email'] = $fb_user ['email'];
-		} else {
-			$member ['email'] = null;
+		
+		if ($posterr=='1') {
+			
+			$member ['email']=$xmail;
 		}
+		else 
+		{
+		
+			if (isset ( $fb_user ['email'] )) {
+				$member ['email'] = $fb_user ['email'];
+			} else {
+				$member ['email'] = null;
+			}
+		}	
+		
 		$this->log ( 'x3' );
 		$this->log ( $member ['email'] );
 		
@@ -600,7 +679,7 @@ class AppApiController extends Controller {
 				$this->log('--FB---');
 				$this->log($errors ['email']);
 				$this->log(serialize($this->Member));
-				return $this->_apiEr ( __( 'You tried to register via Facebook that is connected to an email address that already exists in our database and that email is not connected to your Facebook account in our system. Try to login with your email and password.' ), true );
+				return $this->_apiEr ( __( 'Non possiamo effettuare la registrazione con Facebook. Per favore registrati con il tuo numero di telefono o con la tua email, grazie.' ),   true,null,null,'297' );
 			}
 			
 			$msg = array ();
@@ -608,13 +687,19 @@ class AppApiController extends Controller {
 				$msg [] = $col . ': ' . implode ( ', ', $er );
 			}
 			
-			return $this->_apiEr ( __( 'There was an error connecting via Facebook: %s', implode ( '; ', $msg ) ), true );
+			return $this->_apiEr ( __( 'Non possiamo effettuare la registrazione con Facebook. Per favore registrati con il tuo numero di telefono o con la tua email, grazie.', implode ( '; ', $msg ) ),  true,null,null,'297' );
 		}
 		else
 		{
 			$this->log ( 'buon fine 1' );
 			$this->PrivacySetting->CreateSettings ( $memberNew ['Member']['big'] );
-			$this->Wallet->addAmount ( $memberNew ['Member']['big'], '50', 'Welcome to Haamble' );
+            
+            $currentTimestamp=time();
+            if (($currentTimestamp>=1418338800 AND $currentTimestamp<=1418425200) OR ($currentTimestamp>=1419030000 AND $currentTimestamp<=1419152400))
+            
+			$this->Wallet->addAmount ( $memberNew ['Member']['big'], '500', 'Welcome to Haamble extra' );  
+                else
+                 $this->Wallet->addAmount ( $memberNew ['Member']['big'], '50', 'Welcome to Haamble' );     
 			$this->_use_fb_picture($memberNew ['Member']['fb_id'], $memberNew);
 			$this->log ( 'buon fine 3' );
 				

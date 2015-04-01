@@ -255,21 +255,54 @@ class Place extends AppModel {
 		
 		
 		$db = $this->getDataSource ();
-		$sql = 'SELECT
-					Place.big as "big",
-					Place.name as "name",
-					Place.lonlat as "lonlat",
-					Place.category_id as "category_id",
-					photos.big as "DefaultPhoto__big",
-					photos.original_ext as "DefaultPhoto__original_ext"
-				FROM places AS Place
-				LEFT JOIN photos ON (Place.default_photo_big = photos.big AND photos.status != 255) 
-				WHERE	Place.status != 255 ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) asc LIMIT 15'; // todo: rimettere . API_MAP_LIMIT;
+		$sqlOLD = "SELECT ".
+					"Place.big as \"big\",".
+					"Place.name as \"name\",".
+					"Place.lonlat as \"lonlat\",".
+					"Place.category_id as \"category_id\",".
+					"photos.big as \"DefaultPhoto__big\",".
+					"photos.original_ext as \"DefaultPhoto__original_ext\" ".
+                    "FROM places AS Place ".
+				"LEFT JOIN photos ON (Place.default_photo_big = photos.big AND photos.status != 255) ".
+                //"LEFT JOIN photos ON (Place.default_photo_big = photos.big) ". 
+				"WHERE Place.status != 255 ".
+                "ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) ASC ". 
+                "LIMIT 15"; // todo: rimettere . API_MAP_LIMIT;
 		// LIMIT ' . API_MAP_LIMIT;
 		// TODO: set a limit?		(( Place.lonlat <@> ? )::numeric(10,1) * 1.6) AS "Place__distance",
-	
+	    
+         $sql = "SELECT ".
+                    "Place.big as \"big\",".
+                    "Place.name as \"name\",".
+                    "Place.lonlat as \"lonlat\",".
+                    "Place.category_id as \"category_id\",".
+                    "photos.big as \"DefaultPhoto__big\",".
+                    "photos.original_ext as \"DefaultPhoto__original_ext\", ".
+                    "photos.gallery_big as \"DefaultPhoto__gallery_big\" ".
+                "FROM places AS Place ".
+                "LEFT JOIN photos ON (Place.default_photo_big = photos.big) ". 
+                "WHERE Place.status != 255 AND photos.status IS NOT NULL AND photos.status!=255 ".
+                "ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) ASC ". 
+                "LIMIT 15"; // todo: rimettere . API_MAP_LIMIT;
+    
+
+         $sqlNEW = "SELECT ".
+         		"Place.big as \"big\",".
+         		"Place.name as \"name\",".
+         		"Place.lonlat as \"lonlat\",".
+         		"Place.category_id as \"category_id\",".
+         		"photos.big as \"DefaultPhoto__big\",".
+         		"photos.original_ext as \"DefaultPhoto__original_ext\", ".
+         		"photos.gallery_big as \"DefaultPhoto__gallery_big\" ".
+         		"FROM places AS Place ".
+         		"LEFT JOIN photos ON (Place.default_photo_big = photos.big) ".
+         		"WHERE Place.status != 255 AND Place.published=1 ".
+         		"ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) ASC ".
+         		"LIMIT 15"; // todo: rimettere . API_MAP_LIMIT;
+    
+    
 		// try {
-		$result = $db->fetchAll ( $sql,array (
+		$result = $db->fetchAll ( $sqlNEW,array (
 				$coords
 		) );
 		// catch (Exception $e)
@@ -304,6 +337,66 @@ class Place extends AppModel {
 	}
 	
 	
+    public function getRadarPlacesBoost($coords) {
+        //Circa 1,5s più veloce della precedente
+        
+        //    $coords='(16.2894573999997,40.6300568)';
+        //turn the coords ma come se fa co sti places.....
+        //$coords2=str_replace ( '(', '' , $coords );
+        //$coords2=str_replace ( ')', '' , $coords2 );
+        
+        //$lavirgola=strpos($coords2,',');
+        
+        
+    //    die(debug(substr($coords2,$lavirgola+1)));
+    //    die(debug(substr($coords2,0,$lavirgola)));
+    //$coords2='('.substr($coords2,$lavirgola+1).','.substr($coords2,0,$lavirgola).')';
+        
+        
+        $db = $this->getDataSource ();
+        $sql = "SELECT ".
+                    "Place.big as \"big\",".
+                    "Place.name as \"name\",".
+                    "Place.lonlat as \"lonlat\",".
+                    "Place.category_id as \"category_id\",".
+                    "photos.big as \"DefaultPhoto__big\",".
+                    "photos.original_ext as \"DefaultPhoto__original_ext\", ".
+                    "photos.gallery_big as \"DefaultPhoto__gallery_big\" ".
+                "FROM places AS Place ".
+                "LEFT JOIN photos ON (Place.default_photo_big = photos.big) ". 
+                "WHERE Place.status != 255 AND photos.status IS NOT NULL AND photos.status!=255 ".
+                "ORDER BY ( Place.lonlat <@> ?)::numeric(10,1) ASC ". 
+                "LIMIT 15"; // todo: rimettere . API_MAP_LIMIT;
+       
+       
+        $result = $db->fetchAll ( $sql,array (
+                $coords
+        ) );
+       
+    
+        if (empty ( $result ))
+            return array ();
+            
+        // Transform to a friendlier format
+        $res = array ();
+        foreach ( $result as $key => $r ) {
+            // Transform coordinates into lon and lat
+            if (! empty ( $r  ['lonlat'] )) {
+                $lonlat = explode ( ',', preg_replace ( '/[\(\)]/', '', $r ['lonlat'] ) );
+                $r ['lon'] = $lonlat [0];
+                $r ['lat'] = $lonlat [1];
+                
+            }
+                
+                
+            //$result [$key] = $r;
+            $result [$key] = $r;
+        }
+        return $result;
+    }
+    
+    
+    
 	public function getBoardPlaces($MemberID, $offset=0) {
 		
                
@@ -323,7 +416,7 @@ class Place extends AppModel {
 		WHERE
 		c.event_big = e.big AND
 		e.place_big = p.big AND
-		c.member_big = ' . $MemberID . '
+		c.member_big = ' . $MemberID . ' AND p.status<255 
 		ORDER BY
 		p.big
 		) as px

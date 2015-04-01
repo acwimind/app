@@ -14,10 +14,11 @@ class MembersController extends AppController {
 			'Category',
 			'ExtraInfos',
 			'Wallet',
-            'MemberSetting' 
+            'MemberSetting' ,
+			'ExtraInfos'
 	);
     
-    var $components = array('MailchimpApi');
+    var $components = array('MailchimpApi','Mandrill');
     
 	public function beforeFilter() {
 		parent::beforeFilter ();
@@ -49,7 +50,7 @@ class MembersController extends AppController {
 			if ($this->Auth->login ()) {
 				return $this->redirect ( $this->Auth->redirect () );
 			} else {
-				$this->Session->setFlash ( __ ( 'E-mail or password is incorrect' . $test ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'E-mail o password errata' . $test ), 'flash/error' );
 			}
 		} elseif ($this->logged) {
 			
@@ -65,9 +66,9 @@ class MembersController extends AppController {
 							'fb_id' => null 
 					) 
 			) );
-			$this->Session->setFlash ( __ ( 'Your Facebook account was disconnected from Haamble' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Il tuo account Facebook è disconnesso da Haamble' ), 'flash/success' );
 		} else {
-			$this->Session->setFlash ( __ ( 'Your Haamble account is not connected to any Facebook account' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Il tuo account Haamble non è connesso con un account Facebook' ), 'flash/error' );
 		}
 		$this->redirect ( array (
 				'action' => 'edit' 
@@ -86,16 +87,16 @@ class MembersController extends AppController {
 							) 
 					);
 					$this->Member->save ( $member );
-					$this->Session->setFlash ( __ ( 'Your Facebook account was unlinked, you denied access to your account' ), 'flash/error' );
+					$this->Session->setFlash ( __ ( 'Il tuo account è stato scollegato. Hai vietato l\'accesso al tuo account' ), 'flash/error' );
 				} else {
-					$this->Session->setFlash ( __ ( 'Please confirm access to your Facebook account' ), 'flash/error' );
+					$this->Session->setFlash ( __ ( 'Conferma l\'accesso al tuo account Facebook' ), 'flash/error' );
 				}
 			} elseif (isset ( $this->params->query ['error'] )) {
-				$this->Session->setFlash ( __ ( 'We were not able to connect to your Facebook. Facebook told us: %s', $this->params->query ['error_description'] ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'Non sei abilitato alla connessione Facebook. Facebook risponde: %s', $this->params->query ['error_description'] ), 'flash/error' );
 			}
 		} elseif (isset ( $this->params->query ) && isset ( $this->params->query ['error_message'] )) { // response from FB - error
 			
-			$this->Session->setFlash ( __ ( 'We were not able to connect to your Facebook. Facebook told us: %s', $this->params->query ['error_message'] ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Non sei abilitato alla connessione Facebook. Facebook risponde: %s', $this->params->query ['error_message'] ), 'flash/error' );
 		} elseif (isset ( $this->params->query ) && isset ( $this->params->query ['code'] )) { // response from FB - success
 			
 			$this->Fb->exchangeToken ( $this->params->query ['code'] ); // get token
@@ -118,21 +119,47 @@ class MembersController extends AppController {
 	
 	
 
-	private function api_messa() {
-		$MySugAffinityAll = $this->Member->find ( 'all', array ( // find user in our DB
-				'recursive' => - 1
-		) );
+	public function api_messa() {
+
 		
+		set_time_limit(0);  //evita timeout con corrispondente file internal error di cake
+          
+        /*$data = $this->Member->find ( 'all', array ( // find user in our DB
+                'recursive' => - 1
+        ) );*/
+		
+        $data = $this->Member->find ( 'all', array ( // find user in our DB
+						'recursive' => - 1
+		) ); 
+		$cont=0;
+		
+        foreach ( $data as $key => $mem ) {
+			
+            //45920420
+	//		$this->Wallet->sendChatNotification('44548401',$mem ['Member'] ['big']);
+			$this->Wallet->sendChatNotification($mem ['Member'] ['big'],'Ciao, abbiamo pubblicato un aggiornamento disponibile sull\' Apple Store che richiede di essere installato per evitare eventuali messaggi di errore, appena aggiornata l\'App, disconnettiti (impostazioni->logout) e rientra (login) per sincronizzare nuovamente il tuo account. Grazie e buon divertimento!');
+		    
+	        $cont+=1;
+		}
+		/*
+		 * 
+		 * 				'conditions' => array (
+						
+						'big' => 45517058
+						),
 		foreach ( $MySugAffinityAll as $key => &$val ) {
 				
 			// check if any friendship exists yet
 			// debug($val[0] ['big']);
-			$this->Wallet->sendChatNotification($val [0] ['big'],'Ciao, abbiamo pubblicato un aggiornamento per questa app, se stai sperimentando problemi puoi uscire (impostazioni->logout) e rientrare (login) per sincronizzare nuovamente il tuo account.Grazie');
+			$this->Wallet->sendChatNotification($val [0] ['big'],'Ciao, abbiamo pubblicato un aggiornamento disponibile sull\' Apple Store che richiede di essere installato per evitare eventuali messaggi di errore, appena aggiornata l\'App, disconnettiti (impostazioni->logout) e rientra (login) per sincronizzare nuovamente il tuo account. Grazie e buon divertimento!');
 			
 		}
+		*/
+		
+		$this->_apiOk("Inviati $cont avvisi");
 		
 	}
-	
+   
 	
 	private function _fb_login_connect($fb_user = array()) {
 		$user = $this->Member->find ( 'first', array ( // find user in our DB
@@ -180,16 +207,16 @@ class MembersController extends AppController {
 			}
 			
 			$this->Member->save ( $member );
-			$this->Session->setFlash ( __ ( 'Your account was linked with your Facebook account' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Il tuo account è stato collegato con l\'account Facebook' ), 'flash/success' );
 		} elseif ($user ['Member'] ['big'] == $this->logged ['Member'] ['big']) { // already paired with this account
 			
-			$this->Session->setFlash ( __ ( 'Your account is already linked with this Facebook account' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Il tuo account è già collegato con l\'account Facebook' ), 'flash/success' );
 		} elseif ($user ['Member'] ['fb_id'] == $fb_user ['id']) { // FB account already paired with another account
 			
-			$this->Session->setFlash ( __ ( 'Your Facebook account is already linked to another Haamble account' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Il tuo account Facebook è già collegato con un account Haamble' ), 'flash/error' );
 		} else {
 			
-			$this->Session->setFlash ( __ ( 'Internal error occured' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Errore interno' ), 'flash/error' );
 		}
 		
 		return $this->redirect ( array (
@@ -237,7 +264,7 @@ class MembersController extends AppController {
 			
 			$this->_use_fb_picture ( $fb_user, $member );
 			
-			$this->Session->setFlash ( __ ( 'Thank you for registering. Please fill in your profile' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Grazie per la registrazione. Compila il tuo profilo' ), 'flash/success' );
 			return $this->redirect ( array (
 					'controller' => 'members',
 					'action' => 'edit' 
@@ -250,10 +277,10 @@ class MembersController extends AppController {
 		                                                              
 			// $this->Auth->login($user); //we should not login them, possible security breach
 		                                                              // (i can change my email on FB to any address and than login into our app)
-			$this->Session->setFlash ( __ ( 'The e-mail address is already in use, but the account is not paired with your Facebook account. If you already signed up, please login with your email and password. If you forgot your password you can reset it.' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'L\' indirizzo email è già in uso, ma non è associato con un account Facebook. Se sei già registrato effettua il login con email e password. Se hai perso la password puoi resettarla' ), 'flash/error' );
 		} else {
 			
-			$this->Session->setFlash ( __ ( 'Internal error occured' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Errore interno' ), 'flash/error' );
 		}
 		return $this->redirect ( array (
 				'action' => 'login' 
@@ -314,7 +341,7 @@ class MembersController extends AppController {
 				
 				$this->Auth->login ();
 				
-				$this->Session->setFlash ( __ ( 'Please fill in your profile' ), 'flash/info' );
+				$this->Session->setFlash ( __ ( 'Compila il tuo profilo' ), 'flash/info' );
 				
 				$this->redirect ( array (
 						'action' => 'edit',
@@ -363,7 +390,7 @@ class MembersController extends AppController {
 				} catch ( UploadException $e ) {
 				}
 				
-				$this->Session->setFlash ( __ ( 'Profile updated' ), 'flash/success' );
+				$this->Session->setFlash ( __ ( 'Profilo aggiornato' ), 'flash/success' );
 				
 				if ($register !== false) {
 					$this->redirect ( '/' );
@@ -404,10 +431,11 @@ class MembersController extends AppController {
 		$this->layout='api';
 		if ($this->logged) {
 			
-			$this->Session->setFlash ( __ ( 'You are already logged in. You can change your password here.' ), 'flash/success' );
-			return $this->redirect ( array (
+			$this->Session->setFlash ( __ ( 'Sei già loggato. Puoi cambiare la tua password qui.' ), 'flash/success' );
+		/*	return $this->redirect ( array (
 					'action' => 'edit' 
 			) );
+			*/
 		}
 		
 		if ($this->request->is ( 'post' )) {
@@ -415,7 +443,7 @@ class MembersController extends AppController {
 			$member = $this->Member->findByEmail ( $this->data ['Member'] ['email'] );
 			
 			if (! $member) {
-				$this->Session->setFlash ( __ ( 'Invalid e-mail address' ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'Indirizzo e-mail non valido' ), 'flash/error' );
 				return false;
 			}
 			
@@ -441,10 +469,12 @@ class MembersController extends AppController {
 				) )->send ();
 			}
 			
-			$this->Session->setFlash ( __ ( 'Please check your e-mail for further instruction. (Make sure to check your spam folder as well.)' ), 'flash/success' );
+	/*		$this->Session->setFlash ( __ ( 'Please check your e-mail for further instruction. (Make sure to check your spam folder as well.)' ), 'flash/success' );
 			$this->redirect ( array (
 					'action' => 'postreq' 
-			) );
+			) );*/
+			$this->layout='api';
+			$this->render ( 'postreq' );
 		}
 	}
 	
@@ -470,7 +500,7 @@ class MembersController extends AppController {
 		
 		// invalid token
 		if ($data ['PasswordResetToken'] ['token'] != $token) {
-			$this->Session->setFlash ( __ ( 'Invalid password reset link. Please use the form below to generate new link.' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Link reset password non valido. Usa il form per generare un nuovo link.' ), 'flash/error' );
 			return $this->redirect ( array (
 					'action' => 'forgot_password' 
 			) );
@@ -485,7 +515,7 @@ class MembersController extends AppController {
 				) );
 			}
 			
-			$this->Session->setFlash ( __ ( 'You are already logged in. You can change your password here.' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Sei già loggato. Puoi cambiare la password qui.' ), 'flash/success' );
 			return $this->redirect ( array (
 					'action' => 'edit' 
 			) );
@@ -507,10 +537,14 @@ class MembersController extends AppController {
 					'PasswordResetToken.member_big' => $member_big 
 			) ); // delete all tokens (no longer needed, potantial security risk)
 			
-			$this->Session->setFlash ( __ ( 'Password succesfully changed. Now use your new password to login.' ), 'flash/success' );
+		/*	$this->Session->setFlash ( __ ( 'Password succesfully changed. Now use your new password to login.' ), 'flash/success' );
 			return $this->redirect ( array (
 					'action' => 'login' 
 			) );
+			*/
+			$this->layout='api';
+			$this->render ( 'post_password' );
+			return true;
 		}
 	}
 	public function admin_logout() {
@@ -616,13 +650,13 @@ class MembersController extends AppController {
 					$this->Operator->delete ( $this->Member->id );
 				}
 				
-				$this->Session->setFlash ( __ ( 'User saved' ), 'flash/success' );
+				$this->Session->setFlash ( __ ( 'Utente salvato' ), 'flash/success' );
 				return $this->redirect ( array (
 						'action' => 'index' 
 				) );
 			} else {
 				
-				$this->Session->setFlash ( __ ( 'Error while saving user' ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'Errore durante il salvataggio dell\'utente' ), 'flash/error' );
 			}
 		} elseif ($big > 0) {
 			$params = array (
@@ -681,7 +715,7 @@ class MembersController extends AppController {
 		 * TODO: delete all member items? - chat messages - member rels - member settings - signalations - member perms - password reset tokens - api tokens - push tokens - operators - photos - ratings - checkins
 		 */
 		
-		$this->Session->setFlash ( __ ( 'User deleted' ), 'flash/success' );
+		$this->Session->setFlash ( __ ( 'Utente cancellato' ), 'flash/success' );
 		return $this->redirect ( array (
 				'action' => 'index' 
 		) );
@@ -724,7 +758,7 @@ class MembersController extends AppController {
 		 * TODO: delete all member items? Not yet. - chat messages - member rels - member settings - signalations - member perms - password reset tokens - api tokens - push tokens - operators - photos - ratings - checkins
 		 */
 		
-		$this->Session->setFlash ( __ ( 'Unsubscribed successuly' ), 'flash/success' );
+		$this->Session->setFlash ( __ ( 'Deregistrazione effettuata' ), 'flash/success' );
 		return $this->redirect ( array (
 				'action' => 'index' 
 		) );
@@ -786,7 +820,7 @@ class MembersController extends AppController {
 		if (isset ( $this->api ['version'] ) and $this->api ['version'] != null) {
 			
 			if (!$this->checkAppUpdate ( $this->api ['platform_id'], $this->api ['version'] )) {
-				$this->_apiEr ( __( 'Your version of Haamble is out of date. Please upgrade your App' ), true,null,null,'010');
+				$this->_apiEr ( __( 'La tua versione di Haamble non è aggiornata all\'ultima versione. Per favore aggiorna l\'App' ), true,null,null,'010');
 			}
 		}
 		
@@ -801,6 +835,8 @@ class MembersController extends AppController {
 				CakeLog::error ( 'Push token not saved for member_big ' . $member ['Member'] ['big'] . '. PT: ' . $pushToken . ' Platform: ' . $platformId );
 			}
 		}
+		
+		$member ['Member']['isvip']=($member ['Member']['type'] == MEMBER_VIP);
 		
 		$this->_apiOk ( array (
 				'Member' => $member ['Member'],
@@ -841,6 +877,37 @@ class MembersController extends AppController {
 		), 'data' );
 	}
 	
+    
+     public function mandrill_BenvenutoReminder($email,$user_name){
+                       
+       
+       $message = array('message'=>array(
+                                            'subject' => "$user_name Benvenuto su Haamble",
+                                            'from_email' => 'haamble@haamble.com',
+                                            'to' => array(array('email' => "$email", 
+                                                                'name' => "$user_name"))));
+                        
+                        
+
+       $template_name = array('template_name'=>'Benvenuto_reminder');
+
+       
+       $template_content = array('template_content'=>array(array(
+                                                                    'name' => 'main',
+                                                                    'content' => ''
+                                                                    )
+                                                          )      
+                                );
+                                
+       $params=array_merge($template_name,$template_content,$message);                                
+              
+       //risposta non usata per verificare failure
+       $this->Mandrill->messagesSend_template($params);
+           
+       
+   } 
+          
+    
 	/**
 	 * sign up new member
 	 */
@@ -850,9 +917,16 @@ class MembersController extends AppController {
 		
 		// save new member
 		$member = $this->_save ();
+        // INSERISCE I PRIVACY SETTINGS tutti a 1!!
+        $this->PrivacySetting->CreateSettings ( $member ['big'] );
+        // INSERISCE I EXTRA INFOs
+        $this->ExtraInfos->CreateInfos ( $member ['big'],$member ['sex'] );
+        
         //Registra l'utente in list sull'account mailchimp di haamble
        $this->MailchimpApi->addMembers(MAILCHIMP_HAAMBLE_LIST_ID,$this->api['email'],$this->api['name'],$this->api['surname']);
 		
+        $mandrillResult=$this->mandrill_BenvenutoReminder($this->api['email'],$this->api['name']);
+                        
 		$response = $this->_apiLogin ();
 		
 		$response ['user_msg'] = __( 'Registration succesfull' );
@@ -872,10 +946,17 @@ class MembersController extends AppController {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
 		
-		// INSERISCE I PRIVACY SETTINGS tutti a 1!!
-		$this->PrivacySetting->CreateSettings ( $member ['big'] );
+		
 		// give some credit
-		$this->Wallet->addAmount ( $member ['big'], '50', 'Welcome to Haamble' );
+        
+        $currentTimestamp=time();
+            if (($currentTimestamp>=1418338800 AND $currentTimestamp<=1418425200) OR ($currentTimestamp>=1419030000 AND $currentTimestamp<=1419152400))
+            
+            $this->Wallet->addAmount ( $member['big'], '500', 'Welcome to Haamble extra' );  
+                else
+                 $this->Wallet->addAmount ( $member['big'], '50', 'Welcome to Haamble' );  
+        
+		//$this->Wallet->addAmount ( $member ['big'], '50', 'Welcome to Haamble' );
 		$this->Wallet->sendChatNotification($member ['big'], 'Benvenuto su Haamble');
 		$this->_apiOk ( $response );
 	}
@@ -894,7 +975,7 @@ class MembersController extends AppController {
   //      $this->log("member: ".serialize($member));
         
 		if (! $member) {
-			$this->_apiEr ( __( 'There was an error while saving your profile data' ), true );
+			$this->_apiEr ( __( 'Si è verificato un errore durante il salvataggio del profilo' ), true );
 		}
 		
 		$params2 = array(
@@ -935,7 +1016,10 @@ class MembersController extends AppController {
 			$this->_api_photo_upload($member['big']);
 			$amount = 30;
 			$reason = "Uploaded picture";
-			$this->Wallet->addAmount($member['big'], $amount, $reason );
+            if ($this->Wallet->getCreditByReason($this->logged['Member']['big'],'Uploaded picture')==0){
+                            $this->Wallet->addAmount($member['big'], $amount, $reason );     
+                            }
+			
 		} catch ( UploadException $e ) {
 			$response ['user_msg'] .= $e->getMessage ();
 		}
@@ -1066,30 +1150,36 @@ class MembersController extends AppController {
 		}
 		
 		// TODO: check field format? check in Member model?
-		
+		if ($big==0){//se è nuovo utente imposta il type altrimenti lo lascia invariato
 		$member ['type'] = MEMBER_MEMBER;
+        }
 		$member ['status'] = ACTIVE;
 		
 		if ($big > 0) { // editing
 			$member ['big'] = $big;
 		}
-		
+		$member['sex']=strtolower($member['sex']);
 		$this->Member->set ( $member );
 		$this->Member->save ();
 		
 		if (! empty ( $this->Member->validationErrors )) { // we have errors while saving the data
-			
-			$this->_apiEr ( __( 'Please fill in all required fields' ), true, false, array (
-					'fields' => $this->Member->validationErrors 
-			) );
-		}
+                       
+            //$this->_apiEr ( __( 'Please fill in all required fields' ), true, false, array ( 'fields' => $this->Member->validationErrors ) );
+                      
+            $firstError = implode('',reset($this->Member->validationErrors));
+            $this->_apiEr ( __( $firstError ),true, false, array ( 'fields' => $this->Member->validationErrors ),'010');
+            
+        }
 		
 		$member ['big'] = $this->Member->id;
 		
-		// crediti e rank per nuova registrazione o edit profilo
-		$this->Member->rank ($member['big'], 10 + $opt_fields_rank );
-        $this->Wallet->addAmount($member['big'], $opt_fields_credit, 'Edit profilo' );
-		
+          if ($this->Wallet->getCreditByReason($member['big'],'Edit profilo')==0){
+                                   
+                                   // crediti e rank per nuova registrazione o edit profilo
+                                   $this->Member->rank ($member['big'], 10 + $opt_fields_rank );
+                                   $this->Wallet->addAmount($member['big'], $opt_fields_credit, 'Edit profilo' ); 
+                                   }
+        		
 		return $member;
 	}
 	
@@ -1125,7 +1215,7 @@ class MembersController extends AppController {
 		try {
 			$res = $this->Member->save ();
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 		
 		// AUTO CHECKIN!!!
@@ -1162,7 +1252,7 @@ class MembersController extends AppController {
 			
 			$this->_apiOk ( $data );
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 	}
 	
@@ -1188,6 +1278,49 @@ class MembersController extends AppController {
 		
 		$data = $this->Member->find ( 'first', $params );
 		
+		$data ['Member']['isvip']=($data ['Member'] ['type'] == MEMBER_VIP);
+		
+
+		
+		
+		$db = $this->Member->getDataSource();
+		
+		$serviceList=explode(',',ID_RADAR_VISIBILITY_PRODUCTS);
+		$query='SELECT count(*) FROM wallets WHERE member1_big='.$this->api ['big'] .' AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.')';
+		
+		try {
+		$mwal=$db->fetchAll($query);
+		$data ['Member']['ishot']=(count($mwal)>0);
+		}
+		catch (Exception $e)
+		{
+			
+		$this->_apiEr( $e);
+				
+		}
+		
+// count amici
+		$query='SELECT * FROM friends WHERE status=\'A\' and (member1_big='.$this->api ['big'] .' or member2_big='.$this->api ['big'].')';
+		
+		try {
+			$mwal=$db->fetchAll($query);
+		}
+		catch (Exception $e)
+		{
+				
+			$this->_apiEr( $e);
+		
+		}
+		
+		$data ['Member']['friendscount']=count($mwal);
+
+	
+		$now = new DateTime();
+	$olddate = date('m/d/Y h:i:s a', time());	
+		date_sub($now, date_interval_create_from_date_string('5 days'));
+		$data ['Member']['isnew']=($data ['Member'] ['created']) > $now;
+		
+	
 		unset ( $data ['Member'] ['password'] );
 		unset ( $data ['Member'] ['salt'] );
 		unset ( $data ['Member'] ['created'] );
@@ -1196,6 +1329,18 @@ class MembersController extends AppController {
 		unset ( $data ['Member'] ['last_web_activity'] );
 		unset ( $data ['Member'] ['status'] );
 		unset ( $data ['Member'] ['type'] );
+		
+
+		$datapic=$this->Member->getMembersPhotos( $data ['Member'] ['big']);
+		foreach ( $datapic as $key => $val ) {
+
+			$data ['Member']['Pictures'][$key]=$val;
+
+		}
+
+			
+		
+		
 		
 		if ($data ['Member'] ['photo_updated'] > 0) {
 			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
@@ -1278,7 +1423,7 @@ class MembersController extends AppController {
 			
 			$this->_apiOk ( $data );
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 	}
 	public function api_getExtraInfos() {
@@ -1317,7 +1462,7 @@ class MembersController extends AppController {
 				$this->_apiOk ( $data );
 			}
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __("Error") );
+			$this->_apiEr ( __("Errore") );
 		}
 	}
 	
@@ -1325,23 +1470,22 @@ class MembersController extends AppController {
 	 * view member profile visits
 	 * TODO: at the moment this is method is still incomplete
 	 */
-	public function api_profilevisits() {
+	public function api_profilevisitsold() {
 		$this->_checkVars ( array (), array (
 				'big' 
 		) );
-		
+		debug ( "1 ".date('h:i:s') );
 		if (! isset ( $this->api ['big'] )) {
 			$this->api ['big'] = $this->logged ['Member'] ['big'];
 		}
-		
 		$all_nearby = $this->ProfileVisit->getVisits ( $this->api ['big'] );
 		$xresponse = array ();
 		$xami = array ();
 		$counter = 0;
-		
+		debug ( "2 ".date('h:i:s') );
 		// print_r($all_nearby);
 		foreach ( $all_nearby as $ami ) {
-			
+			debug ( "21 ".date('h:i:s'). " ".$ami ['ProfileVisit'] ['visitor_big'] );
 			$ami ['ProfileVisit'] ['last_visit'] = $ami [0] ['created'];
 			$ami ['ProfileVisit'] ['number_of_visits'] = $ami [0] ['number_of_visits'];
 			unset ( $ami [0] );
@@ -1395,7 +1539,7 @@ class MembersController extends AppController {
 			}
 			
 			if ($xstatus != 'A') {
-				$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+				$data ['Member'] ['surname'] = mb_substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
 			}
 			
 			$data ['Member'] ['isFriend'] = $xisFriend;
@@ -1409,14 +1553,178 @@ class MembersController extends AppController {
 			
 			$counter += 1;
 		}
-		
+		debug ( "3 ".date('h:i:s') );
 		// reset visits read count
 		
 		$this->ProfileVisit->markAsRead ( $this->api ['big'] );
-		
+		debug ( "4 ".date('h:i:s') );
 		$this->_apiOk ( $xresponse );
 		
 		// $this->_apiOk ( $data );
+	}
+	
+	
+	
+	public function api_profilevisits() {
+		
+		$this->_checkVars ( array (), array (
+				'big'
+		) );
+	//	debug ( "1 ".date('h:i:s') );
+		if (! isset ( $this->api ['big'] )) {
+			$this->api ['big'] = $this->logged ['Member'] ['big'];
+		}
+		
+		$db = $this->Member->getDataSource();
+	
+	$query="select profile_visits.visitor_big as visitor , MAX(profile_visits.created) AS created,COUNT(profile_visits.visitor_big) AS number_of_visits , MAX(members.name) as name,MAX(members.middle_name) as middle_name, max(members.surname) as surname, max(members.photo_updated) as photo_updated,max(members.sex) as sex ".
+			",max(members.type) as type,max(members.created) as mcreated".
+ ", max(member_settings.chat_ignore) as ignora , max(friends.status) as amico from profile_visits  ".
+ "left outer join members on (profile_visits.visitor_big=members.big ) ".
+"left outer join friends on ( (friends.member1_big=profile_visits.visitor_big or friends.member2_big=profile_visits.visitor_big) and ( friends.member1_big=".$this->api ['big']." or friends.member2_big=".$this->api ['big'].")) ".
+"left outer join member_settings on ( (member_settings.from_big=profile_visits.visitor_big or member_settings.to_big=profile_visits.visitor_big)and ( member_settings.from_big=".$this->api ['big']." or member_settings.to_big=".$this->api ['big'].")) ".
+"   where visited_big=".$this->api ['big']." and members.status<>255 and (member_settings.chat_ignore<>1 or member_settings is null)   group by profile_visits.visitor_big order by created desc";
+        ;
+				
+	try {
+		$membersArray=$db->fetchAll($query);
+	}
+	catch (Exception $e)
+	{
+	$this->_apiOk ( $e);
+		
+	}
+	
+	$counter = 0;
+	$xresponse =array();
+	foreach ( $membersArray as $ami ) {
+		//debug ( $ami['visitor'] );
+		$xami=array();
+		$xami['ProfileVisit'] ['visitor_big'] = $ami [0] ['visitor'];
+		$xami['ProfileVisit'] ['last_visit'] = $ami [0] ['created'];
+		$xami ['ProfileVisit'] ['number_of_visits'] = $ami [0] ['number_of_visits'];
+	$xami['Member']['big']=$ami[0]['visitor'];
+	
+	
+	$xami ['Member']['isvip']=($ami[0] ['type'] == MEMBER_VIP);
+	
+	
+	
+	
+	$db = $this->Member->getDataSource();
+	
+	$serviceList=explode(',',ID_RADAR_VISIBILITY_PRODUCTS);
+	$query='SELECT count(*) FROM wallets WHERE member1_big='.$this->api ['big'] .' AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.')';
+	
+	try {
+		$mwal=$db->fetchAll($query);
+		$xami  ['Member']['ishot']=(count($mwal)>0);
+	}
+	catch (Exception $e)
+	{
+	
+		$this->_apiEr( $e);
+	
+	}
+	
+	$now = new DateTime();
+	$olddate = date('m/d/Y h:i:s a', time());
+	date_sub($now, date_interval_create_from_date_string('5 days'));
+	$xami  ['Member']['isnew']=($ami[0] ['mcreated']) > $now;
+	
+	
+	
+	$xami['Member']['name']=$ami[0]['name'];
+	$xami['Member']['surname']=$ami[0]['surname'];
+	$xami['Member']['sex']=$ami[0]['sex'];
+//	$xami['Member']['big']=$ami[0]['visitor'];
+	if (isset ( $ami[0] ['photo_updated'] ) && $ami[0] ['photo_updated'] > 0) {
+		$xami ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $ami[0] ['visitor'], $ami[0] ['photo_updated'] );
+	} else {
+		// standard image
+		$sexpic = 2;
+		if ($ami[0]  ['sex'] == 'f') {
+			$sexpic = 3;
+		}
+	
+		$xami ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+	}
+
+	$xami ['Member'] ['isFriend'] = strlen($ami[0]['amico']);
+	
+	if ($ami[0]['amico'] != 'A') {
+		$xami ['Member'] ['surname'] = mb_substr ( $xami ['Member'] ['surname'], 0, 1 ) . '.';
+	}
+	
+	
+	/*	unset ( $ami [0] );
+			
+		$xami [] = $ami;
+		// print_r($ami);
+		// print_r($xami);
+		$params = array (
+				'conditions' => array (
+						'Member.big' => strval ( $ami ['ProfileVisit'] ['visitor_big'] )
+				),
+				'fields' => array (
+						'Member.big',
+						'Member.name',
+						'Member.middle_name',
+						'Member.surname',
+						'Member.photo_updated',
+						'Member.sex',
+						'Member.birth_date',
+						'Member.address_town',
+						'Member.address_country'
+				),
+				'recursive' => - 1
+		);
+		
+		$data = $this->Member->find ( 'first', $params );
+			
+		// print_r($data);
+		// debug ( $data ['Member'] );
+			
+		if (isset ( $data ['Member'] ['photo_updated'] ) && $data ['Member'] ['photo_updated'] > 0) {
+			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $data ['Member'] ['big'], $data ['Member'] ['photo_updated'] );
+		} else {
+			// standard image
+			$sexpic = 2;
+			if ($data ['Member'] ['sex'] == 'f') {
+				$sexpic = 3;
+			}
+	
+			$data ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+		}
+			
+		// ADDED key for frindship
+		$xfriend = $this->Friend->FriendsAllRelationship ( $this->logged ['Member'] ['big'], $data ['Member'] ['big'] );
+		$xisFriend = 0;
+		$xstatus = 'NO';
+		if (count ( $xfriend ) > 0) {
+			$xisFriend = 1;
+			$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
+			$xstatus = $xfriend [0] ['Friend'] ['status'];
+		}
+			
+		if ($xstatus != 'A') {
+			$data ['Member'] ['surname'] = mb_substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+		}
+			
+		$data ['Member'] ['isFriend'] = $xisFriend;
+			
+		$xami [$counter] ['Member'] = $data ['Member'];
+		*/		
+		$xresponse [] = $xami;
+		/*
+		 * debug($xresponse);
+	
+				*/
+		$counter += 1;
+	}
+	$this->ProfileVisit->markAsRead ( $this->api ['big'] );
+	$this->_apiOk ( $xresponse );
+	
 	}
 	
 	/*
@@ -1428,6 +1736,9 @@ class MembersController extends AppController {
 		
 		$membersMails = array ();
 		$membersPhones = array ();
+        $this->log("############CHECKCONTACTSPROFILE#############");
+        $this->log("MEMBER ->".$this->api ['member_big']);
+        
 		$ContactBIG = $this->api ['member_big'];
 		$PhoneContacts = array ();
 		
@@ -1436,11 +1747,13 @@ class MembersController extends AppController {
 		if (isset ( $this->api ['chunk'] )) {
 			$chunk = $this->api ['chunk'];
 		}
+        $this->log("CHUNK -> ".$chunk);
 		$numChunks = 1;
 		if (isset ( $this->api ['chunksCount'] )) {
 			$numChunks = $this->api ['chunksCount'];
 		}
-		
+		$this->log("NUMCHUNK -> ".$numChunks);
+        
 		$Privacyok = $this->PrivacySetting->getPrivacySettings ( $this->api ['member_big'] );
 		$goonPrivacy = true;
 		if (count ( $Privacyok ) > 0) {
@@ -1449,13 +1762,16 @@ class MembersController extends AppController {
 			}
 		}
 		if ($goonPrivacy) {
-			for($i = 1; $i <= $numChunks; $i ++) {
+			for($i = 1; $i <= $numChunks; $i++) {
 				
-				$xPhoneContacts = $this->api ['contacts' . $chunk];
+                $this->log("CHUNK -> $i ");
+				$xPhoneContacts = $this->api ['contacts' . $i];
+                $this->log("xPhoneContacts -> ".serialize($xPhoneContacts));
 				$XCo2 = json_decode ( $xPhoneContacts, true );
 				$PhoneContacts = array_merge ( $PhoneContacts, $XCo2 );
 			}
-			
+            $this->log("##########################PhoneContacts#######################");
+			$this->log("PhoneContacts -> ".serialize($PhoneContacts));
 			// array_merge
 			// delete all existing contacts
 			if ($chunk == '0') 			// only for chunk=0
@@ -1616,7 +1932,7 @@ class MembersController extends AppController {
 						
 						$mem ['Member'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
 					}
-					$mem ['Member'] ['surname'] = substr ( $mem ['Member'] ['surname'], 0, 1 ) . '.';
+					$mem ['Member'] ['surname'] = mb_substr ( $mem ['Member'] ['surname'], 0, 1 ) . '.';
 						
 					$AppoMem [] = $mem;
 				}
@@ -1625,7 +1941,7 @@ class MembersController extends AppController {
 		/*
 		 * $dbo = $this->Member->getDatasource (); $logs = $dbo->getLog (); $lastLog = end ( $logs ['log'] ); debug ( $lastLog ['query'] );
 		 */
-		
+		$this->log("############FINE CHECKCONTACTSPROFILE#############");
 		$this->_apiOk ( $AppoMem );
 	}
 	
@@ -1655,7 +1971,9 @@ class MembersController extends AppController {
 						'Member.sex',
 						'Member.birth_date',
 						'Member.address_town',
-						'Member.address_country' 
+						'Member.address_country',
+						'Member.description',
+						'Member.type'
 				) 
 		);
 		
@@ -1669,6 +1987,8 @@ class MembersController extends AppController {
 			$xisFriend = 1;
 			$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
 		}
+		
+		$data ['Member']['isvip']=($data ['Member'] ['type'] == MEMBER_VIP);
 		$data ['Member'] ['isFriend'] = $xisFriend;
 		
 		// debug($data);
@@ -1721,7 +2041,7 @@ class MembersController extends AppController {
 			$place = $this->_addPlacePhotoUrls ( $place );
 			
 			if (empty ( $place )) {
-				$this->_apiEr ( __('Nonexistent place.') );
+				$this->_apiEr ( __('Posto inesistente.') );
 			}
 			
 			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
@@ -1752,7 +2072,7 @@ class MembersController extends AppController {
 			$place = $this->_addPlacePhotoUrls ( $place );
 			
 			if (empty ( $place )) {
-				$this->_apiEr ( __('Nonexistent place.') );
+				$this->_apiEr ( __('Posto inesistente.') );
 			}
 			
 			$category = $this->Place->Category->getOne ( $place ['Place'] ['category_id'] );
@@ -1832,7 +2152,7 @@ class MembersController extends AppController {
 		}
 		
 		if ($xstatus != 'A') {
-			$data ['Member'] ['surname'] = substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
+			$data ['Member'] ['surname'] = mb_substr ( $data ['Member'] ['surname'], 0, 1 ) . '.';
 		}
 		
 		$data ['Member'] ['isFriend'] = $xisFriend;
@@ -1876,7 +2196,7 @@ class MembersController extends AppController {
 		$this->set ( 'member', $member );
 		
 		if (! $member) {
-			$this->Session->setFlash ( __ ( 'The user does not exist' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'L\'utente non esiste' ), 'flash/error' );
 			return $this->redirect ( '/' );
 		}
 		
@@ -1931,7 +2251,7 @@ class MembersController extends AppController {
 		$this->set ( 'member', $member );
 		
 		if (! $member) {
-			$this->Session->setFlash ( __ ( 'The user does not exist' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'L\'utente non esiste' ), 'flash/error' );
 			return $this->redirect ( '/' );
 		}
 		
@@ -1996,7 +2316,7 @@ class MembersController extends AppController {
 		
 		$MySugAffinityAll = array ();
 		$MySugAffinity = array ();
-		$MySugAffinityAll = $this->Member->getAffinityMembers ( $memBig );
+		$MySugAffinityAll = $this->Member->getAffinityMembersNew ( $memBig );
 		
 		// debug($MySugAffinityAll);
 		
@@ -2010,7 +2330,7 @@ class MembersController extends AppController {
 			$logs = $dbo->getLog ();
 			$lastLog = end ( $logs ['log'] );
 			if (count ( $AlreadyFr ) == 0) {
-				$MySugAffinityAll [$key] [0] ['surname'] = substr ( $MySugAffinityAll [$key] [0] ['surname'], 0, 1 ) . '.';
+				$MySugAffinityAll [$key] [0] ['surname'] = mb_substr ( $MySugAffinityAll [$key] [0] ['surname'], 0, 1 ) . '.';
 				$MySugAffinity [] = $MySugAffinityAll [$key];
 			}
 		}

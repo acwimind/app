@@ -189,6 +189,8 @@ class AppWebController extends Controller {
 			array('members', 'forgot_password'),
 			array('members', 'change_password'),
 			array('members', 'registercheck'),	
+				array('members', 'postreq'),
+				array('members', 'post_password'),
 				array('landing', 'index')
 		);
 
@@ -198,7 +200,7 @@ class AppWebController extends Controller {
 
 			if (!in_array($here, $public_pages)) {	//check if this is public URL
 				if ($here != array('home', 'index')) {
-					$this->Session->setFlash(__('Access denied, please login'), 'flash/error');
+					$this->Session->setFlash(__('Accesso negato, effettuare il login'), 'flash/error');
 				}
 				return $this->redirect(array('controller' => 'cms_entries', 'action' => 'home', 'admin' => false));
 			}
@@ -207,7 +209,7 @@ class AppWebController extends Controller {
 		//not admin
 		elseif ($this->logged['Member']['type'] != MEMBER_ADMIN && $this->params['prefix'] == 'admin') {
 
-			$this->Session->setFlash(__('Access denied, you are not administrator'), 'flash/error');
+			$this->Session->setFlash(__('Accesso negato, non hai i permessi di Amministratore'), 'flash/error');
 			return $this->redirect('/');
 
 		}
@@ -215,7 +217,7 @@ class AppWebController extends Controller {
 		//not operator and not admin
 		elseif (!in_array($this->logged['Member']['type'], array(MEMBER_OPERATOR, MEMBER_ADMIN)) && $this->params['prefix'] == 'operator') {
 
-			$this->Session->setFlash(__('Access denied, you are not operator'), 'flash/error');
+			$this->Session->setFlash(__('Accesso negato, non hai i permessi di Operatore'), 'flash/error');
 			return $this->redirect('/');
 
 		}
@@ -295,7 +297,7 @@ class AppWebController extends Controller {
 			'recursive' => -1,
 		));
 		if (!in_array($current_place_big, $place_bigs)) {
-			$this->Session->setFlash(__('You do not have permissions access this page'), 'flash/error');
+			$this->Session->setFlash(__('Non hai i permessi per accedere alla pagina richiesta'), 'flash/error');
 			return $this->redirect('/');
 		}
 

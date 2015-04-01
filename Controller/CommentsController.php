@@ -78,7 +78,7 @@ class CommentsController extends AppController {
 	}
 	else 
 	{	
-		$this->_apiEr( __("Comment/Like not saved") );
+		$this->_apiEr( __("Commento o Like non salvato") );
 	}
 	}
 

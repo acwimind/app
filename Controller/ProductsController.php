@@ -60,7 +60,7 @@ public $uses = array('Wallet','Product');
               $this->_apiOk($result);       
               }
               else {
-                 $this->_apiError(__('You do not have enough credit'));       
+                 $this->_apiError(__('Non hai credito sufficiente'));       
           }  
                   
         }

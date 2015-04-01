@@ -1,12 +1,12 @@
 <?php
 
-echo '<p>' . __('Hello %s,', $name) . '<br />' . 
-		__('this is password reset e-mail from Haamble.') . '</p>' . "\n";
+echo '<p>' . __('Ciao %s,', $name) . '<br />' . 
+		__('questo è un messaggio per resettare la tua password di Haamble.') . '</p>' . "\n";
 
 echo '<p>' . $this->Html->link(
-				__('Please click here to reset your password.'), 
+				__('Per favore clicca qui per resettare la tua password:'), 
 				$this->Html->url(array('controller' => 'members', 'action' => 'change_password', $member_big, $token), true)
 	) . '</p>' . "\n";
 
-echo '<p>' . __('If you didn\'t request password reset, please ignore this e-mail. Password reset was requested from IP address %s.', $ip) . '</p>';
+echo '<p>' . __('Se non hai richiesto di resettare la tua password ignora questa e-mail. La richiesta di resettare la password è stata fatta da questo IP %s.', $ip) . '</p>';
 

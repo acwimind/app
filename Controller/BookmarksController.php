@@ -171,7 +171,7 @@ class BookmarksController extends AppController {
 		try {
 			
 			$this->_add($place_big);
-			$this->Session->setFlash(__('Place bookmarked'), 'flash/success');
+			$this->Session->setFlash(__('Posto salvato nei preferiti'), 'flash/success');
 
 		} catch (ErrorEx $e) {
 
@@ -192,7 +192,7 @@ class BookmarksController extends AppController {
 		try {
 			
 			$this->_remove($place_big);
-			$this->Session->setFlash(__('Place removed from bookmarks'), 'flash/success');
+			$this->Session->setFlash(__('Posto rimosso dai preferiti'), 'flash/success');
 
 		} catch (ErrorEx $e) {
 

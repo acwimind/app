@@ -32,12 +32,12 @@ class RegionsController extends AppController {
 			if ($this->Region->saveAll ( $this->request->data, array (
 					'validate' => 'first' 
 			) )) {
-				$this->Session->setFlash ( __ ( 'Region saved' ), 'flash/success' );
+				$this->Session->setFlash ( __ ( 'Regione salvata' ), 'flash/success' );
 				return $this->redirect ( array (
 						'action' => 'index' 
 				) );
 			} else {
-				$this->Session->setFlash ( __ ( 'Error while saving region' ), 'flash/error' );
+				$this->Session->setFlash ( __ ( 'Errore durante il salvataggio della Regione' ), 'flash/error' );
 			}
 		} elseif ($id > 0) {
 			
@@ -59,9 +59,9 @@ class RegionsController extends AppController {
 			$this->Region->deleteAll ( array (
 					'Region.id' => $id 
 			) );
-			$this->Session->setFlash ( __ ( 'Region deleted' ), 'flash/success' );
+			$this->Session->setFlash ( __ ( 'Regione eliminata' ), 'flash/success' );
 		} else {
-			$this->Session->setFlash ( __ ( 'Unable to delete region, because it contains places. Please delete places first.' ), 'flash/error' );
+			$this->Session->setFlash ( __ ( 'Non riesco a cancellare la regione perchè contiene posti. Cancellare i posti.' ), 'flash/error' );
 		}
 		return $this->redirect ( array (
 				'action' => 'index' 
@@ -116,7 +116,7 @@ class RegionsController extends AppController {
 			// 'recursive' => -1,
 			// ));
 		} catch ( Exception $e ) {
-			$this->_apiEr ( __ ( "Error" ) );
+			$this->_apiEr ( __ ( "Errore" ) );
 		}
 		
 		// $cities_array = array();

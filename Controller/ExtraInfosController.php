@@ -58,7 +58,7 @@ class ExtraInfosController extends AppController{
 		if ($result !== false) {
 		return true;
 		} else {
-		throw new ErrorEx(__('Error saving extra info.'));
+		throw new ErrorEx(__('Errore salvataggio extra info.'));
 			}
 
 	}
@@ -74,14 +74,14 @@ class ExtraInfosController extends AppController{
 			$extraInfos->create();
 			$this->request->data['ExtraInfos']['member_big'] = $this->logged['Member']['big'];
 			if ($extraInfos->save( $this->request->data )) {
-				$this->Session->setFlash(__('Your information has been saved.'), 'flash/success');
+				$this->Session->setFlash(__('Le informazioni sono state salvate.'), 'flash/success');
 
 				return $this->redirect ( array (
 						'action' => 'index'
 				) );
 			}
 
-			$this->Session->setFlash(__('Unable to add your post.'), 'flash/error');
+			$this->Session->setFlash(__('Non posso aggiungere un posto.'), 'flash/error');
 		}
 
 		$this->request->data = $extraInfos->findByMemberBig( $this->logged['Member']['big'] );//prefill form, after save

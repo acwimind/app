@@ -1,7 +1,7 @@
 qq.FineUploaderBasic = function(o){
     var that = this;
     this._options = {
-        debug: false,
+        debug: true,
         button: null,
         multiple: true,
         maxConnections: 3,

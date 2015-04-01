@@ -44,6 +44,7 @@ define('DELETED', 255);
 define('MEMBER_MEMBER', 1);
 define('MEMBER_OPERATOR', 2);
 define('MEMBER_ADMIN', 3);
+define('MEMBER_VIP', 4);  
 
 define('LANG_NONE', 0);
 define('LANG_EN', 1);
@@ -91,6 +92,9 @@ define('EVENT_TYPE_DEFAULT', 2);
 
 define('ADMIN', 'admin');
 
+// ----- UTENTE HAAMBLE --------
+define('ID_HAAMBLE_USER',90644);
+//------------------------------
 define('API', 'api');
 define('API_LOG_MEMBERS', '');	//coma separated list members to log all their activity via API
 define('API_TOKEN_VALID', strtotime('+30 days'));	//validity of API token, prolonged on every API call
@@ -129,15 +133,9 @@ define('PUSH_IOS', 2);
 define('PUSH_WINDOWS', 3);
 
 // App Version
-//define('ANDROID_APP_VERSION',1.0);
-//define('IOS_APP_VERSION',2.0);
-//define('WPHONE_APP_VERSION',1.0);
-
-// App Version
-define('ANDROID_APP_VERSION','1.0');
-define('IOS_APP_VERSION','1.0');
-define('WPHONE_APP_VERSION','1.0');
-
+define('ANDROID_APP_VERSION','1.1');
+define('IOS_APP_VERSION','2.1');
+define('WPHONE_APP_VERSION','1');
 
 // Type of home screen
 define('HOME_CHECKED_IN', 1);
@@ -159,6 +157,12 @@ define('RATING_MAXIMUM', 5);
 
 // Affinity Members
 define('MIN_AFFINITY_MEMBERS',10); // The min number of affinity members displayed in the list
+
+// SMS Limit
+define('MAXSMSLIMIT',100);
+
+// SOGLIA CHAT NOTIFICATION
+define('SOGLIA_CHAT_NOTIFICATION',50);
 
 // MailChimp config
 define('MAILCHIMP_HAAMBLE_LIST_ID','8b7eef3ed5');
@@ -421,6 +425,7 @@ if (function_exists('apc_fetch')) {
  */
 CakePlugin::load('DebugKit');
 CakePlugin::load('Uploader');
+//CakePlugin::load('Mandrill');
 
 /**
  * You can attach event listeners to the request lifecyle as Dispatcher Filter . By Default CakePHP bundles two filters:

@@ -29,3 +29,36 @@ $this->AdvForm->initUploader();
 <div id="lightbox">
 	<div id="register-window"></div>
 </div>
+<script type="text/javascript">
+$(function(){
+	$('form#MemberRegisterForm').submit(function(){
+
+		$('form#MemberRegisterForm div.error-message').remove();
+		$('form#MemberRegisterForm div.error').removeClass('error');
+
+		$.post('<?php echo $form_url; ?>', $(this).serialize(), function(response){
+			try {
+
+				var r = jQuery.parseJSON( response );
+				console.log(r);
+				for(key in r) {
+					for(var i=0; i<r[key].length; i++) {
+						var inputDiv = $('form#MemberRegisterForm input[name="data[Member]['+key+']"]').closest('div.input');
+						inputDiv.addClass('error');
+						inputDiv.append('<div class="error-message">' + r[key][i] + '</div>');
+					}
+				}
+
+			} catch (err) {
+
+				$('#register-window').html(response);
+				$('.content-header').remove();
+				$('#register-window').fadeIn();
+				$('#lightbox').fadeIn();
+
+			}
+		});
+		return false;
+	});
+});
+</script>

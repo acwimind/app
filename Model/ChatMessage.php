@@ -17,6 +17,240 @@ class ChatMessage extends AppModel {
 		),
 	);
 	
+    /* 
+     *  findConversationsNew è stato creato perchè l'output di findConversations con offset>0 
+     *  è diverso dall'output di findConversations con offset=0. Questa nuova versione effettua la paginazione
+     *  presentando l'output sempre allo stesso modo.    
+    */
+       
+    public function findConversationsNew($memberOne, $partnerBig, $olderThan = null, $newerThan = null, $offset = 0, $refresh = false)
+    {
+        
+        if (!$refresh)
+        {
+           
+            // Get message parties
+            $pars = array(
+                'conditions' => array(
+                    'OR' => array(
+                        array(
+                            'MemberRel.member1_big' => $memberOne,
+                            'MemberRel.member2_big' => $partnerBig,
+                        ),
+                        array(
+                            'MemberRel.member2_big' => $memberOne,
+                            'MemberRel.member1_big' => $partnerBig,
+                        ),
+                    ),
+                ),
+                'fields' => array(
+                    'Sender.name',
+                    'Sender.middle_name',
+                    'Sender.surname',
+                    'Sender.photo_updated',
+                        'Sender.sex',
+                    'Recipient.name',
+                    'Recipient.middle_name',
+                    'Recipient.surname',
+                    'Recipient.photo_updated',
+                    'Sender.big',
+                    'Recipient.big',
+                        'Recipient.sex',
+                ),
+                'recursive' => 0
+            );
+            try {
+                $parties = $this->MemberRel->find('first', $pars);
+//                debug($parties);
+            }
+            catch (Exception $e)
+            {
+//                debug($e);
+                CakeLog::error($e);
+            }
+    
+            if (empty($parties))
+            {
+                // Get message parties
+                $pars = array(
+                    'conditions' => array(
+                        'Sender.big' => $partnerBig 
+                        
+                    ),
+                    'fields' => array(
+                        'Sender.name',
+                        'Sender.middle_name',
+                        'Sender.surname',
+                        'Sender.photo_updated',
+                        'Sender.big',
+                            'Sender.sex',
+                    ),
+                    'recursive' => 0
+                );
+                try {
+                    $sender = $this->Sender->find('first', $pars);
+//                    debug($sender);
+                }
+                catch (Exception $e)
+                {
+//                    debug($e);
+                    CakeLog::error($e);
+                }
+
+                $result = array();
+                if (!empty($sender))
+                {
+                    $result = $sender;
+                }
+                
+                // Recipient
+                $pars = array(
+                    'conditions' => array(
+                        'Recipient.big' => $memberOne 
+                        
+                    ),
+                    'fields' => array(
+                        'Recipient.name',
+                        'Recipient.middle_name',
+                        'Recipient.surname',
+                        'Recipient.photo_updated',
+                        'Recipient.big',
+                            'Recipient.sex',
+                    ),
+                    'recursive' => 0
+                );
+                try {
+                    $recipient = $this->Recipient->find('first', $pars);
+//                    debug($recipient);
+                }
+                catch (Exception $e)
+                {
+//                    debug($e);
+                    CakeLog::error($e);
+                }
+                
+                if (!empty($recipient))
+                {
+                    $result = array_merge($result, $recipient);
+                }
+//                debug($result);
+                return array('members' => $result);
+            }
+            
+        
+        }
+            
+        // Get messages
+        $params = array(
+            'conditions' => array(
+                'OR' => array(
+                    array(
+                        'MemberRel.member1_big' => $memberOne,
+                        'MemberRel.member2_big' => $partnerBig,
+                    ),
+                    array(
+                        'MemberRel.member2_big' => $memberOne,
+                        'MemberRel.member1_big' => $partnerBig,
+                    ),
+                ),
+                'OR ' => array(
+                    array(
+                        'ChatMessage.from_big' => $memberOne,
+                        'ChatMessage.from_status' => 1,
+                    ),
+                    array(
+                        'ChatMessage.to_big' => $memberOne,
+                        'ChatMessage.to_status' => 1,
+                    ),
+                ),
+            ),
+            'fields' => array(
+                'Sender.big',
+                'Recipient.big',
+                'ChatMessage.created',
+                'ChatMessage.text',
+                'ChatMessage.id',
+                'ChatMessage.photo_updated',
+                'ChatMessage.read',
+                'ChatMessage.msgclientid'
+            ),
+            'order' => array(
+                'ChatMessage.created' => 'desc'
+            ),
+            'limit' => API_CHAT_PER_PAGE,
+        );
+        
+        $paramsFull=$params;
+        
+        if (!empty($olderThan))
+        {
+            $params['conditions'] = array_merge($params['conditions'], array('ChatMessage.created <=' => $olderThan ));
+        }
+        
+        if (!empty($newerThan))
+        {
+            $params['conditions'] = array_merge($params['conditions'], array('ChatMessage.created >' => $newerThan ));
+        }
+
+        if (!empty($offset))
+        {
+            $params['offset'] = $offset * API_CHAT_PER_PAGE;
+        }
+        
+        try {
+            $chatmsgs = $this->find('all', $params);
+        }
+        catch (Exception $e)
+        {
+//            debug($e);
+            CakeLog::error($e);
+        }
+        // Data post porcessing
+        foreach ($chatmsgs as &$res)
+        {
+            $res['sender_big'] = $res['Sender']['big'];
+            unset($res['Sender']); 
+            $res['recipient_big'] = $res['Recipient']['big'];
+            unset($res['Recipient']);
+            $textmsg=$res['ChatMessage']['text']; 
+            $res['msg_text'] = stripslashes($textmsg);
+            $res['photo_updated'] = $res['ChatMessage']['photo_updated'];
+            $res['msg_created'] = $res['ChatMessage']['created'];
+            $res['msg_id'] = $res['ChatMessage']['id'];
+            $res['read'] = $res['ChatMessage']['read'];
+            $res['msgclientid'] = $res['ChatMessage']['msgclientid'];
+            $this->log('Mess->'.$res['msg_text']);
+            unset($res['ChatMessage']); 
+            
+        }
+        
+        // Build result
+        $result = array();
+        if (!$refresh)
+        {
+            $result['members'] = $parties;
+        }
+        $result['chat_messages']= array_reverse($chatmsgs);
+        
+        // Get total count of messages in every page
+        if ($offset>= 0)
+        {
+            unset($params['limit']);
+            unset($params['offset']);
+            $count = $this->find('count', $params);
+            $result['msg_count'] = $count;
+        }
+        
+        unset($paramsFull['limit']);
+        unset($paramsFull['offset']);
+        $countFull=$this->find('count', $paramsFull);
+        $result['total_count'] = $countFull;
+        //$this->log('Result ->'.serialize($result));
+        return $result;
+    }
+    
+    
+    
 	public function findConversations($memberOne, $partnerBig, $olderThan = null, $newerThan = null, $offset = 0, $refresh = false)
 	{
 //		die(debug($memberOne)); 
@@ -202,8 +436,10 @@ class ChatMessage extends AppModel {
 			$res['sender_big'] = $res['Sender']['big'];
 			unset($res['Sender']); 
 			$res['recipient_big'] = $res['Recipient']['big'];
-			unset($res['Recipient']); 
-			$res['msg_text'] = $res['ChatMessage']['text'];
+			unset($res['Recipient']);
+            $textmsg=$res['ChatMessage']['text']; 
+            $res['msg_text'] = stripslashes($textmsg); 
+			//$res['msg_text'] = $res['ChatMessage']['text'];
 			$res['photo_updated'] = $res['ChatMessage']['photo_updated'];
 			$res['msg_created'] = $res['ChatMessage']['created'];
 			$res['msg_id'] = $res['ChatMessage']['id'];

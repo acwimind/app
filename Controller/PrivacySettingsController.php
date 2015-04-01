@@ -73,7 +73,7 @@ class PrivacySettingsController extends AppController {
 	}
 	else 
 	{	
-		$this->_apiEr( __("PrivacySettings not saved") );
+		$this->_apiEr( __("Impostazioni Privacy non salvate") );
 	}
 	}
 

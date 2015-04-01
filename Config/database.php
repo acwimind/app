@@ -6,22 +6,11 @@ class DATABASE_CONFIG {
 		'datasource' => 'Database/Postgres',
 		'persistent' => false,
 		'host' => 'localhost',
-		'login' => 'postgres',
-		'password' => 'palla1',
-		'database' => 'postgres',
+		'login' => 'sandro',
+		'password' => 'sandro',
+		'database' => 'haamble',
 		'prefix' => '',
-		//'encoding' => 'utf8','password' => 'I7mkw06Ss4','database' => 'haamble',:5432
-	);
-
-    	public $Postgres = array(
-		'datasource' => 'Database/Postgres',
-		'persistent' => false,
-		'host' => 'localhost',
-		'login' => 'postgres',
-		'password' => 'palla1',
-		'database' => 'test1',
-		'prefix' => '',
-		//'encoding' => 'utf8','password' => 'I7mkw06Ss4','database' => 'haamble',:5432
+		//'encoding' => 'utf8',
 	);
 
 	public $test = array(

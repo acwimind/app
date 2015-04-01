@@ -8,7 +8,7 @@ class PushToken extends AppModel {
 		'Member'
 	);
 	
-// TEST!!! 2015	protected static $apiKey = "AIzaSyC7rT2QGeKjHaE6NoRUPQ6i_6UtO7Dyeaw";
+//TEST 2015 protected static $apiKey = "AIzaSyC7rT2QGeKjHaE6NoRUPQ6i_6UtO7Dyeaw";
 	
 	protected static $apiKey = "AIzaSyDPwFwVvXhq60DqoagAyP-_xZQrcRYt4PM";
 	
@@ -17,6 +17,8 @@ class PushToken extends AppModel {
         Logger::Info('Called push/sendNotification with data: Ttl - 0 Msg - 1 Data - 2 Rcps - 3 Type - 4 Act - 5',
             array($title, $message, $data, $userIds, $type, $action));
         
+               
+        $message=utf8_encode($message);
         // TODO Initial checks e.g. if empty userIDs
         
         // Get tokens from DB by userids
@@ -29,7 +31,8 @@ class PushToken extends AppModel {
         $winRcps = array();
         foreach ($userIds as $userId)
         {
-            $tokens = $this->getPushTokens($userId);
+            $tokens = $this->getPushTokens($userId);  
+            $this->log("TOKENS".serialize($tokens));
             if (!empty($tokens))
             {
                 if (isset($tokens['andr']))
@@ -57,6 +60,7 @@ class PushToken extends AppModel {
         if (!empty($regids))
         {
             $resultAndr = null;
+             $this->log("ANDROID TOKENS".serialize($andrRcps));
             try {
                 $resultAndr = $this->sendAndroidMsg($title, $message, $data, $andrRcps, $type, $action, $regids);
             }
@@ -70,6 +74,7 @@ class PushToken extends AppModel {
         if (!empty($dvcTkns))
         {
             try {
+                $this->log("IOS TOKENS".serialize($iosRcps));
                 $this->sendIosMsg($title, $message, $data, $iosRcps, $type, $action, $dvcTkns);
             }
             catch (Exception $e)
@@ -80,7 +85,7 @@ class PushToken extends AppModel {
         if (!empty($winIds))
         {
             // TODO Call WMS
-        	try {
+        	try {   
         		$this->sendWindowsMsg($title, $message, $data, $iosRcps, $type, $action, $winIds);
         	}
         	catch (Exception $e)
@@ -105,7 +110,109 @@ class PushToken extends AppModel {
 
     }
     
-    private function sendWindowsMsg($title, $message, array $data, array $userIds, $type, $action, array $regids)
+
+    
+    
+    public function sendNotificationNew($title, $message, array $data, array $userIds, $type, $action,$img)
+    {
+    	Logger::Info('Called push/sendNotification with data: Ttl - 0 Msg - 1 Data - 2 Rcps - 3 Type - 4 Act - 5',
+    			array($title, $message, $data, $userIds, $type, $action));
+    
+    	 
+    	$message=utf8_encode($message);
+    	// TODO Initial checks e.g. if empty userIDs
+    
+    	// Get tokens from DB by userids
+    	$regids = array();
+    	$dvcTkns = array();
+    	$winIds = array();
+    	// Recipients
+    	$andrRcps = array();
+    	$iosRcps = array();
+    	$winRcps = array();
+    	foreach ($userIds as $userId)
+    	{
+    		$tokens = $this->getPushTokens($userId);
+    		$this->log("TOKENS".serialize($tokens));
+    		if (!empty($tokens))
+    		{
+    			if (isset($tokens['andr']))
+    			{
+    				$regids = array_merge($regids, $tokens['andr']);
+    				$andrRcps[] = $userId;
+    			}
+    
+    			if (isset($tokens['ios']))
+    			{
+    				$dvcTkns = array_merge($dvcTkns, $tokens['ios']);
+    				$iosRcps[] = $userId;
+    			}
+    
+    			if (isset($tokens['win']))
+    			{
+    				$winIds = array_merge($winIds, $tokens['win']);
+    				$winRcps[] = $userId;
+    			}
+    
+    		}
+    	}
+    
+    	// Decide which call to call :)
+    	if (!empty($regids))
+    	{
+    		$resultAndr = null;
+    		$this->log("ANDROID TOKENS".serialize($andrRcps));
+    		try {
+    			$resultAndr = $this->sendAndroidMsg($title, $message, $data, $andrRcps, $type, $action, $regids,$img);
+    		}
+    		catch (Exception $e)
+    		{
+    			Logger::Error($e);
+    		}
+    		Logger::Info('Call push/sendNotification Android with result: 0',
+    				array($resultAndr));
+    	}
+    	if (!empty($dvcTkns))
+    	{
+    		try {
+    			$this->log("IOS TOKENS".serialize($iosRcps));
+    			$this->sendIosMsg($title, $message, $data, $iosRcps, $type, $action, $dvcTkns,$img);
+    		}
+    		catch (Exception $e)
+    		{
+    			Logger::Error($e);
+    		}
+    	}
+    	if (!empty($winIds))
+    	{
+    		// TODO Call WMS
+    		try {
+    			$this->sendWindowsMsg($title, $message, $data, $iosRcps, $type, $action, $winIds,$img);
+    		}
+    		catch (Exception $e)
+    		{
+    			Logger::Error($e);
+    		}
+    	}
+    
+    	Logger::Info(' --------------------- Call push/sendNotification ended. ---------------------------------------------------');
+    
+    	//        print_r($regids);
+    	//        die();
+    
+    	// For testing purposes
+    	//        echo 'Message: ' . $message;
+    
+    
+    
+    	// For testing purposes
+    	//        print_r(json_decode($result));
+    	//        die();
+    
+    }
+    
+    
+    private function sendWindowsMsg($title, $message, array $data, array $userIds, $type, $action, array $regids,$img)
     {
     
     	/*
@@ -151,7 +258,13 @@ Headers ("X-NotificationClass", "2")
     	
     	
     	$tokens = $this->getPushTokens($userIds[0]);
+    	
+    	Logger::Info( 'wiqui'.$output);
+    	
     	$url = $tokens['win'][0];
+    	Logger::Info( 'wiquiu'.$url);
+    	 
+    	
   //  	die(debug($url));
    // 	$url='http://am3.notify.live.net/throttledthirdparty/01.00/AQHaIU3PSNCoQ7QBdUSLO0PDAgAAAAADAQAAAAQUZm52OkJCMjg1QTg1QkZDMkUxREQFBkVVV0UwMQ';
 
@@ -170,15 +283,15 @@ Headers ("X-NotificationClass", "2")
     	
     	// add message
     	curl_setopt($r, CURLOPT_POSTFIELDS, $toastMessage);
-    	
+    	Logger::Info( 'wiqmex'.$toastMessage);
     	// execute request
     	$output = curl_exec($r);
     	curl_close($r);
-    //	Logger::Info( $output);
+    	Logger::Info( 'wiqui'.$output);
 
     }   
     
-    private function sendAndroidMsg($title, $message, array $data, array $userIds, $type, $action, array $regids)
+    private function sendAndroidMsg($title, $message, array $data, array $userIds, $type, $action, array $regids,$img)
     {
     	//Log device tokens
     	Logger::Info('Device tokens: 0', $regids);
@@ -190,8 +303,7 @@ Headers ("X-NotificationClass", "2")
         
         $fields = array(
             'registration_ids'  => $regids,
-            'data'              => array( 'ttl' => $title, 'msg' => $message, 'data' => $data, 'rcps' => $userIds, 'type' => $type, 'act' => $action ),
-        );
+            'data'              => array( 'ttl' => $title, 'msg' => $message, 'data' => $data, 'rcps' => $userIds, 'type' => $type, 'act' => $action , 'img' => $img),);
         
         
         // rimettere . GOOGLE_API_KEY,
@@ -212,7 +324,7 @@ Headers ("X-NotificationClass", "2")
         curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0); 
         curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $fields ) );
-        
+         $this->log("DATI INVIATI A GOOGLEPUSH ".serialize($fields));
         // Execute post
         $result = curl_exec($ch);
         
@@ -259,7 +371,7 @@ Headers ("X-NotificationClass", "2")
         return $result;
     }
     
-    private function sendIosMsg($title, $msg, array $data, array $userIds, $type, $action, array $dvcTkns)
+    private function sendIosMsg($title, $msg, array $data, array $userIds, $type, $action, array $dvcTkns,$img)
     {
 		//Log device tokens
     	Logger::Info('Device tokens: 0', array(implode(',', $dvcTkns)));
@@ -331,6 +443,7 @@ Headers ("X-NotificationClass", "2")
 				$message->setCustomProperty('type', $type);
 				$message->setCustomProperty('act', $action);
 				$message->setCustomProperty('ttl', $title);
+				$message->setCustomProperty('ttl', $img);
 
 				// Set the expiry value to 30 seconds
 				$message->setExpiry(30);
@@ -594,12 +707,13 @@ Headers ("X-NotificationClass", "2")
         );
         
         $pTokens = $this->find('all', $pars);
-        
+        $this->log("PUSH TOKENS".serialize($pTokens));
         if (!empty($pTokens))
         {
             $andr = array();
             $ios = array();
             $win = array();
+            $this->log("PUSH TOKENS_no empty".serialize($pTokens));
             foreach ($pTokens as $ptoken)
             {
                 switch ($ptoken['PushToken']['platform'])
@@ -618,6 +732,11 @@ Headers ("X-NotificationClass", "2")
                     
                 }
             }
+            
+            $this->log("ANDROID ".serialize($andr));
+            $this->log("IOS ".serialize($ios));
+            $this->log("WIN ".serialize($win));
+            
             return array('andr' => $andr, 'ios' => $ios, 'win' => $win);
         }
         else
@@ -628,18 +747,24 @@ Headers ("X-NotificationClass", "2")
     
 	
     
-    public function deleteSinglePushToken($dvcToken)
+    public function deleteSinglePushToken($dvcToken,$memBig)
     {
     	$params = array(
     		'conditions' => array(
     			'PushToken.token' => $dvcToken,
+    			'PushToken.member_big' => $memBig,
     		),
     		'recursive' => -1,
     	);
     	
     	$token = $this->find('first', $params);
+    //	return $token;
     	
-    	if (!empty($token))
+    	//debug($token);
+    	
+    	$result = false;
+    	
+    	if (!empty($dvcToken))
     	{
     		$result = $this->delete($token['PushToken']['id']);
     		if (!$result)
@@ -651,6 +776,7 @@ Headers ("X-NotificationClass", "2")
     	{
     		Logger::Error('deleteSinglePushToken Empty token');
     	}
+    	return $result;
     }
 	
     public function deleteAllPushTokens($memBig)

@@ -89,11 +89,14 @@ class Checkin extends AppModel {
 	public function getMemberAvailableToChat($eventBig, $memberBig) {
 		$db = $this->getDataSource ();
 		$query = 'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."birth_date" AS "Member__birth_date","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count" 
-			FROM "checkins" AS "Checkin" 
+       (Member.type=4) as Member__isvip,(Member.created>(now() - interval \'5 days\'))  as Member__isnew,
+               (SELECT COUNT(*) FROM wallets WHERE member1_big=Member.big AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.'))>0 AS Member__ishot, 
+				FROM "checkins" AS "Checkin" 
 			LEFT JOIN "members" AS "Member" ON ("Checkin"."member_big" = "Member"."big")  
 			LEFT JOIN (SELECT from_big, COUNT(*) AS count FROM chat_messages WHERE read = 0 AND to_big = ? GROUP BY from_big) AS "ChatMessage" ON ("Member"."big" = "ChatMessage"."from_big") 
 			LEFT JOIN "events" AS "Event" ON ("Checkin"."event_big" = "Event"."big") 
-			WHERE "Checkin"."event_big" = ? AND "Member"."status" != 255 AND 
+            LEFT JOIN privacy_settings ON "Member"."big"=privacy_settings.member_big 
+			WHERE "Checkin"."event_big" = ? AND "Member"."status" != 255 AND privacy_settings.visibletousers > 0 AND 
             "Member"."big" NOT IN (
                                 SELECT to_big as "blockedbig"
                                 FROM member_settings
@@ -255,7 +258,9 @@ class Checkin extends AppModel {
 	
 	
 	public function getJoinsandCheckinsCountFor($eventBig, $memberBig = null) {
-		$params = array (
+		
+        /*
+        $params = array (
 				'conditions' => array (
 						'Checkin.event_big' => $eventBig,
 						'Member.status !=' => DELETED,
@@ -268,8 +273,48 @@ class Checkin extends AppModel {
 	
 		if (! empty ( $memberBig ))
 			$params ['conditions'] ['Checkin.member_big !='] = $memberBig;
-	
-		return intval ( $this->find ( 'count', $params ) );
+	    
+        $values=$this->find ( 'count', $params );
+         
+		return intval ($values);*/
+        
+        
+        $db = $this->getDataSource ();
+        $query = "SELECT physical=0 AS join,physical=1 AS checkin,COUNT(*) AS count ".
+                 "FROM checkins c ".
+                 "LEFT JOIN events e ON (c.event_big = e.big) ".
+                 "LEFT JOIN members m ON (c.member_big = m.big) ".
+                 "WHERE c.event_big = $eventBig ".
+                 "AND m.status!= 255 ".
+                 "AND ((c.checkout IS NULL) OR (c.checkout > 'NOW()')) ".
+                 "GROUP BY physical"; 
+        
+        $result = $db->fetchAll ( $query );
+        
+               
+        //print_r($result);
+        $counter['join']=0;
+        $counter['checkin']=0;
+        
+        if (count($result)>0){
+            
+            foreach ($result as $key=>$val){
+                
+                if ($val[0]['join']) {
+                                     $counter['join']=$val[0]['count'];
+                                       } else {
+                                        
+                                         $counter['checkin']=$val[0]['count'];
+                                                            
+                                        }
+               
+            }           
+                      
+        }
+        
+        //print_r($counter);       
+        return $counter; 
+       
 	}
 	
 	/**
@@ -630,10 +675,13 @@ class Checkin extends AppModel {
     public function getNearbyPeopleNew($coords, $optParams,$membig,$offset) {
         $myc = $this->AutoCheckout ();
         
-        $BUGLIMIT=API_MAP_LIMIT + 250;
-        
+        //$BUGLIMIT=API_MAP_LIMIT + 250;
+	    //Per ios usano pagine da 100
+        $API_MAP_LIMIT=100;
+        $offset=$offset*$API_MAP_LIMIT;
+
         $name=strtolower($optParams['name']);
-        
+        //print_r($optParams);
         if ($optParams['name']!=null) $filter[]=" (LOWER(members.name) LIKE '%$name%' OR LOWER(members.surname) LIKE '%$name%') "; 
         
         if ($optParams['sex']!=null) $filter[]=" members.sex='$optParams[sex]' ";
@@ -667,12 +715,40 @@ class Checkin extends AppModel {
             }
                         
         }
+        
+        if ($optParams['vip']==1) {
+            
+            
+            $filter[]=" members.type=4 ";
+            
+            
+        } /* else
+        {
+            
+             $filter[]=" members.type!=4 ";
+            
+        }
+	*/
+        
+        
+        
+        if ($optParams['photo']!=null) {
+            
+                                  
+        }
+        
         //over: > 62 miglia; 1..n: 1..n miglia 1km=0.62mi
         if ($optParams['distance']!=null) {
             
-            if ($optParams['distance']=='over') $nearby_radius='distance > 62 AND '; 
+            if ($optParams['distance']=='over') {
+                                            $nearby_radius=' distance > 62 AND ';
+                                            $nearby_radius_dist=' AND distance > 62 ';
+                                        } 
                         else
-                         $nearby_radius='distance <= '.$optParams['distance'] .' AND '; 
+                                {
+                                    $nearby_radius=' distance <= '.$optParams['distance'] .' AND ';
+                                    $nearby_radius_dist=' AND distance <= '.$optParams['distance'];
+                                } 
            
            //$distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) ".$nearby_radius." AND ";
            $distanceFilter=" ((members.last_lonlat <@> '$coords')::numeric(10,1)) ".$nearby_radius." AND ";
@@ -681,7 +757,8 @@ class Checkin extends AppModel {
                     
                    { 
                     $distanceFilter="";
-                    $nearby_radius=''; 
+                    $nearby_radius='';
+                    $nearby_radius_dist=''; 
                    }
        
         if ($optParams['category']!=null) $filter[]=" places.category_id=$optParams[category] ";
@@ -692,25 +769,30 @@ class Checkin extends AppModel {
                                 } else 
                                     $filterString='';
         
+        
         $db = $this->getDataSource ();
         
          if ($optParams['category']!=null) {
              
-              $sql2 = "WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,".
-                                           "members.surname,members.updated,members.photo_updated,".
-                                           "members.sex,members.birth_date,".
-                                           "date_part('year',age(now(),members.birth_date)) AS \"age\",".                                                        "members.last_lonlat AS \"coordinates\",".
+       $sql2 = "WITH tblcategory AS (SELECT DISTINCT ON (members.big) members.big,members.name,".
+                                    "members.surname,members.updated,members.photo_updated,".
+                                    "members.sex,members.birth_date,members.type,".
+                                    "date_part('year',age(now(),members.birth_date)) AS \"age\",".
+                                    "(members.type=4) AS isvip, (members.created > NOW() - interval '5 days') AS isnew,".
+                                    "(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN (1,2,3,4,5))>0 AS ishot,".                                                       
+                                           "members.last_lonlat AS \"coordinates\",".
                                            "((members.last_lonlat <@> '$coords')::numeric(10,1)*1.6) AS \"distance\" ".
                                            "FROM public.members ".
                                            "JOIN checkins on members.big=checkins.member_big ".
                                            "JOIN events on events.big=checkins.event_big ".
                                            "JOIN places on places.big=events.place_big ".
                                            "WHERE members.status<255 ".
+                                                  "AND members.big != ". ID_HAAMBLE_USER ." ".  
                                                   "AND checkins.checkout IS NULL ".
                                                   "AND places.status < 255 ".
                                                   "AND events.status < 255 ".
-                                                  "AND $nearby_radius ".
-                                                  "members.big NOT IN ( ".
+                                                  //"AND $nearby_radius ".
+                                                  "AND members.big NOT IN ( ".
                                                         "SELECT to_big as \"blockedbig\" ".
                                                         "FROM member_settings ".
                                                         "WHERE from_big=$membig AND chat_ignore=1 ".
@@ -722,22 +804,24 @@ class Checkin extends AppModel {
                                                         "ORDER BY members.big ) ".
                      "SELECT tblcategory.*,visibletousers FROM tblcategory ".
                      "JOIN privacy_settings ON (tblcategory.big=privacy_settings.member_big) ".
-                     "WHERE visibletousers=1 ".
-                     "LIMIT ".$BUGLIMIT; //rimettere quando ok API_MAP_LIMIT
+                     "WHERE visibletousers=1 $nearby_radius_dist ".
+                     "LIMIT ".$API_MAP_LIMIT;
                
              
          } else {
         
                
         $sql2 = "SELECT members.*,visibletousers FROM ".
-                "(SELECT members.big,members.name,members.surname,members.status,members.updated,".
+                "(SELECT members.big,members.name,members.surname,members.type,members.status,members.updated,".
                 "members.photo_updated,".
+                "(members.type=4) AS isvip, (members.created > NOW() - interval '5 days') AS isnew,".
+                "(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN (1,2,3,4,5))>0 AS ishot,".
                 "members.sex,members.birth_date,date_part('year',age(now(),members.birth_date)) AS \"age\",".
                 "members.last_lonlat AS \"coordinates\",".
                 "((members.last_lonlat <@> '$coords')::numeric(10,1) * 1.6) AS \"distance\" ".
                 "FROM public.members) AS members ".
                 "JOIN privacy_settings ON (members.big=privacy_settings.member_big) ". 
-                "WHERE members.status<255 AND ".//$distanceFilter  
+                "WHERE members.status<255 AND members.big != ". ID_HAAMBLE_USER . " AND ".//$distanceFilter  
                 $nearby_radius.
                 "visibletousers=1 ".
                 /*"AND NOW() < members.updated + interval '1 day' ".*/              
@@ -751,27 +835,27 @@ class Checkin extends AppModel {
                     "WHERE to_big=$membig AND chat_ignore=1) ".
                   
                 "AND (members.big <> $membig ) ".$filterString." ".
-                "ORDER BY distance ASC ".
-                "LIMIT ".$BUGLIMIT; //rimettere quando ok API_MAP_LIMIT;
+                "ORDER BY distance, name, surname ASC ".
+                "LIMIT ".$API_MAP_LIMIT;
                 
                 
          }      
-        $this->log("filterString ".$filterString);
-	$this->log("Query ".$sql2);         
+        //$this->log("filterString ".$filterString);
+	    //$this->log("Query ".$sql2);         
         if(isset($offset))
         {
             
             $sql2 .= " OFFSET ". $offset;
         }
         //$result = $db->fetchAll ( $sql2, array ($coords, $coords) );
-        
+        //print_r($sql2);
         $result = $db->fetchAll ( $sql2 );
         
         /* istruzioni debug query
         $modelAnimal = ClassRegistry::init ( 'Animal' );  
         $result=$modelAnimal->AddQuery($sql2);
         */
-         $this->log($sql2);             
+                    
         return $result;
     }
     
@@ -807,7 +891,7 @@ class Checkin extends AppModel {
 		
 		if (count ( $result ) > 0) {
 			// AUTOMATIC PHISICAL CHECKIN
-			if ($result [0][0] ['distance'] > 1 and $result [0][0] ['physical'] == true) {
+			if ($result [0][0] ['distance'] > 3 and $result [0][0] ['physical'] == true) {
 			//	die("i".debug($result [0][0] ['distance']));
 					$sql3 = "UPDATE checkins SET physical=0 WHERE big=" . $result [0][0] ['big'];
 				$this->query ( $sql3 );
@@ -816,7 +900,7 @@ class Checkin extends AppModel {
                 
 			}
 			// AUTOMATIC non PHISICAL join
-			if ($result [0] [0]['distance'] < 1 and $result [0][0] ['physical'] == false) {
+			if ($result [0] [0]['distance'] < 3 and $result [0][0] ['physical'] == false) {
 			//	die("o".debug($result[0] [0] ['distance']));
 				$sql3 = "UPDATE checkins SET physical=1 WHERE big=" . $result[0] [0] ['big'];
 				$this->query ( $sql3 );

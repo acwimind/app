@@ -42,7 +42,7 @@ class CmsEntriesController extends AppController {
 				}
 				else
 				{
-					$this->Session->setFlash(__('Entry not saved because of missing values'), 'flash/error');
+					$this->Session->setFlash(__('Entry non salvato'), 'flash/error');
 					return;
 				}
 			}
@@ -70,11 +70,11 @@ class CmsEntriesController extends AppController {
 
 
 			if ($this->CmsEntry->saveAll($data, array('validate' => 'first'))) {
-				$this->Session->setFlash(__('Entry saved'), 'flash/success');
+				$this->Session->setFlash(__('Entry salvato'), 'flash/success');
 				return $this->redirect(array('action' => 'index'));
 			} else {
 //				debug($this->CmsEntry->validationErrors);
-				$this->Session->setFlash(__('Error while saving entry'), 'flash/error');
+				$this->Session->setFlash(__('Errore durante il salvataggio'), 'flash/error');
 			}
 
 		} elseif ($id > 0) {
@@ -99,7 +99,7 @@ class CmsEntriesController extends AppController {
 			'status' => DELETED,
 		));
 
-		$this->Session->setFlash(__('Entry deleted'), 'flash/success');
+		$this->Session->setFlash(__('Entry cancellato'), 'flash/success');
 		return $this->redirect(array('action' => 'index'));
 
 	}

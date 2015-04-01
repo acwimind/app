@@ -1,0 +1,20 @@
+<html lang="en-US">
+<head>
+    <title>Modal Recover Password</title>
+    <link href="less/compiler.php" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <div class="haamble-modal">
+        <h2>Cambia Password</h2>
+        <form action="/members/forgot_password" id="MemberForgotPasswordForm" method="post" accept-charset="utf-8">
+            <div style="display:none;"><input type="hidden" name="_method" value="POST"></div>
+            <div class="input email required">
+                <input name="data[Member][email]" placeholder="Indirizzo email" type="email" id="MemberEmail" required="required">
+            </div>
+            <div class="submit">
+                <input type="submit" value="Continue">
+            </div>
+        </form>
+    </div>
+</body>
+</html>

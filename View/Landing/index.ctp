@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en">
+<meta name="apple-itunes-app" content="app-id=848231757, affiliate-data=myAffiliateData, app-argument=myURL">
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
-    <meta name="description" content="Cerca un posto in cui vorresti andare, chatta con chi &egrave; l&igrave; in quel momento e scopri se ti piace dalle persone che lo vivonoâ€¦">
+    <meta name="description" content="Cerca un posto in cui vorresti andare, chatta con chi &egrave; l&igrave; in quel momento e scopri se ti piace dalle persone che lo vivono…">
     <meta name="keywords" content="social,app,urban,dating,chat,places,luoghi,haamble,persone,locali">
     <meta name="author" content="Haamble">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -56,9 +57,21 @@
     <!-- JQUERY -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 
+<script src="https://apis.google.com/js/platform.js" async defer>  {lang: 'it'}</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-53604104-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </head>
 
 <body>
+<div id="fb-root"></div><script>(function(d, s, id) {  var js, fjs = d.getElementsByTagName(s)[0];  if (d.getElementById(id)) return;  js = d.createElement(s); js.id = id;  js.src = "//connect.facebook.net/it_IT/sdk.js#xfbml=1&version=v2.0";  fjs.parentNode.insertBefore(js, fjs);}(document, 'script', 'facebook-jssdk'));</script>
     <!-- =========================
          PRE LOADER
     ============================== -->
@@ -94,6 +107,8 @@
 								<li><a href="#hammble">Places become people</a></li>
 								<li><a href="#testimonials">Urban Social Network</a></li>
 								<li><a href="#categories">Living contexts</a></li>
+				<li><a href="http://blog.haamble.com/?utm_source=haambledotcom&utm_medium=mainmenu&utm_campaign=blogvisits" target="_blank" class="external">Blog</a></li>
+
 								<li><a href="#feedbacks">We</a></li>
 								<li><a href="#download">Contacts</a></li>
 							</ul>
@@ -128,16 +143,15 @@
 								<p>Per sapere se un posto ti piace ti basta conoscere la gente che lo frequenta. Perch&eacute; sono le persone che fanno i luoghi.</p>
 								<h5>Available on App Store, Google Play and Windows Apps</h5>
 
+								
 								<!-- BUTTON -->
 								<ul class="download-buttons ">
-									<li>
-										<a href="#contactContainer" class="applestore shadow">
-											<i></i><span><strong>Soon available</strong><br /><em>on the App Store</em></span>
-										</a>
+									<li>									
+										<a href="https://itunes.apple.com/it/app/haamble/id848231757?mt=8" class="applestore shadow external"><img src="images/haamble/logoap.png" /></a>
 									</li>
 									<li>
-										<a href="#contactContainer" class="googlestore shadow">
-											<i></i><span><strong>Soon available</strong><br /><em>on Google Play</em></span>
+										<a href="https://play.google.com/store/apps/details?id=com.haamble.haamblesocial&hl=en" class="googlestore shadow external">
+											<img src="images/haamble/logogp.png" />
 										</a>
 									</li>                                
 									<li>
@@ -257,7 +271,7 @@
 									<div class="person first"></div>
 									<div class="person second"></div>
 									<div class="bottom">
-										<span>Aumenta la tua visibilit&agrave;; usa i tuoi crediti</span>
+										<span>Aumenta la tua visibilit&agrave; usa i tuoi crediti</span>
 										<div class="button">114 crediti</div>
 									</div>
 								</div>
@@ -268,7 +282,7 @@
 							<h1>share and earn</h1>
 							<h2>La <strong>condivisione</strong> arricchisce e non costa nulla.</h2>
 							<p>
-								Scarica l&rsquo;app di Haamble e inizia a condividere i luoghi che pi&ugrave; ti piacciono. Consigliandoli agli altri utenti accumulerai crediti da utilizzare su Haamble per dare pi&ugrave; visibilit&agrave;; ai tuoi post o da spendere all&rsquo;interno dei posti che pi&ugrave; ami.
+								Scarica l&rsquo;app di Haamble e inizia a condividere i luoghi che pi&ugrave; ti piacciono. Consigliandoli agli altri utenti accumulerai crediti da utilizzare su Haamble per dare pi&ugrave; visibilit&agrave; ai tuoi post o da spendere all&rsquo;interno dei posti che pi&ugrave; ami.
 							</p>
 						</div>
 						<div class="col-md-6 wow animated fadeInRight  visible-mobile" data-wow-offset="10" data-wow-duration="1.5s">
@@ -327,7 +341,7 @@
 						<!-- /END SINGLE FEEDBACK -->
 						<!-- SINGLE FEEDBACK -->
 						<div class="feedback">
-							<h2><strong>Network</strong> perch&eacute; non ti d&agrave;; solo contatti ma la possibilit&agrave;; di entrare in contatto con personalit&agrave;; affini ai tuoi gusti e interessi, creando una rete di legami.</h2>
+							<h2><strong>Network</strong> perch&eacute; non ti d&agrave;; solo contatti ma la possibilit&agrave; di entrare in contatto con personalit&agrave; affini ai tuoi gusti e interessi, creando una rete di legami.</h2>
 							<div class="message">
 								Il piacere di stare in mezzo alle persone con gusti simili ai tuoi e instaurare dei rapporti anche  duraturi sar&agrave;; reale. Poter accertarsi, prima di entrare in un luogo, da chi &egrave; frequentato in  quell&rsquo;istante, ti permetter&agrave;; di capire se le persone con cui condividerai il tuo tempo sono affini alla compagnia che cerchi in quel momento. Haamble favorisce i rapporti interpersonali e ti aiuta ad ampliare la tua rete di contatti.
 							</div>
@@ -604,27 +618,25 @@
 							<!-- DOWNLOAD BUTTONS AREA -->
 							<div class="download-container">
 								<h2 class=" wow animated fadeInLeft " data-wow-offset="10" data-wow-duration="1.5s">Download the app on</h2>
-								<h6>Coming Soon</h6>
 
 								<!-- BUTTONS -->
-								<ul class="download-buttons  wow animated fadeInRight " data-wow-offset="10" data-wow-duration="1.5s">
+								<ul class="download-buttons  wow animated fadeInRight " data-wow-offset="10" data-wow-duration="1.5s">									
 									<li>
-										<a href="javascript:void(0);" class="applestore">
-											<i></i><span><strong>Soon available</strong><br />on the App Store</span>
+										<a href="https://itunes.apple.com/it/app/haamble/id848231757?mt=8" class="applestore shadow"><img src="images/haamble/logoap.png" /></a>
+									</li>
+									<li>
+										<a href="https://play.google.com/store/apps/details?id=com.haamble.haamblesocial&hl=en" class="googlestore shadow external">
+											<img src="images/haamble/logogp.png" />
 										</a>
 									</li>
 									<li>
-										<a href="javascript:void(0);" class="googlestore">
-											<i></i><span><strong>Soon available</strong><br />on Google Play</span>
-										</a>
-									</li>
-									<li>
+										<h6>Coming Soon</h6>
 										<a href="#contactContainer" class="windowsstore">
 											<i></i><span><strong>Soon available</strong><br />on Windows Mobile</span>
 										</a>
 									</li>
 								</ul>
-
+			
 								<!-- /END BUTTONS -->
 								<p>L'app per il tuo dispositivo sar&agrave; presto on line. Iscriviti alla mailing list e verrai aggiornato su ogni novit&agrave; che riguarda Haamble!</p>
 							</div>
@@ -716,19 +728,20 @@
 						<img src="images/haamble/haamble-app-social-logo_small.png" alt="Haamble - The Urban Social Network">
 						<p>
 							Haamble s.r.l.<br />
-							Head Office:<br /> Via Ermete Brandimarte, 63<br />65123 Pescara (Italy)<br />P.IVA: IT02090230687
+							Head Office:<br /> Via Ermete Brandimarte, 63<br />65123 Pescara (Italy)<br />Operational Office:<br /> Via Mosca, 10<br />00142 Roma (Italy)<br />P.IVA: IT02090230687
+
 						</p>
 					</div>
 					<div class="col-sm-3 col-md-3">
 						<h3>Haamble for all platform</h3>
 						<ul class="foot-download-buttons  wow animated fadeInRight " data-wow-offset="10" data-wow-duration="1.5s">
 							<li>
-								<a href="#contactContainer" class="applestore">
+								<a href="https://itunes.apple.com/it/app/haamble/id848231757?mt=8" class="applestore external">
 									<i></i><span>iOS</span>
 								</a>
 							</li>
 							<li>
-								<a href="#contactContainer" class="googlestore">
+								<a href="https://play.google.com/store/apps/details?id=com.haamble.haamblesocial&hl=en" class="googlestore external">
 									<i></i><span>Android</span>
 								</a>
 							</li>
@@ -742,22 +755,24 @@
 					<div class="col-sm-3 col-md-3">
 						<h3>info on haamble</h3>
 						<ul class="foot-links">
-							<li><a href="javascript:void(0);" id="trigger-overlay-disclaimer">disclaimer</a></li>
+							<li><a href="http://blog.haamble.com/?utm_source=haambledotcom&utm_medium=footer&utm_campaign=blogvisits" target="_blank" class="external">Blog</a></li>
+<li><a href="javascript:void(0);" id="trigger-overlay-disclaimer">disclaimer</a></li>
+
 							<li><a href="javascript:void(0);" id="trigger-overlay-privacy">privacy</a></li>
 						</ul>
 						<h3>lingue</h3>
 						<ul class="foot-links">
 							<li><a href="javascript:void(0);">ITA</a></li>
 							<li><a href="index_en.html">ENG</a></li>
-<li><a href="https://plus.google.com/115206525619589429322" rel="publisher">Google+</a>
+
 </li>
 						</ul>
 					</div>
 					<div class="col-sm-3 col-md-3">
 						<h3>Share it!</h3>
-						<div class="fb-like" data-href="https://www.haamble.com" data-layout="button_count" data-action="like" data-show-faces="false" data-share="false"></div>
-						<a href="https://twitter.com/share" class="twitter-share-button" data-lang="en">Tweet</a>
-						<g:plusone></g:plusone>
+<div class="fb-like" data-href="https://www.facebook.com/HaambleApp?fref=ts" data-layout="button_count" data-action="like" data-show-faces="true" data-share="false"></div>
+<div class="g-plusone" data-annotation="inline" data-width="300"></div>
+						<a href="https://twitter.com/haambleapp" class="twitter-follow-button" data-show-count="false" data-size="large">Follow @haambleapp</a><script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
 					</div>
 				</div>
 			</div>
@@ -872,7 +887,7 @@
 
 				<h3>ELIMINAZIONE DELL&#39;ACCOUNT</h3>
 				<ol>
-					<li>L&#39;Utente ha la facolt&agrave; di eliminare l&#39;account creato e/o cancellare la registrazione alle App e/o ai Servizi offerti, in tutto o in parte, attraverso l&#39;area &quot;Impostazioni&quot; del Sito.</li>
+					<li>L&#39;Utente ha la facolt&agrave; di eliminare l&#39;account creato e/o cancellare la registrazione alle App e/o ai Servizi offerti, in tutto o in parte, attraverso l&#39;area &quot;Impostazioni&quot; del Sito o inviando una email a info@haamble.com chiedendo la rimozione del profilo.</li>
 					<li>In caso di eliminazione dell&#39;account e/o cancellazione della registrazione alle App e/o ai Servizi, l&#39;Utente non avr&agrave; diritto ad alcun rimborso e/o risarcimento e/o a qualunque somma a qualsiasi titolo da parte di Haamble.</li>
 					<li>Haamble si riserva la facolt&agrave; di conservare i dati e/o i contenuti forniti e/o comunicati e/o pubblicati dall&#39;Utente anche dopo l&#39;eliminazione dell&#39;account e/o la sospensione e/o l&#39;interruzione del Sito e/o delle App e/o dei Servizi al solo fine di custodire una copia di backup per 36 mesi. Resta inteso che i dati conservati come copia di backup non saranno visibili a terzi.</li>
 				</ol>
@@ -979,7 +994,7 @@
 					<li>Il Titolare si riserva la facolt&agrave; di conservare tutte le informazioni fornite dall&#39;Utente, ivi comprese quelle fornite nel caso di utilizzo di un servizio con rilevamento della posizione, ad esempio, a titolo meramente esemplificativo, nei casi di check-in tramite GPS e/o utilizzo di connessione Wi-Fi e/o ripetitori di segnale dei dispositivi mobili presenti nella zona di riferimento.</li>
 					<li>Il Titolare ha la facolt&agrave; di comunicare i dati a soggetti terzi per finalit&agrave; di carattere contabile, quali a titolo meramente esemplificativo e non esaustivo, il controllo e/o l&#39;addebito e/o la fatturazione dei pagamenti dei beni e/o dei servizi mediante carta di credito.<br />
 						Tali soggetti terzi tratterranno i dati personali dell&#39;Utente esclusivamente in relazione alle finalit&agrave; indicate e ad essi verranno forniti esclusivamente i dati necessari all&#39;espletamento del servizio richiesto.<br />
-						Resta inteso che tali dati non verranno conservati e/o comunicati a terzi per altre eventuali finalit&agrave; nÃ© verranno diffusi.
+						Resta inteso che tali dati non verranno conservati e/o comunicati a terzi per altre eventuali finalit&agrave; né verranno diffusi.
 					</li>
 					<li>L&#39;Utente garantisce la veridicit&agrave; e la liceit&agrave; dei dati forniti e/o pubblicati e/o condivisi sul Sito e/o mediante le App e/o i Servizi e garantisce, altres&igrave;, di avere il diritto di comunicarli e/o diffonderli, manlevando il Titolare da ogni eventuale responsabilit&agrave;.</li>
 					<li>Resta inteso che il Titolare tratter&agrave; i dati dell&#39;Utente, forniti e/o comunque raccolti, al fine di far valere e/o difendere un suo diritto in sede giudiziaria e/o di adempiere ad obblighi previsti da leggi, regolamenti e dalla normativa comunitaria.</li>
@@ -1017,7 +1032,7 @@
 							<li>ottenere l&#39;aggiornamento, la rettificazione o, quando vi ha interesse, l&#39;integrazione dei dati;</li>
 							<li>ottenere la cancellazione, la trasformazione in forma anonima o il blocco dei dati trattati in violazione di legge, compresi quelli di cui non &egrave; necessaria la conservazione in relazione agli scopi per i quali i dati sono stati raccolti e/o successivamente trattati;</li>
 							<li>ottenere l&#39;attestazione che le operazioni sub v) e vi) sono state portate a conoscenza, anche per quanto riguarda il loro contenuto, di coloro ai quali i dati sono stati comunicati o diffusi, eccettuato il caso in cui tale adempimento si rivela impossibile o comporta un impiego di mezzi manifestamente sproporzionato rispetto al diritto tutelato;</li>
-							<li>opporsi, in tutto o in parte, per motivi legittimi, al trattamento dei dati personali che lo riguardano, ancorchÃ© pertinenti allo scopo della raccolta; al trattamento di dati che lo riguardano a fini di invio di materiale pubblicitario o di vendita diretta o per il compimento di ricerche di mercato o di comunicazione commerciale.</li>
+							<li>opporsi, in tutto o in parte, per motivi legittimi, al trattamento dei dati personali che lo riguardano, ancorché pertinenti allo scopo della raccolta; al trattamento di dati che lo riguardano a fini di invio di materiale pubblicitario o di vendita diretta o per il compimento di ricerche di mercato o di comunicazione commerciale.</li>
 						</ol>
 					<li>Nel caso in cui l&#39;Utente riveli per errore i suoi dati identificativi e/o gli stessi vengano smarriti, Haamble raccomanda di provvedere immediatamente alla modifica dei dati identificativi nell&#39;area del sito dedicata. Haamble raccomanda, altres&igrave;, di comunicare l&#39;eventuale errata rivelazione e/o smarrimento al seguente indirizzo Via Ermete Brandimarte , 63 Pescara.</li>
 					<li>Per far valere i suoi diritti ai sensi dell&#39;art. 7 del D.Lgs. n.196 del 2003 l&#39;Utente potr&agrave; inviare una richiesta al seguente indirizzo di posta elettronica privacy@haamble.com.</li>
@@ -1065,8 +1080,7 @@
 	</div>		
 		
 		
-    <div id="fb-root">
-    </div>
+    
     <!-- /END FOOTER -->
     <!-- =========================SCRIPTS ============================== -->
     <script src="js/external.js"></script>

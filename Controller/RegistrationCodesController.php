@@ -60,11 +60,11 @@ class RegistrationCodesController extends AppController {
 				// $this->_apiOk ( $response );
 				$this->_apiOk ( $myText );
 			} else {
-				$this->_apiError ( __ ( 'Member already registered' ) );
+				$this->_apiError ( __ ( 'Utente già registrato' ) );
 			}
 		} else {
 			
-			$this->_apiError ( __ ( 'Wrong parameters' ) );
+			$this->_apiError ( __ ( 'Parametro errato' ) );
 		}
 	}
 	public function api_checkVerificationCode() {
@@ -81,11 +81,11 @@ class RegistrationCodesController extends AppController {
 			if (count ( $savedCodes ) == 1) {
 				$this->_apiOk ();
 			} else {
-				$this->_apiError ( __ ( 'User does not exist' ) );
+				$this->_apiError ( __ ( 'Utente inesistente' ) );
 			}
 		} else {
 			
-			$this->_apiError ( __ ( 'Wrong parameters' ) );
+			$this->_apiError ( __ ( 'Parametro errato' ) );
 		}
 	}
 	
@@ -222,6 +222,7 @@ class RegistrationCodesController extends AppController {
 		
 		// Per recuperare input in formato json
 		// $data=$this->request->input('json_decode', true );
+		$WalletModel = ClassRegistry::init('Wallet');
 		
 		$array_sms = (isset ( $this->api ['smscontacts'] )) ? json_decode ( $this->api ['smscontacts'] ) : null;
 		$array_email = (isset ( $this->api ['emailcontacts'] )) ? json_decode ( $this->api ['emailcontacts'] ) : null;
@@ -231,9 +232,13 @@ class RegistrationCodesController extends AppController {
 			foreach ( $array_email as $key => $val ) {
 				
 				$email = new CakeEmail ( 'test' );
-				$email->template ( 'haamble_invite', 'default' )->to ( $val )->subject ( __ ( 'Haamble - Invite' ) )->viewVars ( array (
+				$subj='Lo sai che '. $memberName .' è ora su Haamble?';
+				$email->template ( 'haamble_invite', 'default' )->to ( $val )->subject ( $subj )->viewVars ( array (
 						'name' => $memberName 
 				) )->send ();
+				
+				$WalletModel->addAmount($this->logged['Member']['big'], '2', 'Amico invitato' );
+				
 			}
 		}
 		
@@ -259,6 +264,9 @@ class RegistrationCodesController extends AppController {
 			
 			$SMSReturn = $this->Sms->SmsSend ( $array_sms_checked, $smsMsg );
 			$this->Member->setSmsCounter ( $this->logged ['Member'] ['big'], $inviti );
+			$WalletModel->addAmount($this->logged['Member']['big'], '2', 'Amico invitato' );
+				
+		
 		}
 		
 		if ($smsCount >= MAXSMSLIMIT and $SMSReturn == "")

@@ -1,0 +1,621 @@
+@orange1: #ffad38;
+@orange2: #ff8838;
+@orange3: #ff6600;
+@green1: #9dd66a;
+@green2: #77b63e;
+@brown1: #a15c41;
+@brown2: #a13206;
+@blue1: #4d9def;
+@blue2: #1774d4;
+@blue3: #105290;
+
+
+#categories {
+    background: none #fff;
+    padding-top: 66px;
+
+    h1 {
+        font-family: 'hitchhiker_bregular';
+        color: @blue;
+        font-size: 44px;
+        line-height: 1;
+        margin: 0 0 25px 0;
+        .fontfix;
+    }
+
+    p {
+        font-family: 'proxima_novalight';
+        font-size: 21px;
+        line-height: 30px;
+        color: @grey;
+        width: 100%;
+        text-align: center;
+        .fontfix;
+    }
+
+    .marker-satellite {
+        background: url(../images/haamble/categories.png) no-repeat center center transparent;
+        height: 440px;
+        width: 100%;
+        position: relative;
+        margin-bottom: 50px;
+
+        .he_markerc {
+            display: block;
+            position: absolute;
+
+            .he_marker {
+                .he_markerg {
+                    .he_markerBorder {
+                        fill: #e0edf9;
+                    }
+                }
+            }
+
+            h3 {
+                font-family: 'proxima_novasemibold';
+                font-size: 24px;
+                .fontfix;
+                line-height: 1;
+                margin: 0 0 0 -80px;
+                position: absolute;
+                bottom: 0;
+                width: 160px;
+                left: 50%;
+
+                span {
+                    font-size: 16px;
+                    font-family: 'proxima_novalight';
+                    color: #4e4e4e;
+                }
+            }
+
+            &.orange1 {
+                .he_markerFill {
+                    fill: @orange1;
+                }
+
+                h3 {
+                    color: @orange1;
+                }
+            }
+
+            &.orange2 {
+                .he_markerFill {
+                    fill: @orange2;
+                }
+
+                h3 {
+                    color: @orange2;
+                }
+            }
+
+            &.orange3 {
+                .he_markerFill {
+                    fill: @orange3;
+                }
+
+                h3 {
+                    color: @orange3;
+                }
+            }
+
+            &.green1 {
+                .he_markerFill {
+                    fill: @green1;
+                }
+
+                h3 {
+                    color: @green1;
+                }
+            }
+
+            &.green2 {
+                .he_markerFill {
+                    fill: @green2;
+                }
+
+                h3 {
+                    color: @green2;
+                }
+            }
+
+            &.brown1 {
+                .he_markerFill {
+                    fill: @brown1;
+                }
+
+                h3 {
+                    color: @brown1;
+                }
+            }
+
+            &.brown2 {
+                .he_markerFill {
+                    fill: @brown2;
+                }
+
+                h3 {
+                    color: @brown2;
+                }
+            }
+
+            &.blue1 {
+                .he_markerFill {
+                    fill: @blue1;
+                }
+
+                h3 {
+                    color: @blue1;
+                }
+            }
+
+            &.blue2 {
+                .he_markerFill {
+                    fill: @blue2;
+                }
+
+                h3 {
+                    color: @blue2;
+                }
+            }
+
+            &.blue3 {
+                .he_markerFill {
+                    fill: @blue3;
+                }
+
+                h3 {
+                    color: @blue3;
+                }
+            }
+
+            &.mtop.mleft {
+                margin-left: 20px;
+            }
+
+            &.mtop.mright {
+                margin-right: 20px;
+            }
+
+            &.w100 {
+                width: 135px;
+                top: 9%;
+                left: 50%;
+                margin-left: -67px;
+                padding-bottom: 40px;
+                height: 130px;
+            }
+
+            &.w90 {
+                width: 122px;
+                bottom: 0;
+                left: 50%;
+                margin-left: -61px;
+                padding-bottom: 40px;
+                height: 130px;
+            }
+
+            &.w80 {
+                width: 108px;
+                padding-bottom: 40px;
+                height: 115px;
+
+                &.mleft {
+                    left: 25%;
+                }
+
+                &.mright {
+                    right: 25%;
+                }
+
+                &.mtop {
+                    top: 15%;
+                }
+
+                &.mbot {
+                    bottom: 6%;
+                }
+            }
+
+            &.w65 {
+                width: 88px;
+                padding-bottom: 40px;
+                height: 100px;
+
+                &.mleft {
+                    left: 9%;
+                }
+
+                &.mright {
+                    right: 9%;
+                }
+
+                &.mtop {
+                    top: 25%;
+                }
+
+                &.mbot {
+                    bottom: 17%;
+                }
+            }
+
+            &:after {
+                content: "";
+                position: absolute;
+                width: 100%;
+                height: 70px;
+                left: 0;
+            }
+
+            &.sport {
+                &:after {
+                    .sprite(30px -1699px);
+                    top: 14px;
+                }
+            }
+
+            &.wellness {
+                &:after {
+                    .sprite(39px -1800px);
+                    top: 20px;
+                }
+            }
+
+            &.bar {
+                &:after {
+                    .sprite(53px -1100px);
+                    top: 26px;
+                }
+            }
+
+            &.tourism {
+                &:after {
+                    .sprite(41px -1200px);
+                    top: 20px;
+                }
+            }
+
+            &.restaurant {
+                &:after {
+                    .sprite(31px -1300px);
+                    top: 16px;
+                }
+            }
+
+            &.school {
+                &:after {
+                    .sprite(35px -1600px);
+                    top: 20px;
+                }
+            }
+
+            &.culture {
+                &:after {
+                    .sprite(37px -1500px);
+                    top: 20px;
+                }
+            }
+
+            &.entertainment {
+                &:after {
+                    .sprite(37px -1900px);
+                    top: 20px;
+                }
+            }
+
+            &.beaches {
+                &:after {
+                    .sprite(36px -2000px);
+                    top: 20px;
+                }
+            }
+
+            &.places {
+                &:after {
+                    .sprite(34px -1400px);
+                    top: 20px;
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (max-width : 767px) {
+    #categories {
+        .marker-satellite {
+            background: none transparent;
+            height: auto;
+
+            img {
+                max-width: 75%;
+                margin: 25px auto -18px auto;
+            }
+
+            .he_markerc {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                width: 49%;
+                padding: 0 15%;
+                display: inline-block;
+
+                h3 {
+                    font-size: 20px;
+                margin: 0 0 0 -65px;
+        line-height: 1 !important;
+
+                }
+
+                &.w65.mleft.mtop,
+                &.w65.mleft.mbot,
+                &.w65.mright.mtop,
+                &.w65.mright.mbot,
+                &.w80.mleft.mtop,
+                &.w80.mleft.mbot,
+                &.w80.mright.mtop,
+                &.w80.mright.mbot,
+                &.w100.mtop,
+                &.w90.mbot {
+                    position: relative !important;
+                    top: auto !important;
+                    bottom: auto !important;
+                    height: auto;
+                    left: auto !important;
+                    right: auto !important;
+                    margin: 0;
+                    width: 49%;
+                    text-align: left;
+                }
+            }
+
+            .he_markerc {
+
+                &:after {
+                    display: none;
+                }
+
+                svg {
+                    display: none;
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 768px) {
+}
+
+html.safari
+{
+		#categories {
+			.marker-satellite {
+
+				.he_markerc {
+					&:after {
+						background-size: 60px 1533px !important;
+						/*background-size: 20px 1022px;*/
+					}
+
+					&.sport {
+						&:after {
+							.sprite(34px -1274px);
+							top: 12px;
+						}
+					}
+
+					&.wellness {
+						&:after {
+							.sprite(43px -1349px);
+							top: 17px;
+						}
+					}
+
+					&.bar {
+						&:after {
+							.sprite(57px -824px);
+							top: 20px;
+						}
+					}
+
+					&.tourism {
+						&:after {
+							.sprite(44px -899px);
+							top: 17px;
+						}
+					}
+
+					&.restaurant {
+						&:after {
+							.sprite(34px -974px);
+							top: 13px;
+						}
+					}
+
+					&.school {
+						&:after {
+							.sprite(37px -1199px);
+							top: 17px;
+						}
+					}
+
+					&.culture {
+						&:after {
+							.sprite(41px -1124px);
+							top: 17px;
+						}
+					}
+
+					&.entertainment {
+						&:after {
+							.sprite(42px -1424px);
+							top: 17px;
+						}
+					}
+
+					&.beaches {
+						&:after {
+							.sprite(40px -1499px);
+							top: 15px;
+						}
+					}
+
+					&.places {
+						&:after {
+							.sprite(36px -1049px);
+							top: 17px;
+						}
+					}
+				}
+			}
+		}
+
+}
+@media only screen and (min-width : 768px) and (max-width : 1025px) {
+	html.ipad{
+	
+		
+
+		#categories {
+			.marker-satellite {
+
+				.he_markerc {
+					&:after {
+						background-size: 60px 1533px !important;
+						/*background-size: 20px 1022px;*/
+					}
+
+					&.sport {
+						&:after {
+							.sprite(34px -1274px);
+							top: 12px;
+						}
+					}
+
+					&.wellness {
+						&:after {
+							.sprite(43px -1349px);
+							top: 17px;
+						}
+					}
+
+					&.bar {
+						&:after {
+							.sprite(57px -824px);
+							top: 20px;
+						}
+					}
+
+					&.tourism {
+						&:after {
+							.sprite(44px -899px);
+							top: 17px;
+						}
+					}
+
+					&.restaurant {
+						&:after {
+							.sprite(34px -974px);
+							top: 13px;
+						}
+					}
+
+					&.school {
+						&:after {
+							.sprite(37px -1199px);
+							top: 17px;
+						}
+					}
+
+					&.culture {
+						&:after {
+							.sprite(41px -1124px);
+							top: 17px;
+						}
+					}
+
+					&.entertainment {
+						&:after {
+							.sprite(42px -1424px);
+							top: 17px;
+						}
+					}
+
+					&.beaches {
+						&:after {
+							.sprite(40px -1499px);
+							top: 15px;
+						}
+					}
+
+					&.places {
+						&:after {
+							.sprite(36px -1049px);
+							top: 17px;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+@media only screen and (min-width : 768px) and (max-width : 1025px) and (orientation:portrait){
+	html.ipad{
+
+		#categories {
+			.marker-satellite {
+				.he_markerc {
+					&.w80 {
+
+						&.mtop {
+							top: 19%;
+						}
+					}
+					&.w100 
+					{
+						top: 15%;
+					}
+				}
+			}
+		}
+	}
+}
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+    #categories {
+        .marker-satellite {
+            background-size: 720px auto;
+
+
+            .he_markerc {
+                &.w90 {
+                    bottom: 7%;
+                }
+
+                &.w80 {
+                    &.mbot {
+                        bottom: 13%;
+                    }
+                }
+
+                &.w65 {
+
+                    &.mbot {
+                        bottom: 20%;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 992px) and (max-width : 1199px) {
+    #categories {
+        .marker-satellite {
+            background-size: 940px auto;
+        }
+    }
+}
+
+@media only screen and (min-width : 1200px) {
+}

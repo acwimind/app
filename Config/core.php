@@ -32,7 +32,7 @@
  * In production mode, flash messages redirect after a time interval.
  * In development mode, you need to click the flash message to continue.
  */
-	Configure::write('debug', 3);
+	Configure::write('debug', 0);
 
 /**
  * Configure the Error handler used to handle errors for your application.  By default
@@ -185,8 +185,7 @@
  *
  */
 	Configure::write('Session', array(
-		'defaults' => 'php',
-		'timeout' => 30 // auto logout after 30 minutes
+		'defaults' => 'php'
 	));
 
 /**
@@ -236,9 +235,9 @@
 /**
  * Uncomment this line and correct your server timezone to fix
  * any date & time related errors.
- */
-	date_default_timezone_set('Europe/Rome');	//UTC
 
+*	date_default_timezone_set('UTC');	//UTC  Europe/Rome
+ */
 /**
  * Configure the cache handlers that CakePHP will use for internal
  * metadata like class maps, and model schema.

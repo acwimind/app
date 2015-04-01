@@ -40,11 +40,11 @@ class CategoriesController extends AppController {
 						
 				}
 				
-				$this->Session->setFlash(__('Category saved'), 'flash/success');
+				$this->Session->setFlash(__('Categoria salvata'), 'flash/success');
 				return $this->redirect(array('action' => 'index'));
 				
 			} else {
-				$this->Session->setFlash(__('Error while saving category'), 'flash/error');
+				$this->Session->setFlash(__('Errore durante il salvataggio della categoria'), 'flash/error');
 			}
 			
 		} elseif ($id > 0) {
@@ -76,9 +76,9 @@ class CategoriesController extends AppController {
 		
 		if ($has_places == 0) {
 			$this->Category->deleteAll(array('Category.id' => $id));
-			$this->Session->setFlash(__('Category deleted'), 'flash/success');
+			$this->Session->setFlash(__('Categoria eliminata'), 'flash/success');
 		} else {
-			$this->Session->setFlash(__('Unable to delete category, because it contains places. Please delete places first.'), 'flash/error');
+			$this->Session->setFlash(__('Non riesco a cancellare la categoria poichè contiene dei posti. Eliminare i posti.'), 'flash/error');
 		}
 		return $this->redirect(array('action' => 'index'));
 		

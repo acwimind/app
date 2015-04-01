@@ -1,0 +1,306 @@
+footer {
+    background: none @blue;
+    border-top: 6px solid #156cc1;
+    border-bottom: 6px solid #156cc1;
+    padding-bottom: 40px;
+
+    .contact-box {
+        margin-bottom: 40px;
+
+        .contact-button {
+            .boxShadow(0 0 0 6px, #ffffff);
+            width: 87px;
+            height: 87px;
+
+            &:hover {
+                background: none @blue;
+
+                .icon_mail_alt {
+                    .sprite(0 -1000px);
+
+                    &:before {
+                        content: "";
+                    }
+                }
+            }
+
+            .icon_mail_alt {
+                .sprite(0 -800px);
+                width: 43px;
+                height: 43px;
+                position: absolute;
+                margin-top: -22px;
+                top: 50%;
+                margin-left: -22px;
+                left: 50%;
+
+                &:before {
+                    content: "";
+                }
+            }
+        }
+    }
+	
+	.subscription-form 
+	{
+		.input-box
+		{
+			width: 40%;
+			  display: inline-block;
+		}
+		
+		.standard-button
+		{
+			background: none @orange !important;
+			color: #fff;
+			&:hover, &:focus
+			{
+				background: none #fff !important;
+				color: @orange;
+			
+			}
+
+		}
+		
+		.subscription-success
+		{
+			color: #fff;
+		}
+	}
+	
+	.foot-detail {
+        >div {
+            text-align: left;
+            color: #fff;
+
+            h3 {
+                font-size: 18px;
+                font-family: 'proxima_novasemibold';
+                line-height: 1;
+                margin: 0;
+                font-weight: normal;
+                color: #dbebfa;
+				margin-bottom:10px;
+            }
+
+            p {
+                font-family: 'proxima_novalight';
+                font-size: 15px;
+                line-height: 18px;
+                padding-top: 20px;
+            }
+
+            .foot-download-buttons {
+                margin-top: 18px;
+
+                li {
+                    display: block;
+					margin-top: 13px;
+
+                    &:first-child {
+                        margin-top: 0px;
+                    }
+
+                    a {
+                        font-size: 16px;
+                        font-family: 'proxima_novasemibold';
+                        background: none transparent;
+                        border: 1px solid rgba(255,255,255,0.56);
+                        height: 38px;
+                        width: 200px;
+                        display: block;
+                        .border-radius(20px);
+                        color: #fff;
+                        text-align: center;
+
+
+
+                        &:hover {
+                            color: #fff;
+                        }
+
+                        &.applestore {
+                            i {
+                                .sprite(0 -95px);
+                                margin-right: 16px;
+                            }
+                        }
+
+                        &.googlestore {
+                            i {
+                                .sprite(0 -195px);
+                                margin-right: 10px;
+                            }
+                        }
+                        &.windowsstore {
+                            i {
+                                .sprite(0 -2092px);
+                                margin-right: 10px;
+                            }
+                        }
+
+                        i {
+                            display: inline-block;
+                            height: 100%;
+                            vertical-align: middle;
+                            width: 20px;
+                        }
+
+                        span {
+                            display: inline-block;
+                            vertical-align: middle;
+                        }
+                    }
+                }
+            }
+
+            .foot-links {
+                list-style: disc outside;
+                margin-left: 14px;
+
+                li {
+                    list-style: disc outside;
+
+                    a {
+                        font-family: 'proxima_novalight';
+                        font-size: 16px;
+                        color: #fff;
+
+                        &:hover {
+                            color: #fff;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media only screen and (max-width : 767px) {
+    footer {
+        .contact-box {
+
+            .contact-button {
+                &:hover {
+                    .icon_mail_alt {
+                        .sprite2x(0 -1000px);
+                    }
+                }
+
+                .icon_mail_alt {
+                    .sprite2x(0 -800px);
+                }
+            }
+        }
+
+        .foot-detail {
+            >div {
+
+                .foot-download-buttons {
+
+                    li {
+                        a {
+
+
+                            &.applestore {
+                                i {
+                                    .sprite2x(0 -95px);
+                                }
+                            }
+
+                            &.googlestore {
+                                i {
+                                    .sprite2x(0 -195px);
+                                }
+                            }
+                        }
+                    }
+                }
+				
+				.fb-like, .twitter-share-button, #___plusone_0
+				{
+					display: block;
+					margin: 10px 0;
+				}
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 768px) {
+    footer {
+
+        .foot-detail {
+            >div {
+
+                h3 {
+                    font-size: 18px;
+                }
+
+                p {
+                    font-size: 15px;
+                }
+
+                .foot-download-buttons {
+                    margin-top: 18px;
+
+                    li {
+                        width: 100%;
+                        display: block;
+
+                        &:first-child {
+                            margin-bottom: 13px;
+                        }
+
+                        a {
+                            font-size: 16px;
+                            height: 38px;
+                            width: 100%;
+                            .border-radius(20px);
+
+
+
+                            &:hover {
+                                color: #fff;
+                            }
+                        }
+                    }
+                }
+
+                .foot-links {
+                    list-style: disc outside;
+                    margin-left: 14px;
+
+                    li {
+                        list-style: disc outside;
+
+                        a {
+                            font-family: 'proxima_novalight';
+                            font-size: 16px;
+                            color: #fff;
+
+                            &:hover {
+                                color: #fff;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+	.twitter-share-button
+	{
+		display: block;
+		margin-top: 10px;
+		margin-bottom: 10px;
+	}
+}
+
+@media only screen and (min-width : 768px) and (max-width : 991px) {
+}
+
+@media only screen and (min-width : 992px) and (max-width : 1199px) {
+}
+
+@media only screen and (min-width : 1200px) {
+}

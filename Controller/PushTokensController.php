@@ -39,8 +39,36 @@ class PushTokensController extends AppController{
 		}
 		else
 		{
-			$this->_apiEr(__('Error occured. Push token not saved.'));
+			$this->_apiEr('Errore. Push token non salvato.');
 		}
 	}
 	
+
+	public function api_deletesingle()
+	{
+		$this->_checkVars(array('push_token'));
+	
+		$memBig = $this->logged['Member']['big'];
+		$pushToken = $this->api['push_token'];
+		$platformId = $this->api['platform_id'];
+		$ptId = isset($this->api['push_token_id']) ? $this->api['push_token_id'] : null ;
+		$result = $this->PushToken->deleteSinglePushToken( $pushToken,$memBig);
+		
+		
+		
+		if ($result )
+		{
+			// If push_token_id is present, this should be deleted!!
+		//	debug('b');		
+			$this->_apiOk($result);
+		}
+		else
+		{
+		//	debug('c');
+		//	$this->_apiEr('Error occured. Push token not saved.');
+			$this->_apiEr('Errore. Push token non cancellato.','999');
+		}
+	}
+	
+
 }

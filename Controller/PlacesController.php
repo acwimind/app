@@ -8,7 +8,8 @@ class PlacesController extends AppController {
 
 		$place_bigs = $this->Operator->OperatorsPlace->find('list', array(
 			'conditions' => array(
-				'OperatorsPlace.operator_big' => $this->logged['Member']['big'],
+				
+				'OperatorsPlace.operator_big' => 45111513 // $this->logged['Member']['big']  //,45517058 //
 			),
 			'fields' => array('OperatorsPlace.place_big', 'OperatorsPlace.place_big'),
 			'recursive' => -1,
@@ -151,11 +152,11 @@ class PlacesController extends AppController {
 
 				}
 
-				$this->Session->setFlash(__('Place saved'), 'flash/success');
+				$this->Session->setFlash(__('Posto salvato'), 'flash/success');
 				return $this->redirect(array('action' => 'index'));
 
 			} else {
-				$this->Session->setFlash(__('Error while saving place'), 'flash/error');
+				$this->Session->setFlash(__('Errore durante il salvataggio del posto'), 'flash/error');
 			}
 
 		} elseif ($big > 0) {
@@ -224,7 +225,7 @@ class PlacesController extends AppController {
 		 *  - operator relations
 		 */
 
-		$this->Session->setFlash(__('Place deleted'), 'flash/success');
+		$this->Session->setFlash(__('Posto eliminato'), 'flash/success');
 		return $this->redirect(array('action' => 'index'));
 
 	}
@@ -246,10 +247,10 @@ class PlacesController extends AppController {
 		try {
 			$this->_upload($this->request->data['photos'], $big);
 		} catch (UploadException $e) {
-			$this->Session->setFlash(__('Error while uploading photos'), 'flash/error');
+			$this->Session->setFlash(__('Errore durante l\'upload della foto'), 'flash/error');
 		}
 
-		$this->Session->setFlash(__('Photos saved'), 'flash/success');
+		$this->Session->setFlash(__('Foto salvata'), 'flash/success');
 		return $this->redirect(array('controller' => 'galleries', 'action' => 'index', $place['Gallery'][0]['big']));
 
 	}
@@ -306,79 +307,17 @@ class PlacesController extends AppController {
 
 	}
    
-    
-    public function api_list() {
-
-        // Variables
+     public function api_newlist() {
+        // TODO
         App::uses('Search', 'Lib');
-        
-        // removed lon and lat for no geoloc
+                
         $this->_checkVars(array(),array('lon','lat','name','category','city','rating','offset','sex','age','filteroptions'));
         
         $phrase = isset($this->api['name']) ? Search::PrepareTSQuery($this->api['name']) : null;
         $cat_id = isset($this->api['category']) ? $this->api['category'] : null;
         $region_id = isset($this->api['city']) ? $this->api['city'] : null;
         $rating_avg = isset($this->api['rating']) ? $this->api['rating'] : null;
-        $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;
-    
-
-	    $this->log("var passate: ".serialize($this->api));
-        $this->log("getquotes ".get_magic_quotes_gpc());
-        // PUT IN DEFAULT FILE!!!
-        $coords = '(40.6300568,16.2894573999997)';
-        $lon = '16.2894573999999';
-        $lat='40.6300568';
-                
-        if  (isset($this->api['lon']) AND isset($this->api['lat']))
-        {
-        $lon = isset($this->api['lon']) ? $this->api['lon'] : null;
-        $lat = isset($this->api['lat']) ? $this->api['lat'] : null;
-        $coords = '(' . $lon . ',' . $lat . ')';
-        
-        }
-        else
-        {  // try
-            //Gran parte del codice sotto potrebbe essere abbreviato visto che Places uses Member
-            //$memberdata=$this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] )
-            //$coords=$memberdata['Member']['last_lonlat']
-             
-            $params = array (
-                    'conditions' => array (
-                            'Member.big' => $this->logged['Member']['big']
-                    ),
-                    'fields' => array (
-                            'big',
-                            'last_lonlat',
-                            'updated'
-                    ),
-                    'recursive' => - 1
-            );
-            
-            try {
-                $datapos = $this->Member->find ( 'first', $params );
-                    
-                
-            } catch ( Exception $e ) {
-                $this->_apiEr ( __("Error") );
-            }
-            
-            if (count($datapos)>0)
-            {
-            //    debug($datapos['Member']['last_lonlat']);
-                if ($datapos['Member']['last_lonlat']!=null)
-                {
-                     $coords = $datapos['Member']['last_lonlat'];
-                    $xcoords  = str_replace("(", "", $coords);
-                    $xcoords  = str_replace(")", "", $xcoords);
-                    $lecoords=split(',',$xcoords);
-                    $lon=$lecoords[0];
-                    $lat=$lecoords[1];
-                //    debug('a');
-                }
-            }
-            
-        }
-              
+        $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;  
         
         $filteroptions = isset($this->api['filteroptions']) ? $this->api['filteroptions'] : null;
         $sex=isset($this->api['sex']) ? $this->api['sex'] : null;
@@ -386,8 +325,39 @@ class PlacesController extends AppController {
         $myFilter=array();
         
         $table_options="places ";
+                
+        $default_lon = '16.2894573999999';
+        $default_lat='40.6300568';
+                       
+        if  (isset($this->api['lon']) AND isset($this->api['lat']) AND intval($this->api['lon'])>0 AND intval($this->api['lat'])>0)
+        {//se lon e lat sono passati e non nulli
+            
+            $lon = $this->api['lon'];
+            $lat = $this->api['lat'];
+            $coords = '(' . $lon . ',' . $lat . ')';
         
-        if ($filteroptions!=null){
+        }
+        else
+        { //se lon e lat non sono passati o sono passati nulli 
+            
+            $memberdata=$this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] );
+                                  
+             if (count($memberdata)>0 AND $memberdata['Member']['last_lonlat']!=null)
+              {//se ritorna un record di dati e le coordinate non sono nulle
+                    $coords = $memberdata['Member']['last_lonlat'];
+                    $lonlat=explode(',',str_replace(array('(',')'),'',$coords));
+                    $lon=$lonlat[0];
+                    $lat=$lonlat[1];
+              
+              } else {//In tutti gli altri casi prende coordinate di default              
+                        $lon=$default_lon;
+                        $lat=$default_lat;
+                        $coords = '(' . $lon . ',' . $lat . ')';
+               
+               } 
+           }
+                               
+              if ($filteroptions!=null){
             
             switch ($filteroptions){
                 
@@ -397,7 +367,7 @@ class PlacesController extends AppController {
                                  "FROM bookmarks ".
                                  "JOIN places ON bookmarks.place_big=places.big ".
                                  "WHERE bookmarks.member_big = ".$this->logged['Member']['big'].
-                                 " AND places.published <> 3 ) places ";
+                                 " AND places.published = 1 ) places ";
                                    break;
                 case 'friend' :
                     
@@ -412,7 +382,7 @@ class PlacesController extends AppController {
                                  "JOIN events ON events.place_big=places.big ".
                                  "JOIN checkins ON checkins.event_big=events.big ".
                                  "WHERE checkins.physical=1 AND checkins.checkout IS NULL ".
-                                 "AND places.published <> 3 ".
+                                 "AND places.published = 1 ".
                                  "AND checkins.member_big IN (".$placesWithFriends.") ) places ";
                                  break;
             }
@@ -430,7 +400,9 @@ class PlacesController extends AppController {
         
         if ($sex!=null) $myFilter[]=" members.sex='$sex' ";
         if ($age!=null)  {
-                        switch ($optParams['age']){
+            
+            
+                        switch ($age){
                             //0: <25; 1: 25-35; 2: 35-45; 3: 45-55; 4: >55  
                             case 0: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) < 25) ";
                                     break;
@@ -454,7 +426,7 @@ class PlacesController extends AppController {
                                   'JOIN events ON places.big = events.place_big '.
                                   'JOIN checkins ON events.big = checkins.event_big '.
                                   'JOIN members ON checkins.member_big = members.big '.
-                                  'WHERE places.status < 255 AND checkins.checkout IS NULL '.$filterString.' '. 
+                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString.' '. 
                                   'ORDER BY places.big,( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
                                   'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
                                                                                         
@@ -464,25 +436,24 @@ class PlacesController extends AppController {
                                  
                $queryPrefix='WITH plisel as ( SELECT places.big '.  
                                              'FROM '.$table_options.
-                                             'WHERE places.status < 255 '. 
+                                             'WHERE places.status < 255 AND places.published = 1 '. 
                                              'ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
                                              'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
                                                              
                     $filterString='';
                      
-                                             
+                   // print('qpref '.$queryPrefix);                        
                                     }
         //print('name vale '.$phrase);
         // Match coords against regular expression
         $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
         if ($crdsMatch == FALSE && (!empty($lon) || !empty($lat))) {
-                        $this->_apiEr(__('The following API variables are invalid: lon and/or lat'));
+                        $this->_apiEr(__('Le coordinate non sono valide: lon and/or lat'));
                     }
 
         if (empty($phrase) && empty($cat_id) && empty($region_id) && empty($rating_avg) && $crdsMatch)
         {
-            //print($queryPrefix);
-            
+                       
             $query = $queryPrefix.
                     "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
                     "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
@@ -508,10 +479,13 @@ class PlacesController extends AppController {
                         "GROUP BY place_big ) evts ON places.big = evts.place_big ".
                     "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
                     "WHERE earth_box(ll_to_earth(" . $lat . " /*lat*/, " . $lon . " /*lon*/)," . NEARBY_RADIUS . 
-                    " /* miles */ * 1609.344/*metres*/) @> ll_to_earth(places.lonlat[1], places.lonlat[0]) ". 
+                    " /* miles */ * 16.09344/*metres*/) @> ll_to_earth(places.lonlat[1], places.lonlat[0]) ". 
                     "ORDER BY \"Place__distance\" ASC";
 
        $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$query);
+       $query_count=str_replace("ORDER BY \"Place__distance\" ASC",'',$query);
+       $query_count=str_replace('ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC ','',$query);
+              
        $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';     
                 
                //print($query);
@@ -543,18 +517,18 @@ class PlacesController extends AppController {
                                                   'JOIN events ON places.big = events.place_big '.
                                                   'JOIN checkins ON events.big = checkins.event_big '.
                                                   'JOIN members ON checkins.member_big = members.big '.
-                                                  'WHERE places.status < 255 AND checkins.checkout IS NULL '.$filterString. 
+                                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString. 
                                                   (!empty($where)  ? $where : '') .' '. 
                                                   'ORDER BY places.big,places.name ASC '.
                                                   'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ')';
                        
                 
             } else {//se non abbiamo filtri sex e age
-                            $queryPrefix2='WITH plids as ( SELECT places.big '.
+                            $queryPrefix2='WITH plids as ( SELECT places.big,places.lonlat <@> \''.$coords.'\'::point AS "Place__distance" '.
                                                            'FROM '.$table_options.
-                                                           'WHERE places.status < 255 '.
+                                                           'WHERE places.status < 255 AND places.published = 1 '.
                                                            (!empty($where)  ? $where : '') . ' '.
-                                                           'ORDER BY places.name ASC '.
+                                                           'ORDER BY "Place__distance" ASC,places.name ASC '.
                                                            'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
                                          
             }   
@@ -616,7 +590,7 @@ class PlacesController extends AppController {
                         (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
                         (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
                         (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
-                        " qry @@ places.tsv AND places.status < 255 " . $filterString . " ) plsel ".
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
                         "FULL OUTER JOIN ".
                         "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
                         "FROM tsqry, events ".
@@ -674,8 +648,8 @@ class PlacesController extends AppController {
                         (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
                         (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
                         (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
-                        " places.published <> 3 AND ".
-                        " qry @@ places.tsv AND places.status < 255 " . $filterString . " ) plsel ".
+                        " places.published = 1 AND ".
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
                         "FULL OUTER JOIN ".
                         "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
                         "FROM tsqry, events ".
@@ -691,7 +665,7 @@ class PlacesController extends AppController {
                         "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
                         "GROUP BY place_big) evsel ".
                         "USING (place_big) ".
-                        "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 1609.344 ".
+                        "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 16.09344 ".
                         "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
                         ") ".
                         "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
@@ -720,9 +694,12 @@ class PlacesController extends AppController {
                             "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
                             "ORDER BY \"Place__distance\" ASC";
                     
+             
+             $countQuery=$query;
+             $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$countQuery);
+             $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';
             
-            
-            $countQuery = 'WITH tsqry as (SELECT to_tsquery(\'pg_catalog.italian\',$$' . $phrase . '$$) as qry)
+           /* $countQuery = 'WITH tsqry as (SELECT to_tsquery(\'pg_catalog.italian\',$$' . $phrase . '$$) as qry)
                 SELECT COUNT(*)
                 FROM
                 (
@@ -751,19 +728,19 @@ class PlacesController extends AppController {
                     GROUP BY place_big
                 ) evsel
                 USING (place_big) '.
-                "WHERE places.published <> 3 AND \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 ";
+                "WHERE places.published = 1 AND \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 "; */
         }
 
         $db = $this->Place->getDataSource();
        //print($countQuery);
-      // print($query);
+        //print($query);
         $this->log("------------PLACES CONTROLLER-----------");
         $this->log("---------------query--------------------");
         $this->log($query);
         $this->log("------------Fine PLACES CONTROLLER------");  
         
-        
-       // print($query);
+       // debug($query);
+        //print($query);
         try {
             $places = $db->fetchAll($query);
             if ($offset == 0)
@@ -844,6 +821,1101 @@ class PlacesController extends AppController {
         
         $this->_apiOk($result);
       
+           
+    //print($countQuery);
+    }
+   
+    
+    
+    
+     public function api_list() {
+
+        // Variables
+        App::uses('Search', 'Lib');
+        
+        // removed lon and lat for no geoloc
+        $this->_checkVars(array(),array('lon','lat','name','category','city','rating','offset','sex','age','filteroptions'));
+        
+        $phrase = isset($this->api['name']) ? Search::PrepareTSQuery($this->api['name']) : null;
+        $cat_id = isset($this->api['category']) ? $this->api['category'] : null;
+        $region_id = isset($this->api['city']) ? $this->api['city'] : null;
+        $rating_avg = isset($this->api['rating']) ? $this->api['rating'] : null;
+        $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;
+    
+
+        $this->log("var passate: ".serialize($this->api));
+        $this->log("getquotes ".get_magic_quotes_gpc());
+        // PUT IN DEFAULT FILE!!!
+        $coords = '(40.6300568,16.2894573999997)';
+        $lon = '16.2894573999999';
+        $lat='40.6300568';
+                
+        if  (isset($this->api['lon']) AND isset($this->api['lat']))
+        {
+        $lon = isset($this->api['lon']) ? $this->api['lon'] : null;
+        $lat = isset($this->api['lat']) ? $this->api['lat'] : null;
+        $coords = '(' . $lon . ',' . $lat . ')';
+        
+        }
+        else
+        {  // try
+            //Gran parte del codice sotto potrebbe essere abbreviato visto che Places uses Member
+            //$memberdata=$this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] )
+            //$coords=$memberdata['Member']['last_lonlat']
+             
+            $params = array (
+                    'conditions' => array (
+                            'Member.big' => $this->logged['Member']['big']
+                    ),
+                    'fields' => array (
+                            'big',
+                            'last_lonlat',
+                            'updated'
+                    ),
+                    'recursive' => - 1
+            );
+            
+            try {
+                $datapos = $this->Member->find ( 'first', $params );
+                    
+                
+            } catch ( Exception $e ) {
+                $this->_apiEr ( __("Errore") );
+            }
+            
+            if (count($datapos)>0)
+            {
+            //    debug($datapos['Member']['last_lonlat']);
+                if ($datapos['Member']['last_lonlat']!=null)
+                {
+                     $coords = $datapos['Member']['last_lonlat'];
+                    $xcoords  = str_replace("(", "", $coords);
+                    $xcoords  = str_replace(")", "", $xcoords);
+                    $lecoords=split(',',$xcoords);
+                    $lon=$lecoords[0];
+                    $lat=$lecoords[1];
+                //    debug('a');
+                }
+            }
+            
+        }
+              
+        
+        $filteroptions = isset($this->api['filteroptions']) ? $this->api['filteroptions'] : null;
+        $sex=isset($this->api['sex']) ? $this->api['sex'] : null;
+        $age=isset($this->api['age']) ? $this->api['age'] : null;
+        $myFilter=array();
+        
+        $table_options="places ";
+        
+        if ($filteroptions!=null){
+            
+            switch ($filteroptions){
+                
+                case 'bookmark': 
+                
+                  $table_options="(SELECT places.* ".
+                                 "FROM bookmarks ".
+                                 "JOIN places ON bookmarks.place_big=places.big ".
+                                 "WHERE bookmarks.member_big = ".$this->logged['Member']['big'].
+                                 " AND places.published = 1 ) places ";
+                                   break;
+                case 'friend' :
+                    
+                    
+                  $placesFriends=$this->placesWithFriendsCheckins($this->logged['Member']['big']);
+                  
+                  if (count($placesFriends)>0) $placesWithFriends=implode(',',$placesFriends);
+                                   else $placesWithFriends='null';
+                   
+                  $table_options="(SELECT places.* ".
+                                 "FROM places ".
+                                 "JOIN events ON events.place_big=places.big ".
+                                 "JOIN checkins ON checkins.event_big=events.big ".
+                                 "WHERE checkins.physical=1 AND checkins.checkout IS NULL ".
+                                 "AND places.published = 1 ".
+                                 "AND checkins.member_big IN (".$placesWithFriends.") ) places ";
+                                 break;
+            }
+            
+            
+        }
+        $this->log("----PlacesController---api_list---------------------");
+        $this->log("member: ".$this->logged['Member']['big']);
+        $this->log("phrase: ".$phrase." cat_id: ".$cat_id." region_id: ".$region_id." rating_avg: ".$rating_avg);
+        $this->log("lon: ".$lon." lat: ".$lat." offset: ".$offset." coords: ".$coords);
+        $this->log("filteroptions: ".$filteroptions);
+        $this->log("sex: ".$sex." age: ".$age);
+        $this->log("----------------------------------------------------");
+        
+        
+        if ($sex!=null) $myFilter[]=" members.sex='$sex' ";
+        if ($age!=null)  {
+            
+            
+                        switch ($age){
+                            //0: <25; 1: 25-35; 2: 35-45; 3: 45-55; 4: >55  
+                            case 0: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) < 25) ";
+                                    break;
+                            case 1: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 25 AND 35) ";
+                                    break;
+                            case 2: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 35 AND 45) ";
+                                    break;
+                            case 3: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 45 AND 55) ";
+                                    break;
+                            case 4: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) > 55) ";
+                                    break;
+                              
+                                }
+        }
+        if (count($myFilter)>0) {//filtro per sex e/o age
+                                $filterString=implode('AND',$myFilter);
+                                $filterString='AND '.$filterString;
+                                
+                $queryPrefix='WITH plisel as (SELECT DISTINCT ON (places.big) places.big '. 
+                                  'FROM '.$table_options.
+                                  'JOIN events ON places.big = events.place_big '.
+                                  'JOIN checkins ON events.big = checkins.event_big '.
+                                  'JOIN members ON checkins.member_big = members.big '.
+                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString.' '. 
+                                  'ORDER BY places.big,( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
+                                  'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                                                                        
+                            
+                                
+                      } else { 
+                                 
+               $queryPrefix='WITH plisel as ( SELECT places.big '.  
+                                             'FROM '.$table_options.
+                                             'WHERE places.status < 255 AND places.published = 1 '. 
+                                             'ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
+                                             'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                                             
+                    $filterString='';
+                     
+                   // print('qpref '.$queryPrefix);                        
+                                    }
+        //print('name vale '.$phrase);
+        // Match coords against regular expression
+        $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
+        if ($crdsMatch == FALSE && (!empty($lon) || !empty($lat))) {
+                        $this->_apiEr(__('Le coordinate non sono valide: lon and/or lat'));
+                    }
+
+        if (empty($phrase) && empty($cat_id) && empty($region_id) && empty($rating_avg) && $crdsMatch)
+        {
+                       
+            $query = $queryPrefix.
+                    "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                    "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                    "places.address_street AS \"Place__address_street\",".
+                    "places.address_street_no AS \"Place__address_street_no\",".
+                    "places.lonlat AS \"Place__coordinates\",regions.city AS \"Place__city\",".
+                    "photos.big AS \"DefaultPhoto__big\", photos.original_ext AS \"DefaultPhoto__original_ext\",".                           "photos.gallery_big AS \"Gallery__big\",photos.status AS \"DefaultPhoto__status\",".
+                    "evts.eventnames AS \"Event__names\", evts.eventdates AS \"Event__dates\",".
+                    "evts.eventbigs AS \"Event__bigs\",".
+                    "places.lonlat <@> '" . $coords . "'::point  /*lon,lat*/ AS \"Place__distance\" ".
+                    "FROM plisel ".
+                    "JOIN ".$table_options." ON places.big = plisel.big ".
+                    "JOIN regions ON regions.id = places.region_id ".
+                    "LEFT JOIN ".
+                        "(SELECT place_big, array_agg(name) as eventnames,array_agg(created) as eventdates,".
+                        "array_agg(events.big) as eventbigs ".
+                        "FROM events ".
+                        "WHERE place_big IN (SELECT big FROM plisel) AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < now()) ".
+                        "AND (events.end_date IS NULL or events.end_date > NOW()) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big ) evts ON places.big = evts.place_big ".
+                    "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                    "WHERE earth_box(ll_to_earth(" . $lat . " /*lat*/, " . $lon . " /*lon*/)," . NEARBY_RADIUS . 
+                    " /* miles */ * 16.09344/*metres*/) @> ll_to_earth(places.lonlat[1], places.lonlat[0]) ". 
+                    "ORDER BY \"Place__distance\" ASC";
+
+       $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$query);
+       $query_count=str_replace("ORDER BY \"Place__distance\" ASC",'',$query);
+       //$query_count=str_replace('ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC ','',$query);
+              
+       $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';     
+                
+               //print($query);
+      
+        }
+        elseif (empty($phrase))
+        {
+            $whereArr = array();
+            if (!empty($region_id))
+            {
+                $whereArr[] = ' places.region_id = ' . $region_id . ' ';
+            }
+            if (!empty($cat_id))
+            {
+                $whereArr[] = ' places.category_id = ' . $cat_id . ' ';
+            }
+            if (!empty($rating_avg))
+            {
+                $whereArr[] = ' places.rating_avg >= ' . $rating_avg . ' ';
+            }
+            if (!empty($whereArr))
+                $where = 'AND ' . implode('AND', $whereArr);
+
+                
+            if (count($myFilter)>0){//se abbiamo anche il filtro sex e/o age
+                
+                                    $queryPrefix2='WITH plids as ( SELECT DISTINCT ON (places.big) places.big '.
+                                                  'FROM '.$table_options.
+                                                  'JOIN events ON places.big = events.place_big '.
+                                                  'JOIN checkins ON events.big = checkins.event_big '.
+                                                  'JOIN members ON checkins.member_big = members.big '.
+                                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString. 
+                                                  (!empty($where)  ? $where : '') .' '. 
+                                                  'ORDER BY places.big,places.name ASC '.
+                                                  'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ')';
+                       
+                
+            } else {//se non abbiamo filtri sex e age
+                            $queryPrefix2='WITH plids as ( SELECT places.big,places.lonlat <@> \''.$coords.'\'::point AS "Place__distance" '.
+                                                           'FROM '.$table_options.
+                                                           'WHERE places.status < 255 AND places.published = 1 '.
+                                                           (!empty($where)  ? $where : '') . ' '.
+                                                           'ORDER BY "Place__distance" ASC,places.name ASC '.
+                                                           'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                         
+            }   
+                      
+            
+            $query = $queryPrefix2.
+                    "SELECT places.name AS \"Place__name\",places.big AS \"Place__big\",".
+                    "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                    "places.address_street AS \"Place__address_street\",".
+                    "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                    "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                    "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                    "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                    "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                     ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) . 
+                    "FROM plids ".
+                    "JOIN ".$table_options." USING (big) ".
+                    "JOIN regions ON regions.id = places.region_id ".
+                    "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                    "LEFT JOIN (".
+                        "SELECT place_big, array_agg(events.name) as eventnames,".
+                        "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                        "FROM events ".
+                        "JOIN plids ON plids.big = events.place_big ".
+                        "WHERE (events.status = 1) AND (events.start_date IS NULL or events.start_date < now()) ".
+                        "AND (events.end_date IS NULL or events.end_date > NOW()) AND ".
+                        "(events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evts ON plids.big = evts.place_big ". 
+                    "ORDER BY \"Place__distance\" ASC";
+                   
+
+       $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$query);
+       $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';        
+                   
+                   
+        }
+        else
+        {//$phrase non nullo
+            
+            if ($sex!=null OR $age!=null){
+            
+            $jointable="JOIN events ON places.big = events.place_big ".
+                       "JOIN checkins ON events.big = checkins.event_big ".
+                       "JOIN members ON checkins.member_big = members.big  ";
+            } else $jointable="";
+            
+            //print($filterString);
+            
+            $queryOLD = "WITH plids as (".
+                     "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
+                     "SELECT place_big, greatest(rank_pl, rank_ev) as rank ".
+                     "FROM (".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
+                        "FROM tsqry,".$table_options.
+                        $jointable.
+                        " WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
+                        "FULL OUTER JOIN ".
+                        "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
+                        "FROM tsqry, events ".
+                        "INNER JOIN places ON places.big = events.place_big ".
+                        "WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") .
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= ". $rating_avg . " AND " : "") .
+                        " qry @@ events.tsv AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                        "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evsel ".
+                        "USING (place_big) ".
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        ") ".
+                        "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                        "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                        "places.address_street AS \"Place__address_street\", ".
+                        "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                        "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                        "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                        "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                        "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                        ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) .
+                        " FROM plids ".
+                        "JOIN ".$table_options." ON plids.place_big = places.big ".
+                        "JOIN regions ON regions.id = places.region_id ".
+                        "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                        "LEFT JOIN ( ".
+                            "SELECT place_big, array_agg(events.name) as eventnames,".
+                            "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                            "FROM events ".
+                            "JOIN plids USING (place_big) ".
+                            "WHERE (events.status = 1) ".
+                            "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                            "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                            "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                            "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                            "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
+                        "ORDER BY \"Place__distance\" ASC";
+           
+               
+            
+         $query = "WITH plids as (".
+                     "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
+                     "SELECT place_big, greatest(rank_pl, rank_ev) as rank,\"Place__distance\" ".
+                     "FROM (".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
+                        "FROM tsqry,".$table_options.
+                        $jointable.
+                        " WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " places.published = 1 AND ".
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
+                        "FULL OUTER JOIN ".
+                        "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
+                        "FROM tsqry, events ".
+                        "INNER JOIN places ON places.big = events.place_big ".
+                        "WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") .
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= ". $rating_avg . " AND " : "") .
+                        " qry @@ events.tsv AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                        "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evsel ".
+                        "USING (place_big) ".
+                        "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 16.09344 ".
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        ") ".
+                        "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                        "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                        "places.address_street AS \"Place__address_street\", ".
+                        "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                        "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                        "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                        "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                        "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                        ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) .
+                        " FROM plids ".
+                        "JOIN ".$table_options." ON plids.place_big = places.big ".
+                        "JOIN regions ON regions.id = places.region_id ".
+                        "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                        "LEFT JOIN ( ".
+                            "SELECT place_big, array_agg(events.name) as eventnames,".
+                            "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                            "FROM events ".
+                            "JOIN plids USING (place_big) ".
+                            "WHERE (events.status = 1) ".
+                            "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                            "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                            "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                            "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                            "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
+                            "ORDER BY \"Place__distance\" ASC";
+                    
+             
+             $countQuery=$query;
+             $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$countQuery);
+             $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';
+            
+           /* $countQuery = 'WITH tsqry as (SELECT to_tsquery(\'pg_catalog.italian\',$$' . $phrase . '$$) as qry)
+                SELECT COUNT(*)
+                FROM
+                (
+                    SELECT places.big as place_big,
+                    places.lonlat <@> \''. $coords .'\'::point AS "Place__distance" 
+                    FROM tsqry, '.$table_options.' '.$jointable.' 
+                    WHERE
+                        ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
+                        ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
+                        ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
+                        qry @@ places.tsv  
+                        AND places.status < 255 '. $filterString .'
+                ) plsel
+                FULL OUTER JOIN
+                (
+                    SELECT place_big
+                    FROM tsqry, events
+                    INNER JOIN places ON places.big = events.place_big
+                    WHERE
+                        ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
+                        ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
+                        ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
+                        qry @@ events.tsv
+                        AND (events.status = 1)
+                        AND (events.start_date IS NULL or events.start_date < current_timestamp) AND (events.end_date IS NULL or events.end_date > current_timestamp) AND (events.daily_start IS NULL OR events.daily_start < localtime) AND (events.daily_end IS NULL OR events.daily_end > localtime)
+                    GROUP BY place_big
+                ) evsel
+                USING (place_big) '.
+                "WHERE places.published = 1 AND \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 "; */
+        }
+
+        $db = $this->Place->getDataSource();
+       //print($countQuery);
+        //print($query);
+        $this->log("------------PLACES CONTROLLER-----------");
+        $this->log("---------------query--------------------");
+        $this->log($query);
+        $this->log("------------Fine PLACES CONTROLLER------");  
+        
+       // debug($query);
+        //print($query);
+        try {
+            $places = $db->fetchAll($query);
+            if ($offset == 0)
+            {
+                $plCount = $db->fetchAll($countQuery);
+                $placesCount = $plCount[0][0]['count'];
+            }
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+        }
+
+        
+//        debug($places);
+//        debug($placesCount);
+
+//        if (empty($places) && $placesCount > 0 && isset($params['offset'])) {    //if no results on this page, go to first page
+//            unset($params['offset']);
+//            unbindAllBut($this->Place, array('Gallery', 'DefaultPhoto'));
+//            $places = $this->Place->find('all', $params);
+//        }
+
+        // Add photos
+        // Preprocessing to fit the methods
+        if (count($places)>0){
+        
+        foreach ($places as &$plc)
+        {
+            if ($plc['Place']['distance'] < CHECKIN_RADIUS) {
+                $plc['Place']['Checkable'] = '1';
+            } else {
+                    $plc['Place']['Checkable'] = '0';
+            }
+            
+            
+            $gallery = $plc['Gallery'];
+            unset($plc['Gallery']);
+            $plc['Gallery'][0] = $gallery;
+
+            $names = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['names']));
+            $dates = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['dates']));
+            $bigs = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['bigs']));
+            $name = '';
+            $date = '';
+            $big = '';
+            foreach ($dates as $key=>$val)
+            {
+                if (empty($date) || $date < $val)
+                {
+                    $date = $val;
+                    $name = $names[$key];
+                    $big = $bigs[$key];
+                }
+            }
+            unset($plc['Event']['names']);
+            unset($plc['Event']['dates']);
+            unset($plc['Event']['bigs']);
+            $plc['Event']['name'] = $name;
+            $plc['Event']['big'] = $big;
+        }
+        }
+        $places = $this->_addPlacePhotoUrls($places);
+        //Aggiunge il numero di Join e Checkins dei Places passati
+        $places = $this->_addPlaceCheckedInCount($places);
+        //$places=null;
+                
+       if ($filteroptions=='rating') usort( $places, 'PlacesController::multiFieldSortArray' );
+        //print($placesCount);                     
+               
+        $result = array('places' => $places);
+        if (isset($placesCount))
+            $result['places_count'] = $placesCount;
+        
+                
+        $this->_apiOk($result);
+      
+    //print($countQuery);
+    }
+    
+    
+    
+    public function api_listOLD() {
+
+        // Variables
+        App::uses('Search', 'Lib');
+        
+        // removed lon and lat for no geoloc
+        $this->_checkVars(array(),array('lon','lat','name','category','city','rating','offset','sex','age','filteroptions'));
+        
+        $phrase = isset($this->api['name']) ? Search::PrepareTSQuery($this->api['name']) : null;
+        $cat_id = isset($this->api['category']) ? $this->api['category'] : null;
+        $region_id = isset($this->api['city']) ? $this->api['city'] : null;
+        $rating_avg = isset($this->api['rating']) ? $this->api['rating'] : null;
+        $offset = isset($this->api['offset']) ? $this->api['offset'] * API_PER_PAGE : 0;
+    
+
+	    $this->log("var passate: ".serialize($this->api));
+        $this->log("getquotes ".get_magic_quotes_gpc());
+        // PUT IN DEFAULT FILE!!!
+        $coords = '(40.6300568,16.2894573999997)';
+        $lon = '16.2894573999999';
+        $lat='40.6300568';
+                
+        if  (isset($this->api['lon']) AND isset($this->api['lat']))
+        {
+        $lon = isset($this->api['lon']) ? $this->api['lon'] : null;
+        $lat = isset($this->api['lat']) ? $this->api['lat'] : null;
+        $coords = '(' . $lon . ',' . $lat . ')';
+        
+        }
+        else
+        {  // try
+            //Gran parte del codice sotto potrebbe essere abbreviato visto che Places uses Member
+            //$memberdata=$this->Member->getMemberByBig ( $this->logged ['Member'] ['big'] )
+            //$coords=$memberdata['Member']['last_lonlat']
+             
+            $params = array (
+                    'conditions' => array (
+                            'Member.big' => $this->logged['Member']['big']
+                    ),
+                    'fields' => array (
+                            'big',
+                            'last_lonlat',
+                            'updated'
+                    ),
+                    'recursive' => - 1
+            );
+            
+            try {
+                $datapos = $this->Member->find ( 'first', $params );
+                    
+                
+            } catch ( Exception $e ) {
+                $this->_apiEr ( __("Errore") );
+            }
+            
+            if (count($datapos)>0)
+            {
+            //    debug($datapos['Member']['last_lonlat']);
+                if ($datapos['Member']['last_lonlat']!=null)
+                {
+                     $coords = $datapos['Member']['last_lonlat'];
+                    $xcoords  = str_replace("(", "", $coords);
+                    $xcoords  = str_replace(")", "", $xcoords);
+                    $lecoords=split(',',$xcoords);
+                    $lon=$lecoords[0];
+                    $lat=$lecoords[1];
+                //    debug('a');
+                }
+            }
+            
+        }
+              
+        
+        $filteroptions = isset($this->api['filteroptions']) ? $this->api['filteroptions'] : null;
+        $sex=isset($this->api['sex']) ? $this->api['sex'] : null;
+        $age=isset($this->api['age']) ? $this->api['age'] : null;
+        $myFilter=array();
+        
+        $table_options="places ";
+        
+        if ($filteroptions!=null){
+            
+            switch ($filteroptions){
+                
+                case 'bookmark': 
+                
+                  $table_options="(SELECT places.* ".
+                                 "FROM bookmarks ".
+                                 "JOIN places ON bookmarks.place_big=places.big ".
+                                 "WHERE bookmarks.member_big = ".$this->logged['Member']['big'].
+                                 " AND places.published = 1 ) places ";
+                                   break;
+                case 'friend' :
+                    
+                    
+                  $placesFriends=$this->placesWithFriendsCheckins($this->logged['Member']['big']);
+                  
+                  if (count($placesFriends)>0) $placesWithFriends=implode(',',$placesFriends);
+                                   else $placesWithFriends='null';
+                   
+                  $table_options="(SELECT places.* ".
+                                 "FROM places ".
+                                 "JOIN events ON events.place_big=places.big ".
+                                 "JOIN checkins ON checkins.event_big=events.big ".
+                                 "WHERE checkins.physical=1 AND checkins.checkout IS NULL ".
+                                 "AND places.published = 1 ".
+                                 "AND checkins.member_big IN (".$placesWithFriends.") ) places ";
+                                 break;
+            }
+            
+            
+        }
+        $this->log("----PlacesController---api_list---------------------");
+        $this->log("member: ".$this->logged['Member']['big']);
+        $this->log("phrase: ".$phrase." cat_id: ".$cat_id." region_id: ".$region_id." rating_avg: ".$rating_avg);
+        $this->log("lon: ".$lon." lat: ".$lat." offset: ".$offset." coords: ".$coords);
+        $this->log("filteroptions: ".$filteroptions);
+        $this->log("sex: ".$sex." age: ".$age);
+        $this->log("----------------------------------------------------");
+        
+        
+        if ($sex!=null) $myFilter[]=" members.sex='$sex' ";
+        if ($age!=null)  {
+            
+            
+                        switch ($age){
+                            //0: <25; 1: 25-35; 2: 35-45; 3: 45-55; 4: >55  
+                            case 0: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) < 25) ";
+                                    break;
+                            case 1: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 25 AND 35) ";
+                                    break;
+                            case 2: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 35 AND 45) ";
+                                    break;
+                            case 3: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) BETWEEN 45 AND 55) ";
+                                    break;
+                            case 4: $myFilter[]=" (date_part('year',age(now(),members.birth_date)) > 55) ";
+                                    break;
+                              
+                                }
+        }
+        if (count($myFilter)>0) {//filtro per sex e/o age
+                                $filterString=implode('AND',$myFilter);
+                                $filterString='AND '.$filterString;
+                                
+                $queryPrefix='WITH plisel as (SELECT DISTINCT ON (places.big) places.big '. 
+                                  'FROM '.$table_options.
+                                  'JOIN events ON places.big = events.place_big '.
+                                  'JOIN checkins ON events.big = checkins.event_big '.
+                                  'JOIN members ON checkins.member_big = members.big '.
+                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString.' '. 
+                                  'ORDER BY places.big,( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
+                                  'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                                                                        
+                            
+                                
+                      } else { 
+                                 
+               $queryPrefix='WITH plisel as ( SELECT places.big '.  
+                                             'FROM '.$table_options.
+                                             'WHERE places.status < 255 AND places.published = 1 '. 
+                                             'ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC '.
+                                             'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                                             
+                    $filterString='';
+                     
+                   // print('qpref '.$queryPrefix);                        
+                                    }
+        //print('name vale '.$phrase);
+        // Match coords against regular expression
+        $crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
+        if ($crdsMatch == FALSE && (!empty($lon) || !empty($lat))) {
+                        $this->_apiEr(__('Le coordinate non sono valide: lon and/or lat'));
+                    }
+
+        if (empty($phrase) && empty($cat_id) && empty($region_id) && empty($rating_avg) && $crdsMatch)
+        {
+                       
+            $query = $queryPrefix.
+                    "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                    "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                    "places.address_street AS \"Place__address_street\",".
+                    "places.address_street_no AS \"Place__address_street_no\",".
+                    "places.lonlat AS \"Place__coordinates\",regions.city AS \"Place__city\",".
+                    "photos.big AS \"DefaultPhoto__big\", photos.original_ext AS \"DefaultPhoto__original_ext\",".                           "photos.gallery_big AS \"Gallery__big\",photos.status AS \"DefaultPhoto__status\",".
+                    "evts.eventnames AS \"Event__names\", evts.eventdates AS \"Event__dates\",".
+                    "evts.eventbigs AS \"Event__bigs\",".
+                    "places.lonlat <@> '" . $coords . "'::point  /*lon,lat*/ AS \"Place__distance\" ".
+                    "FROM plisel ".
+                    "JOIN ".$table_options." ON places.big = plisel.big ".
+                    "JOIN regions ON regions.id = places.region_id ".
+                    "LEFT JOIN ".
+                        "(SELECT place_big, array_agg(name) as eventnames,array_agg(created) as eventdates,".
+                        "array_agg(events.big) as eventbigs ".
+                        "FROM events ".
+                        "WHERE place_big IN (SELECT big FROM plisel) AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < now()) ".
+                        "AND (events.end_date IS NULL or events.end_date > NOW()) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big ) evts ON places.big = evts.place_big ".
+                    "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                    "WHERE earth_box(ll_to_earth(" . $lat . " /*lat*/, " . $lon . " /*lon*/)," . NEARBY_RADIUS . 
+                    " /* miles */ * 16.09344/*metres*/) @> ll_to_earth(places.lonlat[1], places.lonlat[0]) ". 
+                    "ORDER BY \"Place__distance\" ASC";
+
+       $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$query);
+       $query_count=str_replace("ORDER BY \"Place__distance\" ASC",'',$query);
+      //$query_count=str_replace('ORDER BY ( places.lonlat <-> \'' . $coords . '\'::point /*lon,lat*/) ASC ','',$query);
+              
+       $countQuery = 'WITH contatore AS ('.$query_count.')'.' SELECT COUNT(*) FROM contatore ';     
+                
+               //print($query);
+      
+        }
+        elseif (empty($phrase))
+        {
+            $whereArr = array();
+            if (!empty($region_id))
+            {
+                $whereArr[] = ' places.region_id = ' . $region_id . ' ';
+            }
+            if (!empty($cat_id))
+            {
+                $whereArr[] = ' places.category_id = ' . $cat_id . ' ';
+            }
+            if (!empty($rating_avg))
+            {
+                $whereArr[] = ' places.rating_avg >= ' . $rating_avg . ' ';
+            }
+            if (!empty($whereArr))
+                $where = 'AND ' . implode('AND', $whereArr);
+
+                
+            if (count($myFilter)>0){//se abbiamo anche il filtro sex e/o age
+                
+                                    $queryPrefix2='WITH plids as ( SELECT DISTINCT ON (places.big) places.big '.
+                                                  'FROM '.$table_options.
+                                                  'JOIN events ON places.big = events.place_big '.
+                                                  'JOIN checkins ON events.big = checkins.event_big '.
+                                                  'JOIN members ON checkins.member_big = members.big '.
+                                                  'WHERE places.status < 255 AND places.published = 1 AND checkins.checkout IS NULL '.$filterString. 
+                                                  (!empty($where)  ? $where : '') .' '. 
+                                                  'ORDER BY places.big,places.name ASC '.
+                                                  'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ')';
+                       
+                
+            } else {//se non abbiamo filtri sex e age
+                            $queryPrefix2='WITH plids as ( SELECT places.big,places.lonlat <@> \''.$coords.'\'::point AS "Place__distance" '.
+                                                           'FROM '.$table_options.
+                                                           'WHERE places.status < 255 AND places.published = 1 '.
+                                                           (!empty($where)  ? $where : '') . ' '.
+                                                           'ORDER BY "Place__distance" ASC,places.name ASC '.
+                                                           'LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset . ') ';
+                                         
+            }   
+                      
+            
+            $query = $queryPrefix2.
+                    "SELECT places.name AS \"Place__name\",places.big AS \"Place__big\",".
+                    "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                    "places.address_street AS \"Place__address_street\",".
+                    "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                    "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                    "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                    "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                    "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                     ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) . 
+                    "FROM plids ".
+                    "JOIN ".$table_options." USING (big) ".
+                    "JOIN regions ON regions.id = places.region_id ".
+                    "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                    "LEFT JOIN (".
+                        "SELECT place_big, array_agg(events.name) as eventnames,".
+                        "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                        "FROM events ".
+                        "JOIN plids ON plids.big = events.place_big ".
+                        "WHERE (events.status = 1) AND (events.start_date IS NULL or events.start_date < now()) ".
+                        "AND (events.end_date IS NULL or events.end_date > NOW()) AND ".
+                        "(events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evts ON plids.big = evts.place_big ". 
+                    "ORDER BY \"Place__distance\" ASC";
+                   
+
+       $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$query);
+       $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';        
+                   
+                   
+        }
+        else
+        {//$phrase non nullo
+            
+            if ($sex!=null OR $age!=null){
+            
+            $jointable="JOIN events ON places.big = events.place_big ".
+                       "JOIN checkins ON events.big = checkins.event_big ".
+                       "JOIN members ON checkins.member_big = members.big  ";
+            } else $jointable="";
+            
+            //print($filterString);
+            
+            $queryOLD = "WITH plids as (".
+                     "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
+                     "SELECT place_big, greatest(rank_pl, rank_ev) as rank ".
+                     "FROM (".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
+                        "FROM tsqry,".$table_options.
+                        $jointable.
+                        " WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
+                        "FULL OUTER JOIN ".
+                        "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
+                        "FROM tsqry, events ".
+                        "INNER JOIN places ON places.big = events.place_big ".
+                        "WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") .
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= ". $rating_avg . " AND " : "") .
+                        " qry @@ events.tsv AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                        "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evsel ".
+                        "USING (place_big) ".
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        ") ".
+                        "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                        "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                        "places.address_street AS \"Place__address_street\", ".
+                        "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                        "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                        "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                        "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                        "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                        ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) .
+                        " FROM plids ".
+                        "JOIN ".$table_options." ON plids.place_big = places.big ".
+                        "JOIN regions ON regions.id = places.region_id ".
+                        "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                        "LEFT JOIN ( ".
+                            "SELECT place_big, array_agg(events.name) as eventnames,".
+                            "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                            "FROM events ".
+                            "JOIN plids USING (place_big) ".
+                            "WHERE (events.status = 1) ".
+                            "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                            "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                            "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                            "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                            "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
+                        "ORDER BY \"Place__distance\" ASC";
+           
+               
+            
+         $query = "WITH plids as (".
+                     "WITH tsqry as (SELECT to_tsquery('pg_catalog.italian',$$" . $phrase . "$$) as qry) ".
+                     "SELECT place_big, greatest(rank_pl, rank_ev) as rank,\"Place__distance\" ".
+                     "FROM (".
+                        "SELECT places.big as place_big, ts_rank_cd(places.tsv, qry, 36) AS rank_pl, ".
+                        "places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " .
+                        "FROM tsqry,".$table_options.
+                        $jointable.
+                        " WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") . 
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= " . $rating_avg . " AND " : "") . 
+                        " places.published = 1 AND ".
+                        " qry @@ places.tsv AND places.status < 255 AND places.published = 1 " . $filterString . " ) plsel ".
+                        "FULL OUTER JOIN ".
+                        "(SELECT place_big, AVG(ts_rank_cd(events.tsv, qry, 36)) AS rank_ev ".
+                        "FROM tsqry, events ".
+                        "INNER JOIN places ON places.big = events.place_big ".
+                        "WHERE ".
+                        (!empty($region_id) ? "places.region_id = " . $region_id . " AND " : "") .
+                        (!empty($cat_id) ? "places.category_id = " . $cat_id . " AND " : "") . 
+                        (!empty($rating_avg) ? "places.rating_avg >= ". $rating_avg . " AND " : "") .
+                        " qry @@ events.tsv AND (events.status = 1) ".
+                        "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                        "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                        "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                        "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                        "GROUP BY place_big) evsel ".
+                        "USING (place_big) ".
+                        "WHERE \"Place__distance\" < ".NEARBY_RADIUS. " * 16.09344 ".
+                        "ORDER BY \"Place__distance\" ASC, rank DESC LIMIT " . API_PER_PAGE . " OFFSET ". $offset . 
+                        ") ".
+                        "SELECT places.name AS \"Place__name\", places.big AS \"Place__big\",".
+                        "places.rating_avg AS \"Place__rating_avg\", places.category_id AS \"Place__category_id\",".
+                        "places.address_street AS \"Place__address_street\", ".
+                        "places.address_street_no AS \"Place__address_street_no\", regions.city AS \"Place__city\",".
+                        "places.lonlat AS \"Place__coordinates\",photos.big AS \"DefaultPhoto__big\",".
+                        "photos.original_ext AS \"DefaultPhoto__original_ext\", photos.gallery_big AS \"Gallery__big\",".
+                        "photos.status AS \"DefaultPhoto__status\",evts.eventnames AS \"Event__names\",".
+                        "evts.eventdates AS \"Event__dates\", evts.eventbigs AS \"Event__bigs\" ".
+                        ($crdsMatch ? ", places.lonlat <@> '" . $coords . "'::point AS \"Place__distance\" " : "" ) .
+                        " FROM plids ".
+                        "JOIN ".$table_options." ON plids.place_big = places.big ".
+                        "JOIN regions ON regions.id = places.region_id ".
+                        "LEFT JOIN photos ON (places.default_photo_big = photos.big) ".
+                        "LEFT JOIN ( ".
+                            "SELECT place_big, array_agg(events.name) as eventnames,".
+                            "array_agg(events.created) as eventdates, array_agg(events.big) as eventbigs ".
+                            "FROM events ".
+                            "JOIN plids USING (place_big) ".
+                            "WHERE (events.status = 1) ".
+                            "AND (events.start_date IS NULL or events.start_date < current_timestamp) ".
+                            "AND (events.end_date IS NULL or events.end_date > current_timestamp) ".
+                            "AND (events.daily_start IS NULL OR events.daily_start < localtime) ".
+                            "AND (events.daily_end IS NULL OR events.daily_end > localtime) ".
+                            "GROUP BY place_big) evts ON plids.place_big = evts.place_big ".
+                            "ORDER BY \"Place__distance\" ASC";
+                    
+             
+             $countQuery=$query;
+             $query_count=str_replace('LIMIT ' . API_PER_PAGE . ' OFFSET ' . $offset,'',$countQuery);
+             $countQuery = 'WITH contatore AS ('.$query_count.')'.'SELECT COUNT(*) FROM contatore';
+            
+           /* $countQuery = 'WITH tsqry as (SELECT to_tsquery(\'pg_catalog.italian\',$$' . $phrase . '$$) as qry)
+                SELECT COUNT(*)
+                FROM
+                (
+                    SELECT places.big as place_big,
+                    places.lonlat <@> \''. $coords .'\'::point AS "Place__distance" 
+                    FROM tsqry, '.$table_options.' '.$jointable.' 
+                    WHERE
+                        ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
+                        ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
+                        ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
+                        qry @@ places.tsv  
+                        AND places.status < 255 '. $filterString .'
+                ) plsel
+                FULL OUTER JOIN
+                (
+                    SELECT place_big
+                    FROM tsqry, events
+                    INNER JOIN places ON places.big = events.place_big
+                    WHERE
+                        ' . (!empty($region_id) ? 'places.region_id = ' . $region_id . ' AND ' : '') . '
+                        ' . (!empty($cat_id) ? 'places.category_id = ' . $cat_id . ' AND ' : '') . '
+                        ' . (!empty($rating_avg) ? 'places.rating_avg >= ' . $rating_avg . ' AND ' : '') . '
+                        qry @@ events.tsv
+                        AND (events.status = 1)
+                        AND (events.start_date IS NULL or events.start_date < current_timestamp) AND (events.end_date IS NULL or events.end_date > current_timestamp) AND (events.daily_start IS NULL OR events.daily_start < localtime) AND (events.daily_end IS NULL OR events.daily_end > localtime)
+                    GROUP BY place_big
+                ) evsel
+                USING (place_big) '.
+                "WHERE places.published = 1 AND \"Place__distance\" < ".NEARBY_RADIUS. " * 1.609344 "; */
+        }
+
+        $db = $this->Place->getDataSource();
+       //print($countQuery);
+        //print($query);
+        $this->log("------------PLACES CONTROLLER-----------");
+        $this->log("---------------query--------------------");
+        $this->log($query);
+        $this->log("------------Fine PLACES CONTROLLER------");  
+        
+       // debug($query);
+        //print($query);
+        try {
+            $places = $db->fetchAll($query);
+            if ($offset == 0)
+            {
+                $plCount = $db->fetchAll($countQuery);
+                //print($countQuery);
+                $placesCount = $plCount[0][0]['count'];
+            }
+        }
+        catch (Exception $e)
+        {
+            debug($e);
+        }
+
+        
+//        debug($places);
+//        debug($placesCount);
+
+//        if (empty($places) && $placesCount > 0 && isset($params['offset'])) {    //if no results on this page, go to first page
+//            unset($params['offset']);
+//            unbindAllBut($this->Place, array('Gallery', 'DefaultPhoto'));
+//            $places = $this->Place->find('all', $params);
+//        }
+
+        // Add photos
+        // Preprocessing to fit the methods
+        if (count($places)>0){
+        
+        foreach ($places as &$plc)
+        {
+            if ($plc['Place']['distance'] < CHECKIN_RADIUS) {
+                $plc['Place']['Checkable'] = '1';
+            } else {
+                    $plc['Place']['Checkable'] = '0';
+            }
+            
+            
+            $gallery = $plc['Gallery'];
+            unset($plc['Gallery']);
+            $plc['Gallery'][0] = $gallery;
+
+            $names = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['names']));
+            $dates = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['dates']));
+            $bigs = explode(',', str_replace(array('{','}','"'), '', $plc['Event']['bigs']));
+            $name = '';
+            $date = '';
+            $big = '';
+            foreach ($dates as $key=>$val)
+            {
+                if (empty($date) || $date < $val)
+                {
+                    $date = $val;
+                    $name = $names[$key];
+                    $big = $bigs[$key];
+                }
+            }
+            unset($plc['Event']['names']);
+            unset($plc['Event']['dates']);
+            unset($plc['Event']['bigs']);
+            $plc['Event']['name'] = $name;
+            $plc['Event']['big'] = $big;
+        }
+        }
+        $places = $this->_addPlacePhotoUrls($places);
+        
+        $places = $this->_addPlaceCheckedIn($places);
+   
+                
+       if ($filteroptions=='rating') usort( $places, 'PlacesController::multiFieldSortArray' );
+                             
+               
+        $result = array('places' => $places);
+        if (isset($placesCount))
+            $result['places_count'] = $placesCount;
+        
+                
+        $this->_apiOk($result);
+      
     //print($countQuery);
     }
 
@@ -912,7 +1984,8 @@ class PlacesController extends AppController {
 	public function api_detail() {
 
 		$this->_checkVars(array('place_big'));
-
+        $memBig = $this->logged['Member']['big'];
+        
 		$params = array();
 		$conditions = array();
 		if (isset($this->api['place_big']))
@@ -957,14 +2030,16 @@ class PlacesController extends AppController {
 
 		if (empty($place))
 		{
-			$this->_apiEr(__('Nonexistent place.'));
+			$this->_apiEr(__('Posto inesistente.'));
 		}
 
 		$category = $this->Place->Category->getOne( $place['Place']['category_id'] );
 
 		$place['CatLang'] = $category['CatLang'];
 		$place['CatLang']['photo'] = $this->FileUrl->category_picture($place['Place']['category_id'], $category['Category']['updated']);
-
+        
+        /* QUESTA PARTE DI CODICE GENERAVA I CONTEGGI JOIN E CHECKINS SULL'ULTIMO EVENTO DEL PLACE
+        
 		$event = $this->Place->getCurrentEvent($place['Place']['big'], true, true);
 
 		// Add hidden parameter
@@ -978,9 +2053,13 @@ class PlacesController extends AppController {
 		}
 
 		// Add number of people joined and checked in
-		$memBig = $this->logged['Member']['big'];
-		$checkinsCount = $this->Place->Event->Checkin->getCheckinsTotalFor($event['Event']['big']);
+		
+        $checkinsCount = $this->Place->Event->Checkin->getCheckinsTotalFor($event['Event']['big']);
 		$joinsCount = $this->Place->Event->Checkin->getJoinsCountFor($event['Event']['big'], $memBig);
+        */
+        
+        $checkinsCount = intval($this->Place->Event->Checkin->getCheckinCountsForPlaceBigs( $this->api['place_big'], 1 ));
+        $joinsCount = intval($this->Place->Event->Checkin->getCheckinCountsForPlaceBigs( $this->api['place_big'], 0 ));
 		$event['Checkins'] = array('count' => $checkinsCount);
 		//changed to all count 8/10(14 $event['Checkins'] = array('count' => $checkinsCount);
 		$event['Joins'] = array('count' => $joinsCount);
@@ -1039,7 +2118,7 @@ class PlacesController extends AppController {
 		// Match coords against regular expression ('41.873114', '12.510547')
 		$crdsMatch = preg_match('/^\(([\-\+\d\.]+),([\-\+\d\.]+)\)$/', $coords);
 		if ($crdsMatch == FALSE) {
-			$this->_apiEr(__('The following API variables are invalid: lon and/or lat'));
+			$this->_apiEr(__('Le coordinate non sono valide: lon and/or lat'));
 		}
 
 		$all_nearby = $this->Place->getNearbyPlaces($coords);
@@ -1164,7 +2243,7 @@ class PlacesController extends AppController {
 		$result = array('nearby' => $nearby, 'checkable' => $checkable);
 		$result['People'] =$xresponse; 
 		if (empty($result)) {
-			$this->_apiEr(__('Error occured. No places found nearby.'), __('There are no places in your vicinity'));
+			$this->_apiEr(__('Errore. Nessun Posto trovato nelle vicinanze.'), __('Non ci sono Posti nelle vicinanze.'));
 		} else {
 			$this->_apiOk($result);
 		}
@@ -1510,6 +2589,42 @@ class PlacesController extends AppController {
 		return $data;
 	}
 	
+    
+    private function _addPlaceCheckedInCount($data) {
+        //usato nella risposta modificata di places/list in stile places/detail come richiesto da Dev App
+        if (empty ( $data )) {
+            return $data;
+        }
+    
+        if (array_keys ( $data ) !== range ( 0, count ( $data ) - 1 )) {
+            $data = array (
+                    $data
+            );
+            $assoc = true;
+        }
+    
+        foreach ( $data as $key => $val ) {
+
+            $checkins = array();
+            $joins = array();
+    
+
+            $checkins = $this->Place->Event->Checkin->getCheckinCountsForPlaceBigs( $data [$key]['Place']['big'], 1 );
+            $joins = $this->Place->Event->Checkin->getCheckinCountsForPlaceBigs( $data [$key]['Place']['big'], 0 );
+
+            /*print_r($val);    
+            print_r($checkins);
+            print_r($joins);
+                */
+                $data [$key]['Checkins']['count']=intval($checkins[$val['Place']['big']]);
+                $data [$key]['Joins']['count']=intval($joins[$val['Place']['big']]);
+            
+            //    debug($checkins[0]);
+        }
+    
+    
+        return $data;
+    }
 	
 	
 	public function detail($big, $slug='')
@@ -1533,7 +2648,7 @@ class PlacesController extends AppController {
 		$this->set('place', $place);
 
 		if (!$place) {
-			$this->Session->setFlash(__('The place does not exist'), 'flash/error');
+			$this->Session->setFlash(__('Il Posto non esiste'), 'flash/error');
 			return $this->redirect('/');
 		}
 
@@ -1677,7 +2792,7 @@ class PlacesController extends AppController {
         
         
     } else 
-        $this->_apiEr ( __("Parameter Error") );
+        $this->_apiEr ( __("Parametro Errato") );
    }
     
     

@@ -102,17 +102,7 @@ class Member extends AppModel {
 		        'rule' => 'isOver18',
 	            'message' => 'You must be over 18',
 	    ),
-		'phone' => array(
-			'max' => array(
-				'rule' => array('maxLength', 32),
-				'message' => 'Phone number is too long',
-			),
-			'reg' => array(
-		        'rule'    => '/^[0-9\+ ]+$/',
-		        'message' => 'Please enter a valid phone number',
-				'allowEmpty' => true
-		    )
-		),
+			
 		'address_street_no' => array(
 			'max' => array(
 				'rule' => array('maxLength', 12),
@@ -161,25 +151,40 @@ class Member extends AppModel {
 				'message' => 'Please enter a valid e-mail address',
 			),
 			'unique' => array(
-				'rule' => 'unique_email',
+				'rule' => array('unique_email'),
 				'message' => 'This e-mail address is already in use by another user',
 			),
 		),
 
-		'phone'=> array(
-			'phone' => array(
-				'rule' => 'numeric',
-				'message' => 'Please enter numbers only',
-			),
-			'unique' => array(
-				'rule' => 'isUnique',
-				'message' => 'This phone address is already in use by another user',
-			),
-			'len' => array(
-					'rule' => array('minLength', 6),
-					'message' => 'This phone address must be at least 6 characters long',
-			),
-		),
+        'phone'=>array(
+            
+          'solocifre' => array(  
+                  'rule'=>'numeric',
+                  'message'=>'Please enter numbers only'
+          ),
+          
+          'unico' => array(
+                 'rule'=> array('unique_phone'),
+                 'message'=>'This phone address is already in use by another user'
+          ),
+          
+          'max' => array(
+                'rule' => array('maxLength', 32),
+                'message' => 'Phone number is too long',
+            ),
+            
+          'min' => array(
+                    'rule' => array('minLength', 6),
+                    'message' => 'This phone address must be at least 6 characters long',
+            ),  
+          'reg' => array(
+                'rule'    => '/^[0-9\+ ]+$/',
+                'message' => 'Please enter a valid phone number',
+                'allowEmpty' => true
+            )
+              
+        ),
+        
 		'password' => array(
 			'rule' => array('minLength', 6),
 			'message' => 'Password must be at least 6 characters long',
@@ -203,23 +208,60 @@ class Member extends AppModel {
 
 		$exists = $this->find('count', array(
 			'conditions' => array(
-				'email' => $check['email'],
-				'big !=' => isset($this->data['Member']['big']) ? $this->data['Member']['big'] : 0,
+				'email' => $check['email']
 			),
-			'recursive' => -1,
+			'callbacks'=> false,  //serve per evitare il controllo status!=255 presente in beforeFind in AppModel
+                                  //da ripristinare nel caso in cui i cancellati status=255 non devono essere contati
+                                  //In tal caso occorrerebbe poi togliere i vincoli sulla tabella members    
+            'recursive' => -1,
 		));
-
-		return $exists == 0;
+                      
+		return $exists==0;
 
 	}
 
+    public function unique_phone($check) {
+
+        $exists = $this->find('count', array(
+            'conditions' => array(
+                'phone' => $check['phone']                
+            ),
+            'callbacks' => false, //serve per evitare il controllo status!=255 presente in beforeFind in AppModel
+                                  //da ripristinare nel caso in cui i cancellati status=255 non devono essere contati   
+                                  //In tal caso occorrerebbe poi togliere i vincoli sulla tabella members 
+            'recursive' => -1,
+        ));
+                     
+        return $exists==0;
+
+    }
 		
 	public function getAffinityMembers($memberBig,$offset=0)
 	{//debug($check);
 	
 	$IPmember=($this->getMemberByBig($memberBig));
 	$Imember=$IPmember['Member'];
-	//	$birthdate = strtotime();
+    
+    $ExtraInfosModel = ClassRegistry::init('ExtraInfos');
+    $extraInfos=$ExtraInfosModel->getExtraInfos($memberBig);
+    
+    $lookingFor=$extraInfos['ExtraInfos']['looking_for'];
+    
+    if (strlen($lookingFor)>0){
+        
+         if ($lookingFor=='Maschi') {
+                                        $affinitySex='m';
+                                        } 
+                else
+                     {
+                         $affinitySex='f';
+                     }
+            
+                  
+    } else $affinitySex = ($Imember['sex']=='m') ? 'f' : 'm';
+        
+        
+    	//	$birthdate = strtotime();
 	//	 (strtotime($birthdate . '+18 year') > time())
 	$Iyear = date('Y', strtotime($Imember['birth_date']));
 	$coords =$Imember['last_lonlat'];
@@ -272,9 +314,9 @@ class Member extends AppModel {
                "JOIN privacy_settings ON members.big=privacy_settings.member_big ".
                "WHERE ((".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".$ageAttempts[$j]." ".
                "AND ".$ageAttempts[$j].") ".
-               "AND sex != '".$Imember['sex']."' ".
+               "AND members.sex = '".$affinitySex."' ".
                "AND	(members.big <> ".$memberBig.") ".
-               "AND (members.status <> 255) ".
+               "AND (members.status <> 255)  AND (members.photo_updated is not null )  ".
                "AND (privacy_settings.visibletousers>0) ".
                $filtroNonAmici.
                $filtroBloccati.
@@ -292,7 +334,7 @@ class Member extends AppModel {
             
     } 
      
-     if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and any members sex
+     if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and opposite members sex
          
          $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
                  "members.photo_updated,members.sex,".
@@ -300,10 +342,11 @@ class Member extends AppModel {
                  "\"distance\" ".
                  "FROM members ".
                  "JOIN privacy_settings ON members.big=privacy_settings.member_big ".             
-                 "WHERE (( ".$Iyear." - DATE_PART(\'year\', birth_date)) BETWEEN -".
+                 "WHERE (( ".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".
                  $ageAttempts[count($ageAttempts)-1]." ".
                  "AND ".$ageAttempts[count($ageAttempts)-1]." ) ".
-                 "AND (members.big <> ".$memberBig.") AND (members.status <> 255) ".
+                 "AND (members.big <> ".$memberBig.") AND (members.status <> 255)  AND (members.photo_updated is not null )  ".
+                 "AND members.sex = '".$affinitySex."' ".
                  "AND (privacy_settings.visibletousers>0) ".
                   $filtroNonAmici.
                   $filtroBloccati.
@@ -342,14 +385,204 @@ class Member extends AppModel {
         	
 	}
 	
-	
+	public function getAffinityMembersNew($memberBig,$offset=0)
+    {//debug($check);
+    
+    $IPmember=($this->getMemberByBig($memberBig));
+    
+    
+    $IPmember['Member']['isvip']=( $IPmember['Member']['type'] == MEMBER_VIP);
+    
+    
+    
+    
+    $db = $this->getDataSource();
+    
+    $serviceList=explode(',',ID_RADAR_VISIBILITY_PRODUCTS);
+    $query='SELECT count(*) FROM wallets WHERE member1_big='.$memberBig.' AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.')';
+    
+    try {
+    	$mwal=$db->fetchAll($query);
+    	$IPmember['Member']['ishot']=(count($mwal)>0);
+    }
+    catch (Exception $e)
+    {
+    		
+    	$this->_apiEr( $e);
+    
+    }
+    
+    $now = new DateTime();
+    $olddate = date('m/d/Y h:i:s a', time());
+    date_sub($now, date_interval_create_from_date_string('5 days'));
+    $IPmember ['Member']['isnew']=($IPmember ['Member'] ['created']) > $now;
+    
+    
+    
+    
+    
+    $Imember=$IPmember['Member'];
+    
+    $ExtraInfosModel = ClassRegistry::init('ExtraInfos');
+    $extraInfos=$ExtraInfosModel->getExtraInfos($memberBig);
+    
+    $lookingFor=$extraInfos['ExtraInfos']['looking_for'];
+    
+    if (strlen($lookingFor)>0){
+        
+         if ($lookingFor=='Maschi') {
+                                        $affinitySex='m';
+                                        } 
+                else
+                     {
+                         $affinitySex='f';
+                     }
+            
+                  
+    } else $affinitySex = ($Imember['sex']=='m') ? 'f' : 'm';
+        
+        
+        //    $birthdate = strtotime();
+    //     (strtotime($birthdate . '+18 year') > time())
+    $Iyear = date('Y', strtotime($Imember['birth_date']));
+    $coords =$Imember['last_lonlat'];
+    //$date = DateTime::createFromFormat("Y-m-d", $birthdate);
+    //    $Iyear =  $birthdate->format("Y");
+    $db = $this->getDataSource ();
+    
+    $FriendModel = ClassRegistry::init('Friend');
+    //$Friends contiene i membig degli amici dei membri che abbiamo bloccato in MemberSettings
+    $Friends=$FriendModel->findAllfriendsWithBad($memberBig);
+              
+    $lista_amici=implode(',',$Friends);
+       
+       if (count($lista_amici)>0){//se ci sono amici e membri bloccati allora non vanno Suggeriti
+                  
+           $filtroNonSuggerire=" AND members.big NOT IN ($lista_amici) ";
+                     
+       } else {//se non ha amici non occorre filtrare
+           
+           $filtroNonSuggerire=' ';
+       }
+       
+     
+    $ageAttempts=array(10,15,20);  //increasing values
+    $distanceAttempts=array(10,50,100);   //increasing values
+    
+    //for loops first search the nearest members and then search for the most distant members     
+    
+    
+   for ($i=0; $i<count($distanceAttempts); $i++){ //distance array iterator index
+                                                        
+        
+        for ($j=0; $j<count($ageAttempts); $j++){ //age array iterator index
+    
+                         
+       $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
+               "members.photo_updated,members.sex,".
+               "members.last_lonlat AS \"coordinates\",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) ".
+               "AS \"distance\" ".
+               ',(members.type=4) as isvip,(members.created>(now() - interval \'5 days\'))  as isnew,'.
+               '(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.'))>0 AS ishot '.
+               "FROM members ".
+               "JOIN privacy_settings ON members.big=privacy_settings.member_big ".
+               "WHERE ((".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".$ageAttempts[$j]." ".
+               "AND ".$ageAttempts[$j].") ".
+               "AND members.sex = '".$affinitySex."' ".
+               "AND    (members.big <> ".$memberBig.") ".
+               "AND (members.status <> 255)  AND (members.photo_updated is not null )  ".
+               "AND (privacy_settings.visibletousers>0) ".
+               $filtroNonSuggerire.
+               "AND ( members.last_lonlat <@> ? )::numeric(10,1) < (". NEARBY_RADIUS. "*".$distanceAttempts[$i].
+               ") ".
+               "ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ".
+               "ASC LIMIT ". API_MAP_LIMIT ." OFFSET ".$offset;
+                     
+        $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));
+        
+        if (count($result)>=MIN_AFFINITY_MEMBERS) {
+                                break 2;
+                                }
+        }
+            
+    }     
+        /*$sql2= "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
+               "members.photo_updated,members.sex,".
+               "members.last_lonlat AS \"coordinates\",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) ".
+               "AS \"distance\" ".
+               "FROM members ".
+               "JOIN privacy_settings ON members.big=privacy_settings.member_big ".
+               "WHERE ((".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".$ageAttempts[0]." AND ".$ageAttempts[0].") ".
+               "AND members.sex = '".$affinitySex."' ".
+               "AND    (members.big <> ".$memberBig.") ".
+               "AND (members.status <> 255)  AND (members.photo_updated is not null )  ".
+               "AND (privacy_settings.visibletousers>0) ".
+               $filtroNonAmici.
+               "ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ".
+               "ASC LIMIT ". API_MAP_LIMIT ." OFFSET ".$offset;
+          
+           $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords  ));           
+          */
+            
+     
+     if (!count($result)>=MIN_AFFINITY_MEMBERS){// extreme attempt : max age diff, max distance and opposite members sex
+         
+         $sql2 = "SELECT members.big,members.name,members.surname,members.updated,members.birth_date,".
+                 "members.photo_updated,members.sex,".
+                 "members.last_lonlat AS \"coordinates\",((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS ".
+                 "\"distance\" ".
+               ',(members.type=4) as isvip,(members.created>(now() - interval \'5 days\'))  as isnew,'.
+               '(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.'))>0 AS ishot '.
+                 "FROM members ".
+                 "JOIN privacy_settings ON members.big=privacy_settings.member_big ".             
+                 "WHERE (( ".$Iyear." - DATE_PART('year', birth_date)) BETWEEN -".
+                 $ageAttempts[count($ageAttempts)-1]." ".
+                 "AND ".$ageAttempts[count($ageAttempts)-1]." ) ".
+                 "AND (members.big <> ".$memberBig.") AND (members.status <> 255)  AND (members.photo_updated is not null )  ".
+                 "AND members.sex = '".$affinitySex."' ".
+                 "AND (privacy_settings.visibletousers>0) ".
+                  $filtroNonSuggerire.
+                 "AND ( members.last_lonlat <@> ? )::numeric(10,1) < (" . NEARBY_RADIUS . "*".$distanceAttempts[count($distanceAttempts)-1].") ".
+                 "ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ".
+                 "ASC LIMIT ". API_MAP_LIMIT. " OFFSET ".$offset; 
+         
+         
+          $result = $db->fetchAll ( $sql2, array ($coords,  $coords,  $coords    ) );
+     }
+      
+    /*
+    
+    *
+    * //$dbo = $this->Member->getDatasource();
+    $logs = $db->getLog();
+    $lastLog = end($logs['log']);
+    die(debug($lastLog['query']));
+    */
+    
+    $serviceList=explode(",",ID_VISIBILITY_PRODUCTS);
+    
+    $ordered_result=$result;
+    
+    $modelWallet = ClassRegistry::init ( 'Wallet' );  
+           
+    foreach ($ordered_result as $key=>$value){
+        
+        $ordered_result[$key][0]['position_bonus']=$modelWallet->hasActiveService($serviceList,$value[0]['big']);
+               
+    }
+    
+      
+    //print_r($ordered_result);
+    return $ordered_result;
+            
+    }
 	
 	
 	public function getRadarMembers($memberBig)
 	{//debug($check);
 		
 		$IPmember=($this->getMemberByBig($memberBig));
-		$Imember=$IPmember['Member'];
+		$IPmember=$IPmember['Member'];
 	//	$birthdate = strtotime();
 	//	 (strtotime($birthdate . '+18 year') > time())
 		$Iyear = date('Y', strtotime($Imember['birth_date']));
@@ -395,7 +628,62 @@ FROM
 
 	}
 
-	public function getRadarPrivacyMembers($memberBig, $serviceList=array(), $bonusOrder=false)
+
+	
+	public function getMembersPhotos($memberBig)
+	{//debug($check);
+	
+	$IPmember=($this->getMemberByBig($memberBig));
+	$Imember=$IPmember['Member'];
+	//	$birthdate = strtotime();
+	//	 (strtotime($birthdate . '+18 year') > time())
+	$Iyear = date('Y', strtotime($Imember['birth_date']));
+	$coords =$Imember['last_lonlat'];
+	//$date = DateTime::createFromFormat("Y-m-d", $birthdate);
+	//	$Iyear =  $birthdate->format("Y");
+	$db = $this->getDataSource ();
+	$prefixLink='http:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$memberBig.DS.$memberBig.DS;
+    /*$sql2 = 'SELECT \'http://' . $_SERVER['HTTP_HOST'] . '\/api/files/members/'.$memberBig.'/'.$memberBig.'\/\'||original_ext||\''.'\/'.'\'||name as imgname,isdefault from  member_galleries where member_big='.$memberBig.'   AND status < 255;';*/
+	$sql2="SELECT '$prefixLink' || name || '". DS . "' || original_ext AS imgname, isdefault,big  ".
+          "FROM member_galleries ".
+          "WHERE member_big=$memberBig AND status < 255";
+          
+    //print($sql2);
+    
+//	die(debug($sql2));
+	
+
+			// \'\files\members\'.$memberBig.'\||
+	
+	
+	//debug($sql2));
+	
+	// try {
+	$res = $db->fetchAll ( $sql2);
+    
+    foreach ($res as $key=>$val){
+        
+        $result[]=$val[0];
+               
+    }
+    
+		
+	/*
+	
+	*
+	* //$dbo = $this->Member->getDatasource();
+	$logs = $db->getLog();
+	$lastLog = end($logs['log']);
+	die(debug($lastLog['query']));
+	*/
+	
+	return $result;
+	
+	}
+	
+	
+	
+	public function getRadarPrivacyMembers($memberBig, $serviceList=array(), $bonusOrder=false, $coordinate='')
     {/*
         Se si passa solo il $memberBig allora restituisce solo i dati del member e della sua privacy
         ordinando l'output in base alla distanza crescente.
@@ -405,40 +693,70 @@ FROM
         dei servizi attivi tra quelli specificati.
         
         Se si passa anche il $bonusOrder allora ordina l'output mettendo per primi i membri che hanno
-        attivi i servizi specificati nell'array. In output aggiunge il campo [position_bonus] = n dove n è           il numero dei servizi attivi tra quelli specificati.
+        attivi i servizi specificati nell'array. In output aggiunge il campo [position_bonus] = n dove n è           
+        il numero dei servizi attivi tra quelli specificati.
     
+        Se si passano le coordinate già estratte prima di chiamare il metodo allora si risparmia una query
     */
+        
+        if ($coordinate==''){
         
         $IPmember=($this->getMemberByBig($memberBig));
         $Imember=$IPmember['Member'];
         $coords =$Imember['last_lonlat'];
+        } else
+        {
+            $coords=$coordinate;
+            
+        }
+        
+        if (count($serviceList)>0){
+        
+        $services=implode(',',$serviceList);        
         
         $db = $this->getDataSource ();
         $sql = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,'.
-                        'members.sex,members.last_lonlat AS "coordinates",'.
+                        'members.sex,members.last_lonlat AS "coordinates",(members.type=4) as isvip,(members.created>(now() - interval \'5 days\'))  as isnew,'.
+                        '(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN ('.$services.'))>0 AS ishot, '.
                         '((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance", '.
-                        'visibletousers,fbintegration,disconnectplace,profilestatus,showvisitedplaces,'.                             'sharecontacts,notifyprofileviews,notifyfriendshiprequests,notifychatmessages,'.
-                        'boardsponsor,checkinsvisibility,photosvisibility '.
+                        'visibletousers,fbintegration,disconnectplace,profilestatus,showvisitedplaces,'.
+                        'sharecontacts,notifyprofileviews,notifyfriendshiprequests,notifychatmessages,'.
+                        'boardsponsor,checkinsvisibility,photosvisibility,'.
+                        '(SELECT COUNT(*) FROM wallets WHERE member1_big=members.big AND expirationdate>NOW() AND product_id IN ('.$services.')) AS position_bonus '.
                  'FROM members '.
                  'JOIN privacy_settings ON members.big=privacy_settings.member_big '.
-                 'WHERE members.big <>'.$memberBig.' AND members.status<>255 '.    
+                 'WHERE members.big <>'.$memberBig.' AND members.status<>255 AND members.photo_updated is not null '.    
                  'ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ASC LIMIT ' . API_MAP_LIMIT;
-        
+            } else
+            {
+                
+                $sql = 'SELECT members.big,members.name,members.surname,members.updated,members.photo_updated,'.
+                        'members.sex,members.last_lonlat AS "coordinates",'.
+                        '((members.last_lonlat <@> ? )::numeric(10,1) * 1.6) AS "distance", '.
+                        'visibletousers,fbintegration,disconnectplace,profilestatus,showvisitedplaces,'.
+                        'sharecontacts,notifyprofileviews,notifyfriendshiprequests,notifychatmessages,'.
+                        'boardsponsor,checkinsvisibility,photosvisibility '.
+                 'FROM members '.
+                 'JOIN privacy_settings ON members.big=privacy_settings.member_big  '.
+                 'WHERE members.big <>'.$memberBig.' AND members.status<>255 AND members.photo_updated is not null '.    
+                 'ORDER BY ( members.last_lonlat <@> ?)::numeric(10,1) ASC LIMIT ' . API_MAP_LIMIT; 
+                            
+            }
+            
         $this->log("query ".$sql);
         $result = $db->fetchAll ( $sql, array ($coords,  $coords ) );
        
         if (count($serviceList)>0){
             //attacca il position_bonus al result e poi ordina per position_bonus e distanza.
-         $modelWallet = ClassRegistry::init ( 'Wallet' );
+         //$modelWallet = ClassRegistry::init ( 'Wallet' );
          
-         $foundMembers=$result;
+            $foundMembers=$result;
             
-            foreach($foundMembers as $key=>$val){
+            //foreach($foundMembers as $key=>$val){
                 
-                $val=$val[0];
-                $foundMembers[$key][0]['position_bonus']=$modelWallet->hasActiveService($serviceList,$val['big']);
+            //    $foundMembers[$key][0]['position_bonus']=$modelWallet->hasActiveService($serviceList,$val[0]['big']);
                 
-            }
+            //}
             
            if ($bonusOrder){
                //ordina per position_bonus
@@ -710,5 +1028,39 @@ FROM
         return $res;
         
     }   
+    
+    
+    public function setSmsCounter($big,$val=1){
+        /*
+            Se non specificato incrementa di 1 il contatore smscount nella tabella members
+            Se $val è specificato allora l'incremento sarà $val
+        */
+        $db = $this->getDataSource();
+        $sql="UPDATE members SET smscount=smscount+$val WHERE big=$big";
+        $db->fetchAll($sql);
+        //$this->updateAll(array('Member.smscount'=>'Member.smscount+1'),array('Member.big'=>$big));
+        
+        
+        
+    }
+
+    
+    public function getSmsCounter($big){
+        /*
+            Recupera il numero di sms inviati dall'utente
+        */
+        $params = array(
+                'conditions' => array(
+                        'Member.big' => $big
+                ),
+                'fields' => array('smscount'),
+                'recursive' => -1,
+        );
+        
+        $smscount = $this->find ( 'first', $params );
+        
+        return $smscount['Member']['smscount'];
+        
+    }
 
 }

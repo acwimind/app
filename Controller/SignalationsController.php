@@ -91,7 +91,7 @@ class SignalationsController extends AppController {
 			'status' => DELETED,
 		));
 
-		$this->Session->setFlash(__('Signalation deleted'), 'flash/success');
+		$this->Session->setFlash(__('Segnalazione cancellata'), 'flash/success');
 		return $this->redirect(array('action' => 'index'));
 
 	}
@@ -103,7 +103,7 @@ class SignalationsController extends AppController {
 			'status' => INACTIVE,
 		));
 
-		$this->Session->setFlash(__('Signalation marked as solved'), 'flash/success');
+		$this->Session->setFlash(__('Segnalazione contrassegnata come risolta'), 'flash/success');
 		return $this->redirect(array('action' => 'index'));
 	}
 
@@ -132,21 +132,21 @@ class SignalationsController extends AppController {
 		}
 		else
 		{
-			$this->_apiEr(__('Bad reason value'));
+			$this->_apiEr(__('Reason errato'));
 		}
 
 		// Check if type of signalation is valid
 		if (!array_key_exists($type, Defines::$signalations))
 		{//TODO in bootstrap aggiungere anche Comment in signalations
 			
-            $this->_apiEr(__('Bad signalation type'));
+            $this->_apiEr(__('Tipo di segnalazione errata'));
 		}
         
         //Search member_big of bad member
         $BadMemBig=$this->Signalation->findBadMemBig($type,$idObj);
         if ($BadMemBig==null OR $BadMemBig=='')
         {
-            $this->_apiEr(__('Missing author identificator'));
+            $this->_apiEr(__('Identificatore autore mancante'));
         }
         
         
@@ -154,7 +154,7 @@ class SignalationsController extends AppController {
 		$canSignal = $this->Signalation->canSignal($memBig, $BadMemBig, $type, $idObj);
 		if (!$canSignal)
 		{
-		$this->_apiEr(__('Cannot signal. A signalation with this parameters is already active or was added not long ago.'));
+		$this->_apiEr(__('Segnalazione non possibile. Una segnalazione con questi parametri è già attiva o effettuata recentemente.'));
 		}
      
         
@@ -168,7 +168,7 @@ class SignalationsController extends AppController {
 				$res = $this->MemberSetting->addToIgnoreList($memBig, $BadMemBig);
 				if ($res === FALSE)
 				{
-					$this->_apiEr(__('Error occured. Member not added to ignore list.'));
+					$this->_apiEr(__('Errore. Utente non aggiunto alla black list.'));
 				}
 			}
 			// If this is a chat, send last M chat messages with up to N characters
@@ -250,7 +250,7 @@ class SignalationsController extends AppController {
 		}
 		else
 		{
-			$this->_apiEr(__('Error occured. Signalation not added.'));
+			$this->_apiEr(__('Errore. Segnalazione non inserita.'));
 		}
 
 	}
@@ -409,20 +409,20 @@ class SignalationsController extends AppController {
         }
         else
         {
-            $this->_apiEr(__('Bad reason value'));
+            $this->_apiEr(__('Reason errato'));
         }
 
         // Check if type of signalation is valid
         if (!array_key_exists($type, Defines::$signalations))
         {
-            $this->_apiEr(__('Bad signalation type'));
+            $this->_apiEr(__('Tipo di segnalazione errata'));
         }
 
         // Can be this signalation added?
         $canSignal = $this->Signalation->canSignal($memBig, $flgBig, $type);
         if (!$canSignal)
         {
-            $this->_apiEr(__('Cannot signal. A signalation with this parameters is already active or was added not long ago.'));
+            $this->_apiEr(__('Segnalazione non possibile. Una segnalazione con questi parametri è già attiva o effettuata recentemente.'));
         }
 
         // If signalation is made of type CHAT , add member to ignore list.
@@ -435,7 +435,7 @@ class SignalationsController extends AppController {
                 $res = $this->MemberSetting->addToIgnoreList($memBig, $flgBig);
                 if ($res === FALSE)
                 {
-                    $this->_apiEr(__('Error occured. Member not added to ignore list.'));
+                    $this->_apiEr(__('Errore. Utente non aggiunto alla black list'));
                 }
             }
             // If this is a chat, send last M chat messages with up to N characters
@@ -498,7 +498,7 @@ class SignalationsController extends AppController {
         }
         else
         {
-            $this->_apiEr(__('Error occured. Signalation not added.'));
+            $this->_apiEr(__('Errore. Segnalazione non inserita.'));
         }
 
     }

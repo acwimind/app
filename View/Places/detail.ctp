@@ -94,7 +94,7 @@ $this->Html->script('map', array('block' => 'script'));
 			<?php echo $place['Place']['short_desc']; ?>
 		</p>
 		<?php endif;
-		
+
 		if (!empty($place['Place']['opening_hours'])):
 		?>
 		<p class="opening_hours">

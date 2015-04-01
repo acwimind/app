@@ -1,0 +1,111 @@
+#conosci {
+
+
+
+    .conosci-image {
+        position: relative;
+
+        >div {
+            width: 320px;
+            height: 69px;
+            position: absolute;
+            border: 1px solid @blue;
+            .rotate_skew(-15deg,12deg, 0deg);
+            .boxShadow(0px 2px 17px, rgba(0,0,0,.3));
+        }
+    }
+}
+
+@media only screen and (max-width : 767px) {
+    #conosci {
+
+        .he_content {
+            padding-top: 20px;
+
+            h1 {
+                .sprite2x(0 -596px);
+            }
+        }
+
+        .conosci-image {
+            overflow: hidden;
+
+            img {
+                margin: 0 auto;
+                max-width: 100%;
+            }
+
+            >div {
+                background: url(../images/haamble/cella2x.png) no-repeat 0 0 transparent;
+                left: 50%;
+                margin-left: -160px;
+                top: 223px;
+                background-size: 320px 69px;
+            }
+        }
+    }
+}
+
+@media only screen and (max-width : 550px) {
+    #conosci {
+
+
+        .conosci-image {
+
+            >div {
+                top: 223px;
+            }
+        }
+    }
+}
+
+@media only screen and (max-width : 480px) {
+    #conosci {
+
+
+        .conosci-image {
+
+            >div {
+                top: 93px;
+                background-size: 240px 52px;
+                width: 240px;
+                height: 52px;
+                margin-left: -120px;
+            }
+        }
+    }
+}
+
+@media only screen and (min-width : 768px) {
+    #conosci {
+        .he_content {
+            padding-top: 160px;
+
+            h1 {
+                .sprite(0 -596px);
+            }
+        }
+
+        .conosci-image {
+            >div {
+                background: url(../images/haamble/cella.png) no-repeat 0 0 transparent;
+                left: 130px;
+                top: 273px;
+            }
+        }
+    }
+}
+@media only screen and (max-width : 981px){
+
+	#conosci .he_content {
+		padding-top: 60px;
+	}
+}
+@media only screen and (min-width : 768px) and (max-width : 981px) {
+}
+
+@media only screen and (min-width : 982px) and (max-width : 1199px) {
+}
+
+@media only screen and (min-width : 1200px) {
+}

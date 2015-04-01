@@ -102,7 +102,7 @@ class MemberSetting extends AppModel{
         
         $ign = $this->find('all', $params);
                
-        
+
         if (empty($ign))
             return false;
             

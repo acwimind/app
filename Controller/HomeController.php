@@ -2,7 +2,7 @@
 
 class HomeController extends AppController {
 	
-	var $uses = array('Checkin', 'Event', 'MemberRel', 'Bookmark', 'Region', 'Wallet', 'ProfileVisit','Friend');
+	var $uses = array('Checkin', 'Event', 'MemberRel', 'Bookmark', 'Region', 'Wallet', 'ProfileVisit','Friend','PrivacySetting');
 	
 	public function api_show() {
 		
@@ -58,9 +58,15 @@ class HomeController extends AppController {
 			$events = $this->Event->getMostPopularEvents();
 			$events = $this->_addEventPhotoUrls($events);
 		}
-           $this->_apiOk(array('visitNotRead' => $this->ProfileVisit->getNotReadVisits($this->logged['Member']['big']))); 
+		
+		
+		
+
+	       $this->_apiOk(array('visitNotRead' => $this->ProfileVisit->getNotReadVisits($this->logged['Member']['big']))); 
 		   $this->_apiOk(array('credit_count' => $this->Wallet->getCredit($this->logged['Member']['big'])));
            $this->_apiOk(array('numFriendRequest'=>$this->Friend->countFriendRequest($this->logged['Member']['big'])));
+           $this->_apiOk(array('PrivacySettings' => $this->PrivacySetting->getPrivacySettings($this->logged['Member']['big'])));
+            
 		//find places with photos
 		{
 			$place_bigs = array();
@@ -169,7 +175,7 @@ class HomeController extends AppController {
 				),
 			),
 		);
-        
+		$this->_apiOk(array('PrivacySettings' => $this->PrivacySetting->getPrivacySettings($this->logged['Member']['big'])));
         $this->_apiOk(array('visitNotRead' => $this->ProfileVisit->getNotReadVisits($this->logged['Member']['big'])));
         $this->_apiOk(array('credit_count'=>$this->Wallet->getCredit($this->logged['Member']['big'])));
         $this->_apiOk(array('numFriendRequest'=>$this->Friend->countFriendRequest($this->logged['Member']['big'])));
@@ -250,7 +256,7 @@ class HomeController extends AppController {
 				
 			// add places with photos to last checkin events
 			foreach ( $checkins as $key => $checkin ) {
-				$checkins [$key] ['Place'] = $places [$checkin ['Place'] ['big']];
+				$checkins [$key] ['Place'] = $place[$checkin ['Place'] ['big']]; //era $places forse per errore ortografico ?!?!
 			}
 				
 			$this->_apiOk ( array (
