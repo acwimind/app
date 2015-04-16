@@ -124,8 +124,7 @@
                  $this->_apiEr ( __ ( $e), __ ( $e ), true, null, '989' );
         }
         
-         //$prefixLink='https:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$MemBig.DS.$MemBig.DS;
-        $prefixLink='http:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$MemBig.DS.$MemBig.DS;
+         $prefixLink='http:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$MemBig.DS.$MemBig.DS;
          $photoUrl = $prefixLink.$result['MemberGallery']['name'].DS.$result['MemberGallery']['original_ext'];        
                  
         $this->_apiOk ( array (
@@ -163,7 +162,6 @@
          $photo=$this->api['photo'];
          $default=0;
          //$default=$this->api['default'];
-//         $prefixLink='https:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$MemBig.DS.$MemBig.DS;
          $prefixLink='http:'.DS.DS.$_SERVER['HTTP_HOST'].DS.'api'.DS.'files'.DS.'members'.DS.$MemBig.DS.$MemBig.DS;
          
          //print_r($_FILES);

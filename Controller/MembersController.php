@@ -1075,7 +1075,8 @@ class MembersController extends AppController {
 			$optional_fields = array (
 					'password' => 'password',
 					'name' => 'name',
-					'surname' => 'surname' 
+					'surname' => 'surname',
+                    'description' => 'description' 
 			);
 		}
 		
@@ -1087,7 +1088,7 @@ class MembersController extends AppController {
 					'lang' => 'lang',
 					'birth_date' => 'birth_date',
 					'sex' => 'sex',
-					'phone' => 'phone',
+					//'phone' => 'phone',
 					'birth_place' => 'birth_place',
 					'address_street' => 'address_street',
 					'address_street_no' => 'address_street_no',
@@ -1116,7 +1117,7 @@ class MembersController extends AppController {
 					'lang' => 'language',
 					'birth_date' => 'birth_date',
 					'sex' => 'sex',
-					'phone' => 'phone',
+					//'phone' => 'phone',
 					'birth_place' => 'birth_place',
 					'address_street' => 'street',
 					'address_street_no' => 'street_no',
@@ -1179,7 +1180,7 @@ class MembersController extends AppController {
                                    $this->Member->rank ($member['big'], 10 + $opt_fields_rank );
                                    $this->Wallet->addAmount($member['big'], $opt_fields_credit, 'Edit profilo' ); 
                                    }
-        		
+        //print_r($member);		
 		return $member;
 	}
 	
@@ -1300,19 +1301,22 @@ class MembersController extends AppController {
 		}
 		
 // count amici
-		$query='SELECT * FROM friends WHERE status=\'A\' and (member1_big='.$this->api ['big'] .' or member2_big='.$this->api ['big'].')';
-		
-		try {
-			$mwal=$db->fetchAll($query);
-		}
-		catch (Exception $e)
-		{
-				
-			$this->_apiEr( $e);
-		
-		}
-		
-		$data ['Member']['friendscount']=count($mwal);
+		// count amici
+        /*$query='SELECT * FROM friends WHERE status=\'A\' and (member1_big='.$this->api ['big'] .' or member2_big='.$this->api ['big'].')';
+        
+        try {
+            $mwal=$db->fetchAll($query);
+        }
+        catch (Exception $e)
+        {
+                
+            $this->_apiEr( $e);
+        
+        }
+        
+        $data ['Member']['friendscount']=count($mwal);*/
+        
+        $data['Member']['friendscount']=count($this->Friend->findAllFriendsNew($this->api['big'],'A'));
 
 	
 		$now = new DateTime();
@@ -1945,6 +1949,8 @@ class MembersController extends AppController {
 		$this->_apiOk ( $AppoMem );
 	}
 	
+        
+    
 	/**
 	 * View public member profile
 	 */
@@ -1977,6 +1983,7 @@ class MembersController extends AppController {
 				) 
 		);
 		
+                
 		$privacySettings = $this->PrivacySetting->getPrivacySettings ( $memBig );
 		$photosVisibility = $privacySettings [0] ['PrivacySetting'] ['photosvisibility'];
 		       
@@ -1988,10 +1995,19 @@ class MembersController extends AppController {
 			$data ['Member'] ['friendstatus'] = $xfriend [0] ['Friend'] ['status'];
 		}
 		
-		$data ['Member']['isvip']=($data ['Member'] ['type'] == MEMBER_VIP);
-		$data ['Member'] ['isFriend'] = $xisFriend;
+		$datapic=$this->Member->getMembersPhotos( $data ['Member'] ['big']);
+		foreach ( $datapic as $key => $val ) {
 		
-		// debug($data);
+			$data ['Member']['Pictures'][$key]=$val;
+		
+		}
+		
+		$data ['Member']['isvip']=($data ['Member'] ['type'] == MEMBER_VIP);
+		$data ['Member']['isnew']=($this->Member->isnew($this->api ['user_big']));
+        $data ['Member']['ishot']=($this->Member->ishot($this->api ['user_big']));
+        $data ['Member']['friendscount']=count($this->Friend->findAllFriendsNew($memBig,'A'));
+		$data ['Member']['isFriend'] = $xisFriend;
+        // debug($data);
 		// Get checkin or join
         
         $checkinsVisibility=$privacySettings[0]['PrivacySetting']['checkinsvisibility'];

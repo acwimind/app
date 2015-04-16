@@ -644,18 +644,54 @@ class Friend extends AppModel {
 		
 		return $cleanResult;
 	}
-	public function findAllFriendsNew($memberBig, $action = null) {
+	public function findAllFriendsNew($memberBig, $action = null, $birth = false) {
 		$db = $this->getDataSource ();
 		$actionFilter = '';
 		
+        if ($birth==true){
+            
+            $birthCondition=" AND date_part('month',birth_date)=date_part('month',Now()) AND date_part('day',birth_date)=date_part('day',Now()) ";
+            
+        } else {
+                $birthCondition="";
+        }
+        
 		if ($action != null) {
 			
 			$actionFilter = " AND f.status='$action' ";
 		}
 		
-		$fields = "f.member1_big,f.member2_big,f.status,m.big,m.name,m.middle_name,m.surname,m.photo_updated," . "m.sex,m.birth_date,m.address_town,m.address_country,cast(last_lonlat as text) AS coordinates,ps.visibletousers" . ",(m.type=4) as isvip,(m.created>(now() - interval '5 days'))  as isnew," . "(SELECT COUNT(*) FROM wallets WHERE member1_big=m.big AND expirationdate>NOW() AND product_id IN (" . ID_RADAR_VISIBILITY_PRODUCTS . "))>0 AS ishot ";
+		$fields = "f.member1_big,f.member2_big,f.status,m.big,m.name,m.middle_name,m.surname,m.photo_updated," . 
+                  "m.sex,m.birth_date,m.address_town,m.address_country,cast(last_lonlat as text) AS coordinates,ps.visibletousers" . 
+                  ",(m.type=4) as isvip,(m.created>(now() - interval '5 days'))  as isnew," . 
+                  " date_part('month',birth_date)=date_part('month',Now()) AND date_part('day',birth_date)=date_part('day',Now()) AS Birth, ".
+                  "(SELECT COUNT(*) FROM wallets WHERE member1_big=m.big AND expirationdate>NOW() AND product_id IN (" . ID_RADAR_VISIBILITY_PRODUCTS . "))>0 AS ishot ";
 		
-		$query = "SELECT $fields " . "FROM friends f " . "JOIN members m ON f.member2_big=m.big " . "LEFT JOIN privacy_settings ps ON m.big=ps.member_big " . "WHERE f.member1_big=$memberBig $actionFilter AND m.status<255 AND f.member2_big NOT IN ( " . "SELECT to_big " . "FROM member_settings " . "WHERE from_big=$memberBig AND chat_ignore=1 " . "UNION " . "SELECT from_big " . "FROM member_settings " . "WHERE to_big=$memberBig AND chat_ignore=1 " . ") " . "UNION " . "SELECT $fields " . "FROM friends f " . "JOIN members m ON f.member1_big=m.big " . "LEFT JOIN privacy_settings ps ON m.big=ps.member_big " . "WHERE f.member2_big=$memberBig $actionFilter AND m.status<255 AND f.member1_big NOT IN ( " . "SELECT to_big " . "FROM member_settings " . "WHERE from_big=$memberBig AND chat_ignore=1 " . "UNION " . "SELECT from_big " . "FROM member_settings " . "WHERE to_big=$memberBig AND chat_ignore=1 " . ")";
+		$query = "SELECT $fields " . 
+                 "FROM friends f " . 
+                 "JOIN members m ON f.member2_big=m.big " . 
+                 "LEFT JOIN privacy_settings ps ON m.big=ps.member_big " . 
+                 "WHERE f.member1_big=$memberBig $actionFilter $birthCondition AND m.status<255 AND f.member2_big NOT IN ( " . 
+                                "SELECT to_big " . "FROM member_settings " . 
+                                "WHERE from_big=$memberBig AND chat_ignore=1 " . 
+                                "UNION " . 
+                                "SELECT from_big " . 
+                                "FROM member_settings " . 
+                                "WHERE to_big=$memberBig AND chat_ignore=1 " . 
+                                ") " . 
+                 "UNION " . 
+                 "SELECT $fields " . 
+                 "FROM friends f " . 
+                 "JOIN members m ON f.member1_big=m.big " . 
+                 "LEFT JOIN privacy_settings ps ON m.big=ps.member_big " . 
+                 "WHERE f.member2_big=$memberBig $actionFilter $birthCondition AND m.status<255 AND f.member1_big NOT IN ( " . 
+                                "SELECT to_big " . 
+                                "FROM member_settings " . 
+                                "WHERE from_big=$memberBig AND chat_ignore=1 " . 
+                                "UNION " . "SELECT from_big " . 
+                                "FROM member_settings " . 
+                                "WHERE to_big=$memberBig AND chat_ignore=1 " . 
+                                ")";
 		
 		$externalQuery = "SELECT * FROM ( $query ) AS foo ORDER BY name,surname";
 		

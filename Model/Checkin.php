@@ -88,9 +88,9 @@ class Checkin extends AppModel {
 	}
 	public function getMemberAvailableToChat($eventBig, $memberBig) {
 		$db = $this->getDataSource ();
-		$query = 'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."birth_date" AS "Member__birth_date","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count" 
-       (Member.type=4) as Member__isvip,(Member.created>(now() - interval \'5 days\'))  as Member__isnew,
-               (SELECT COUNT(*) FROM wallets WHERE member1_big=Member.big AND expirationdate>NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.'))>0 AS Member__ishot, 
+		$query = 'SELECT "Member"."big" AS "Member__big", "Member"."name" AS "Member__name","Member"."birth_date" AS "Member__birth_date","Member"."sex" AS "Member__sex", "Member"."middle_name" AS "Member__middle_name", "Member"."surname" AS "Member__surname", "Member"."photo_updated" AS "Member__photo_updated", "Checkin"."big" AS "Checkin__big", "Checkin"."physical" AS "Checkin__physical", "ChatMessage"."count" AS "ChatMessage__unread_count", 
+       "Member"."type"=4 as "Member__isvip","Member"."created" >(NOW() - interval \'5 days\') as "Member__isnew",
+               (SELECT COUNT(*) FROM wallets WHERE member1_big="Member"."big" AND expirationdate > NOW() AND product_id IN ('.ID_RADAR_VISIBILITY_PRODUCTS.'))>0 AS "Member__ishot"  
 				FROM "checkins" AS "Checkin" 
 			LEFT JOIN "members" AS "Member" ON ("Checkin"."member_big" = "Member"."big")  
 			LEFT JOIN (SELECT from_big, COUNT(*) AS count FROM chat_messages WHERE read = 0 AND to_big = ? GROUP BY from_big) AS "ChatMessage" ON ("Member"."big" = "ChatMessage"."from_big") 
@@ -108,7 +108,7 @@ class Checkin extends AppModel {
 			AND (("Checkin"."checkout" IS NULL) OR ("Checkin"."checkout" > \'NOW()\')) 
 			AND NOT ("Checkin"."member_big" = ?)   
 			ORDER BY "Checkin"."created" desc';
-		
+		//print_r($query);
 		try {
 			$result = $db->fetchAll ( $query, array (
 					$memberBig,
@@ -732,8 +732,9 @@ class Checkin extends AppModel {
         
         
         
-        if ($optParams['photo']!=null) {
+        if ($optParams['photo']==1) {
             
+             $filter[]=" members.photo_updated IS NOT NULL ";
                                   
         }
         
@@ -841,7 +842,7 @@ class Checkin extends AppModel {
                 
          }      
         //$this->log("filterString ".$filterString);
-	    //$this->log("Query ".$sql2);         
+	    //print("Query ".$sql2);         
         if(isset($offset))
         {
             

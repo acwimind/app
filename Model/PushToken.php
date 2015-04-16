@@ -12,7 +12,7 @@ class PushToken extends AppModel {
 	
 	protected static $apiKey = "AIzaSyDPwFwVvXhq60DqoagAyP-_xZQrcRYt4PM";
 	
-	public function sendNotification($title, $message, array $data, array $userIds, $type, $action)
+	public function sendNotificationOLD($title, $message, array $data, array $userIds, $type, $action)
     {
         Logger::Info('Called push/sendNotification with data: Ttl - 0 Msg - 1 Data - 2 Rcps - 3 Type - 4 Act - 5',
             array($title, $message, $data, $userIds, $type, $action));
@@ -113,7 +113,7 @@ class PushToken extends AppModel {
 
     
     
-    public function sendNotificationNew($title, $message, array $data, array $userIds, $type, $action,$img)
+    public function sendNotification($title, $message, array $data, array $userIds, $type, $action,$img=null)
     {
     	Logger::Info('Called push/sendNotification with data: Ttl - 0 Msg - 1 Data - 2 Rcps - 3 Type - 4 Act - 5',
     			array($title, $message, $data, $userIds, $type, $action));

@@ -282,6 +282,15 @@ class ChatMessagesController extends AppController {
             }
             unset ( $val ['Recipient'] ['photo_updated'] );
             
+
+            
+//            $data ['Member']['isvip']=($data ['Member'] ['type'] == MEMBER_VIP);
+             $val ['Recipient']['isnew']=($this->Member->isnew( $val ['Recipient']['big']));
+             $val ['Recipient']['ishot']=($this->Member->ishot($val ['Recipient']['big']));
+
+             $val ['Sender']['isnew']=($this->Member->isnew( $val ['Sender']['big']));
+             $val ['Sender']['ishot']=($this->Member->ishot( $val ['Sender']['big']));
+             
             
             
             $xfriend = $val['MemberRel']['status'];
@@ -820,12 +829,29 @@ class ChatMessagesController extends AppController {
             
         }
         $this->log("NOME CHATPUSH ".$name);
+        
+        if ($this->logged ['Member'] ['photo_updated'] > 0) // reimplementare privacy and $MySugFriends [$key] ['photosvisibility'] > 0) 
+        {
+        	$chatMsg ['ChatMessage'] ['profile_picture'] = $this->FileUrl->profile_picture ( $this->logged ['Member'] ['big'], $this->logged ['Member'] ['photo_updated'] );
+        } else {
+        	$sexpic = 2;
+        	if ($this->logged ['Member'] ['sex'] == 'f') {
+        		$sexpic = 3;
+        	}
+        
+        	$chatMsg ['ChatMessage'] ['profile_picture'] = $this->FileUrl->profile_picture ( $sexpic );
+        }
+        
+        
+    //    debug($chatMsg ['ChatMessage'] ['profile_picture']);
+        
         $msg = (strlen ( $text ) > $strLen + 4) ? substr ( $text, 0, $strLen ) . ($text [$strLen + 1] == ' ' ? ' ...' : '...') : $text;
         $this->PushToken->sendNotification ( $name, $msg, array (
                 'partner_big' => $memBig,
                 'created' => $chatMsg ['ChatMessage'] ['created'],
                 'rel_id' => $chatMsg ['ChatMessage'] ['rel_id'],
                 'msg_id' => $chatMsg ['ChatMessage'] ['id'],
+        		'img'=> $chatMsg ['ChatMessage'] ['profile_picture'],
                 // 'timestamp' => time(),
                 'unread' => $unreadCount 
         ), array (

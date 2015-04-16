@@ -791,4 +791,21 @@ class FriendsController extends AppController {
 		$this->admin_edit ();
 		$this->render ( 'admin_edit' );
 	}
+    
+    
+    public function api_birthFriends(){
+        
+        $this->_checkVars ( array (
+                'idMember' 
+        ) );
+        
+        $idMember=$this->api['idMember'];
+        
+        $friends=$this->Friend->findAllFriendsNew($idMember,'A',true);
+                
+                
+        $this->_apiOk($friends);
+        
+    }
+    
 }

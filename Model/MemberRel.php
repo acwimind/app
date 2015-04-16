@@ -323,40 +323,39 @@ class MemberRel extends AppModel {
                  "\"Recipient\".\"photo_updated\" AS \"Recipient__photo_updated\",\"MemberRel\".\"id\" AS \"MemberRel__id\",".
                  "\"ChatMessage\".\"created\" AS \"ChatMessage__created\",\"ChatMessage\".\"text\" AS \"ChatMessage__text\",".
                  "(\"ChatMessage\".\"from_big\" = ". $memberBig .") AS \"ChatMessage__self\",".
-                 "\"ChatMessage\".\"id\" AS \"ChatMessage__id\",".
-                 "\"ChatMessage\".\"photo_updated\" AS \"ChatMessage__photo_updated\",".
                  "\"Sender\".\"chat_status\" AS \"Sender__chat_status\",".
                  "\"Recipient\".\"chat_status\" AS \"Recipient__chat_status\",\"Sender\".\"sex\" AS \"Sender__sex\",".
                  "\"Recipient\".\"sex\" AS \"Recipient__sex\",".
-                 "\"Sender\".\"status\" AS \"Sender__status\", \"Recipient\".\"status\" AS \"Recipient__status\" ".
+                 "\"Sender\".\"status\" AS \"Sender__status\", \"Recipient\".\"status\" AS \"Recipient__status\", ".
+                 "\"Sender\".\"isvip\" AS \"Sender__isvip\",\"Recipient\".\"isvip\" AS \"Recipient__isvip\" ".
                  "FROM \"member_rels\" AS \"MemberRel\" ". 
-			     "INNER JOIN \"chat_messages\" AS \"ChatMessage\" ON (\"ChatMessage\".\"rel_id\" = \"MemberRel\".\"id\" ". 
-				 "AND \"ChatMessage\".\"created\" = (SELECT MAX(created) FROM chat_messages ".
+                 "INNER JOIN \"chat_messages\" AS \"ChatMessage\" ON (\"ChatMessage\".\"rel_id\" = \"MemberRel\".\"id\" ". 
+                 "AND \"ChatMessage\".\"created\" = (SELECT MAX(created) FROM chat_messages ".
                  "WHERE rel_id = \"MemberRel\".\"id\")) ". 
-			     "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
-                 "members.status,".
-                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2	WHEN checkins.physical = 0 THEN 1 ".
+                 "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
+                 "members.status,(members.type=4) AS isvip,".
+                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2    WHEN checkins.physical = 0 THEN 1 ".
                  "WHEN members.last_web_activity > NOW() - interval '". ONLINE_TIMEOUT . " hour' ".
                  "OR members.last_mobile_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' THEN 1 ELSE 0 END) ".
                  "AS chat_status ".
-				 "FROM members ".
-				 "LEFT JOIN checkins ON (members.big = checkins.member_big) ". 
-				 "AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big) ".
-				 "AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS \"Sender\" ON ".
+                 "FROM members ".
+                 "LEFT JOIN checkins ON (members.big = checkins.member_big) ". 
+                 "AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big) ".
+                 "AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS \"Sender\" ON ".
                  "(\"MemberRel\".\"member1_big\" = \"Sender\".\"big\") ". 
-			     "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
-                 "members.status,".
-                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2	WHEN checkins.physical = 0 THEN 1 ".
+                 "LEFT JOIN (SELECT members.big,members.sex, members.name, members.middle_name, members.surname,".
+                 "members.status,(members.type=4) AS isvip,".
+                 "members.photo_updated,(CASE WHEN checkins.physical = 1 THEN 2    WHEN checkins.physical = 0 THEN 1 ".
                  "WHEN members.last_web_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' OR ".
                  "members.last_mobile_activity > NOW() - interval '" . ONLINE_TIMEOUT . " hour' THEN 1 ".
                  "ELSE 0 END) AS chat_status ".
-				 "FROM members ".
+                 "FROM members ".
                  "LEFT JOIN checkins ON (members.big = checkins.member_big) ".
                  "AND checkins.created = (SELECT MAX(created) FROM checkins WHERE member_big = members.big) ".
                  "AND (checkins.checkout IS NULL OR checkins.checkout > NOW())) AS \"Recipient\" ON ".
                  "(\"MemberRel\".\"member2_big\" = \"Recipient\".\"big\") ". 
-			     "WHERE  \"Recipient\".\"status\"<255 AND \"ChatMessage\".\"status\" != 255 " . 
-			     (!empty($ign) ? " AND NOT (\"MemberRel\".\"member1_big\" IN (" . $ign . ") OR ".
+                 "WHERE  \"Recipient\".\"status\"<255 AND \"ChatMessage\".\"status\" != 255 " . 
+                 (!empty($ign) ? " AND NOT (\"MemberRel\".\"member1_big\" IN (" . $ign . ") OR ".
                  "\"MemberRel\".\"member2_big\" IN (" . $ign . ")) " : "" ) .
                  " AND ((\"ChatMessage\".\"from_big\" = " . $memberBig . "  AND  \"ChatMessage\".\"from_status\" != 255) ".
                  "OR (\"ChatMessage\".\"to_big\" = ". $memberBig . "  AND  \"ChatMessage\".\"to_status\" != 255)) ".
